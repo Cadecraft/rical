@@ -48,6 +48,32 @@ This app is far from complete! Check back soon, mark your calendars...
 - Rust 🦀
 - Libraries and technologies to be determined
 
+## Development
+**Starting the backend**
+- Note: make sure to update the `.env` file and use the correct password/other info in these commands
+- Run Postgres
+```
+cd backend/src
+
+docker pull postgres:17.6
+# In Windows, use 5433 instead of 5432 because of issue
+# This is assuming running Docker in WSL
+docker run --name rical-db -e POSTGRES_PASSWORD=passwordhere -e POSTGRES_DB=rical_db -e POSTGRES_USER=userhere -e PGPORT=5433 -d -p 5433:5433 postgres
+
+# To go into the db using psql:
+docker exec -it rical-db sh
+psql rical_db userhere
+```
+- If it was already running:
+```
+docker container stop rical-db
+docker container rm rical-db
+```
+
+## Deployment
+- Using Railway, Postgres should be straightforward
+    - <https://docs.railway.com/guides/postgresql>
+
 ## Etymology?
 The acronym RICAL stands for:
 - ***R***ical
