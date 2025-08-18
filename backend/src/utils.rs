@@ -9,6 +9,13 @@ use argon2::{
     Argon2
 };
 
+use hmac::{Hmac, Mac};
+use jwt::{ SignWithKey, VerifyWithKey, Error };
+use sha2::Sha256;
+use std::collections::BTreeMap;
+
+use std::env;
+
 /// Hash a password
 pub fn hash_password(password: &str) -> String {
     // See docs: https://docs.rs/argon2/latest/argon2/
@@ -20,8 +27,43 @@ pub fn hash_password(password: &str) -> String {
     password_hash
 }
 
-/// Verify a password
+/// Return whether the incoming password matches the stored one
 pub fn verify_password(incoming: &str, stored_hash: &str) -> bool {
     let parsed_hash = PasswordHash::new(stored_hash).expect("Could not parse stored hash");
     Argon2::default().verify_password(incoming.as_bytes(), &parsed_hash).is_ok()
+}
+
+fn create_hmac_key() -> Hmac<Sha256> {
+    // TODO: load configuration in main to make sure fully configred
+    let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    Hmac::new_from_slice(jwt_secret.as_bytes())
+        .expect("Could not generate key")
+}
+
+/// Create and sign a JWT for auth with the user ID
+pub fn create_jwt(user_id: i64) -> String {
+    // See docs: https://docs.rs/jwt/latest/jwt/
+    // TODO: expiration?
+    let key = create_hmac_key();
+    let mut claims = BTreeMap::new();
+    let user_id_str = user_id.to_string();
+    claims.insert("sub", user_id_str.as_bytes());
+    let token_str = claims.sign_with_key(&key).expect("Could not sign");
+    token_str
+}
+
+/// Verify a JWT and return the sub claim with the ID
+pub fn verify_jwt(incoming_token: &str) -> Option<i64> {
+    let key = create_hmac_key();
+
+    let verif_res: Result<BTreeMap<String, i64>, jwt::Error> = incoming_token.verify_with_key(&key);
+    match verif_res {
+        Ok(claims) => match claims.get("sub") {
+            Some(res) => {
+                Some(res.clone())
+            },
+            None => None
+        }
+        _ => None
+    }
 }

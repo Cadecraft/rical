@@ -1,6 +1,6 @@
 use axum::{
     extract::State,
-    routing::{get, post},
+    routing::post,
     http::StatusCode,
     Json,
     Router
@@ -63,10 +63,26 @@ struct AuthToken {
 async fn login(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<UserCredentials>
-) -> (StatusCode, Json<AuthToken>) {
-    // TODO: check against db, return response with auth token, etc.
-    let auth_token = AuthToken {
-        token: format!("log in example: {} with pw {}", payload.username, payload.password)
-    };
-    (StatusCode::OK, Json(auth_token))
+) -> (StatusCode, Json<Option<AuthToken>>) {
+    let row: Result<(String, i64), sqlx::Error> = sqlx::query_as(
+        "SELECT hashed_password, account_id FROM account WHERE username=$1;"
+    ).bind(&payload.username)
+        .fetch_one(&state.db_pool)
+        .await;
+    if row.is_err() {
+        // TODO: better error message
+        return (StatusCode::BAD_REQUEST, Json(None));
+    }
+    let rowres = row.unwrap();
+    let stored_password = rowres.0;
+    let stored_account_id = rowres.1;
+    let valid = utils::verify_password(&payload.password, &stored_password);
+    if !valid {
+        // TODO: better error message
+        return (StatusCode::UNAUTHORIZED, Json(None));
+    }
+
+    (StatusCode::OK, Json(Some(AuthToken {
+        token: utils::create_jwt(stored_account_id)
+    })))
 }
