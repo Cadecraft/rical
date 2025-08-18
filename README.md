@@ -56,16 +56,18 @@ This app is far from complete! Check back soon, mark your calendars...
 cd backend/src
 
 docker pull postgres:17.6
-docker run --name rical-postgres -e POSTGRES_PASSWORD=passwordhere -e POSTGRES_DB=rical_db -e POSTGRES_USER=userhere -d postgres
-docker exec -it rical-postgres sh
-psql rical_db userhere
+# In Windows, use 5433 instead of 5432 because of issue
+# This is assuming running Docker in WSL
+docker run --name rical-db -e POSTGRES_PASSWORD=passwordhere -e POSTGRES_DB=rical_db -e POSTGRES_USER=userhere -e PGPORT=5433 -d -p 5433:5433 postgres
 
-docker-compose up -d
+# To go into the db using psql:
+docker exec -it rical-db sh
+psql rical_db userhere
 ```
 - If it was already running:
 ```
-docker stop container rical-postgres
-docker rm container rical-postgres
+docker container stop rical-db
+docker container rm rical-db
 ```
 
 ## Deployment
