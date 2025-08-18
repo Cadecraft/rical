@@ -8,6 +8,7 @@ use dotenv;
 use sqlx::postgres::PgPoolOptions;
 
 mod routes;
+mod setup_schemas;
 
 const PORT: &str = "3001";
 
@@ -28,12 +29,6 @@ async fn main() {
 
     let db_url = env::var("DB_URL").expect("DB_URL must be set");
 
-    /*let state = AppState {
-        data: Arc::new(tokio::sync::Mutex::new(AppStateData {
-            temporary_testing_users: HashMap::new()
-        }))
-    };*/
-
     println!("Connecting to db...");
     let pool = PgPoolOptions::new()
         .max_connections(10)
@@ -41,6 +36,16 @@ async fn main() {
         .await
         .expect("Couldn't connect to the database");
     println!("Connected to db");
+
+    // Set up the database with schemas
+    setup_schemas::setup_schemas(pool).await;
+
+    // TODO: get state working
+    /*let state = AppState {
+        data: Arc::new(tokio::sync::Mutex::new(AppStateData {
+            temporary_testing_users: HashMap::new()
+        }))
+    };*/
 
     let app = Router::new()
         .merge(routes::user::get_routes(/*&state*/));
