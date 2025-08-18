@@ -1,6 +1,5 @@
 use axum::Router;
 use tokio;
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::env;
 use dotenv;
@@ -9,17 +8,13 @@ use sqlx::postgres::PgPoolOptions;
 
 mod routes;
 mod setup_schemas;
+mod utils;
 
 const PORT: &str = "3001";
 
-struct AppStateData {
-    // TODO: put db here and process users correctly
-    temporary_testing_users: HashMap<String, String>
-}
-
 #[derive(Clone)]
 pub struct AppState {
-    data: Arc<tokio::sync::Mutex<AppStateData>>
+    pub db_pool: sqlx::PgPool
 }
 
 #[tokio::main]
@@ -38,17 +33,15 @@ async fn main() {
     println!("Connected to db");
 
     // Set up the database with schemas
-    setup_schemas::setup_schemas(pool).await;
+    setup_schemas::setup_schemas(&pool).await;
 
-    // TODO: get state working
-    /*let state = AppState {
-        data: Arc::new(tokio::sync::Mutex::new(AppStateData {
-            temporary_testing_users: HashMap::new()
-        }))
-    };*/
+    let state = Arc::new(AppState {
+        db_pool: pool
+    });
 
+    // Set up the Axum app
     let app = Router::new()
-        .merge(routes::user::get_routes(/*&state*/));
+        .nest("/account", routes::user::get_routes(&state));
 
     let addr = format!("0.0.0.0:{}", PORT);
     println!("Rical backend v{} is listening on {}", option_env!("CARGO_PKG_VERSION").unwrap_or("?"), addr);

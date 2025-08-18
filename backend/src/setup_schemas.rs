@@ -3,7 +3,7 @@ use sqlx::{
     Pool
 };
 
-pub async fn setup_schemas(pool: Pool<Postgres>) {
+pub async fn setup_schemas(pool: &Pool<Postgres>) {
     println!("Setting up schemas...");
     let mut transaction = pool.begin().await.unwrap();
 
