@@ -41,7 +41,7 @@ async fn main() {
 
     // Set up the Axum app
     let app = Router::new()
-        .nest("/account", routes::user::get_routes(&state));
+        .nest("/account", routes::account::get_routes(&state));
 
     let addr = format!("0.0.0.0:{}", PORT);
     println!("Rical backend v{} is listening on {}", option_env!("CARGO_PKG_VERSION").unwrap_or("?"), addr);
