@@ -5,16 +5,12 @@ use axum::{
     Json,
     Router
 };
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use sqlx;
 
 use crate::AppState;
 use crate::utils;
-
-use std::sync::Arc;
-
-use serde::{Deserialize, Serialize};
-
-
-use sqlx;
 
 pub fn get_routes(state: &Arc<AppState>) -> Router {
     Router::new()
