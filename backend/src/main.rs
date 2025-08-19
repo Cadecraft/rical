@@ -2,7 +2,7 @@ use axum::Router;
 use tokio;
 use std::sync::Arc;
 use std::env;
-use dotenv;
+use dotenvy;
 
 use sqlx::postgres::PgPoolOptions;
 
@@ -20,9 +20,9 @@ pub struct AppState {
 #[tokio::main]
 async fn main() {
     // Initialize env variables
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
-    let db_url = env::var("DB_URL").expect("DB_URL must be set");
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     println!("Connecting to db...");
     let pool = PgPoolOptions::new()
