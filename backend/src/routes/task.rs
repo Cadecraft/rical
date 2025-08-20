@@ -94,17 +94,43 @@ async fn post_task(
 }
 
 async fn patch_task(
+    TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
     Path(task_id): Path<i64>,
     Json(payload): Json<TaskData>
 ) -> (StatusCode, Json<Option<TaskData>>) {
-    (StatusCode::IM_A_TEAPOT, Json(None))
+    let account_id = match utils::verify_jwt(bearer.token()) {
+        Some(id) => id,
+        None => {
+            return (StatusCode::UNAUTHORIZED, Json(None));
+        }
+    };
+    let res = match sqlx::query_as!(TaskData, r#"
+        UPDATE task
+        SET year = $1, month = $2, day = $3, start_min = $4, end_min = $5, title = $6,
+            description = $7, complete = $8
+        WHERE task_id = $9 AND account_id = $10
+        RETURNING year, month, day, start_min, end_min, title, description, complete
+    "#, payload.year, payload.month, payload.day, payload.start_min, payload.end_min, payload.title, payload.description, payload.complete, task_id, account_id).fetch_one(&state.db_pool).await {
+        Ok(result) => result,
+        Err(_) => {
+            return (StatusCode::BAD_REQUEST, Json(None));
+        }
+    };
+    (StatusCode::OK, Json(Some(res)))
 }
 
 async fn delete_task(
+    TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
     Path(task_id): Path<i64>,
     Json(payload): Json<TaskData>
 ) -> (StatusCode, Json<Option<TaskData>>) {
+    let account_id = match utils::verify_jwt(bearer.token()) {
+        Some(id) => id,
+        None => {
+            return (StatusCode::UNAUTHORIZED, Json(None));
+        }
+    };
     (StatusCode::IM_A_TEAPOT, Json(None))
 }
