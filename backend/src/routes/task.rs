@@ -12,6 +12,7 @@ use sqlx;
 
 use crate::AppState;
 use crate::utils;
+use crate::types::{TaskData, TaskId};
 
 pub fn get_routes(state: &Arc<AppState>) -> Router {
     Router::new()
@@ -20,23 +21,6 @@ pub fn get_routes(state: &Arc<AppState>) -> Router {
         .route("/{id}", patch(patch_task))
         .route("/{id}", delete(delete_task))
         .with_state(state.clone())
-}
-
-#[derive(Deserialize, Serialize)]
-struct TaskData {
-    year: i32,
-    month: i32,
-    day: i32,
-    start_min: Option<i32>,
-    end_min: Option<i32>,
-    title: String,
-    description: Option<String>,
-    complete: bool
-}
-
-#[derive(Deserialize, Serialize)]
-struct TaskId {
-    task_id: i64
 }
 
 async fn get_task(
@@ -110,7 +94,7 @@ async fn patch_task(
         SET year = $1, month = $2, day = $3, start_min = $4, end_min = $5, title = $6,
             description = $7, complete = $8
         WHERE task_id = $9 AND account_id = $10
-        RETURNING year, month, day, start_min, end_min, title, description, complete
+        RETURNING year, month, day, start_min, end_min, title, description, complete;
     "#, payload.year, payload.month, payload.day, payload.start_min, payload.end_min, payload.title, payload.description, payload.complete, task_id, account_id).fetch_one(&state.db_pool).await {
         Ok(result) => result,
         Err(_) => {
@@ -135,7 +119,7 @@ async fn delete_task(
     };
     match sqlx::query_as!(TaskData, r#"
         DELETE FROM task
-        WHERE task_id = $1 AND account_id = $2
+        WHERE task_id = $1 AND account_id = $2;
     "#, task_id, account_id).fetch_one(&state.db_pool).await {
         Ok(_) => StatusCode::OK,
         Err(_) => StatusCode::BAD_REQUEST

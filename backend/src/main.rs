@@ -6,9 +6,9 @@ use dotenvy;
 use sqlx::postgres::PgPoolOptions;
 
 mod routes;
-mod setup_schemas;
 mod utils;
 mod config;
+mod types;
 
 const PORT: &str = "3001";
 
@@ -32,9 +32,6 @@ async fn main() {
         .expect("Couldn't connect to the database");
     println!("Connected to db");
 
-    // Set up the database with schemas
-    setup_schemas::setup_schemas(&pool).await;
-
     let state = Arc::new(AppState {
         db_pool: pool
     });
@@ -42,7 +39,8 @@ async fn main() {
     // Set up the Axum app
     let app = Router::new()
         .nest("/account", routes::account::get_routes(&state))
-        .nest("/task", routes::task::get_routes(&state));
+        .nest("/task", routes::task::get_routes(&state))
+        .nest("/calendar", routes::calendar::get_routes(&state));
 
     let addr = format!("0.0.0.0:{}", PORT);
     println!("Rical backend v{} is listening on {}", option_env!("CARGO_PKG_VERSION").unwrap_or("?"), addr);

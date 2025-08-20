@@ -69,6 +69,7 @@ psql rical_db userhere
 docker container stop rical-db
 docker container rm rical-db
 ```
+- Start the backend with `cargo run`. Assuming your `DATABASE_URL` is correct, schemas should be loaded into the database automatically via the build script.
 
 ## Deployment
 - Using Railway, Postgres should be straightforward

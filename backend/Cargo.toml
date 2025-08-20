@@ -2,6 +2,12 @@
 name = "backend"
 version = "0.1.0"
 edition = "2024"
+build = "build.rs"
+
+[build-dependencies]
+sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio"] }
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
+dotenvy = "0.15.7"
 
 [dependencies]
 argon2 = "0.5.3"
