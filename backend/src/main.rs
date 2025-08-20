@@ -1,14 +1,14 @@
 use axum::Router;
 use tokio;
 use std::sync::Arc;
-use std::env;
-use dotenv;
+use dotenvy;
 
 use sqlx::postgres::PgPoolOptions;
 
 mod routes;
 mod setup_schemas;
 mod utils;
+mod config;
 
 const PORT: &str = "3001";
 
@@ -20,14 +20,14 @@ pub struct AppState {
 #[tokio::main]
 async fn main() {
     // Initialize env variables
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
-    let db_url = env::var("DB_URL").expect("DB_URL must be set");
+    let db_url = &config::get_config()["DATABASE_URL"];
 
     println!("Connecting to db...");
     let pool = PgPoolOptions::new()
         .max_connections(10)
-        .connect(&db_url)
+        .connect(db_url)
         .await
         .expect("Couldn't connect to the database");
     println!("Connected to db");
@@ -41,7 +41,8 @@ async fn main() {
 
     // Set up the Axum app
     let app = Router::new()
-        .nest("/account", routes::account::get_routes(&state));
+        .nest("/account", routes::account::get_routes(&state))
+        .nest("/task", routes::task::get_routes(&state));
 
     let addr = format!("0.0.0.0:{}", PORT);
     println!("Rical backend v{} is listening on {}", option_env!("CARGO_PKG_VERSION").unwrap_or("?"), addr);

@@ -10,11 +10,11 @@ use argon2::{
 };
 
 use hmac::{Hmac, Mac};
-use jwt::{ SignWithKey, VerifyWithKey, Error };
+use jwt::{ SignWithKey, VerifyWithKey };
 use sha2::Sha256;
 use std::collections::BTreeMap;
 
-use std::env;
+use crate::config;
 
 /// Hash a password
 pub fn hash_password(password: &str) -> String {
@@ -34,8 +34,7 @@ pub fn verify_password(incoming: &str, stored_hash: &str) -> bool {
 }
 
 fn create_hmac_key() -> Hmac<Sha256> {
-    // TODO: load configuration in main to make sure fully configred
-    let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let jwt_secret = &config::get_config()["JWT_SECRET"];
     Hmac::new_from_slice(jwt_secret.as_bytes())
         .expect("Could not generate key")
 }
@@ -46,8 +45,8 @@ pub fn create_jwt(user_id: i64) -> String {
     // TODO: expiration?
     let key = create_hmac_key();
     let mut claims = BTreeMap::new();
-    let user_id_str = user_id.to_string();
-    claims.insert("sub", user_id_str.as_bytes());
+    //let user_id_str = user_id.to_string();
+    claims.insert("sub", user_id);
     let token_str = claims.sign_with_key(&key).expect("Could not sign");
     token_str
 }
@@ -59,11 +58,9 @@ pub fn verify_jwt(incoming_token: &str) -> Option<i64> {
     let verif_res: Result<BTreeMap<String, i64>, jwt::Error> = incoming_token.verify_with_key(&key);
     match verif_res {
         Ok(claims) => match claims.get("sub") {
-            Some(res) => {
-                Some(res.clone())
-            },
+            Some(res) => Some(res.clone()),
             None => None
-        }
-        _ => None
+        },
+        Err(_) => None
     }
 }

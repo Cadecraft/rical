@@ -5,16 +5,12 @@ use axum::{
     Json,
     Router
 };
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use sqlx;
 
 use crate::AppState;
 use crate::utils;
-
-use std::sync::Arc;
-
-use serde::{Deserialize, Serialize};
-
-
-use sqlx;
 
 pub fn get_routes(state: &Arc<AppState>) -> Router {
     Router::new()
@@ -60,29 +56,31 @@ struct AuthToken {
     token: String
 }
 
+struct Account {
+    hashed_password: String,
+    account_id: i64
+}
+
 async fn login(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<UserCredentials>
 ) -> (StatusCode, Json<Option<AuthToken>>) {
-    let row: Result<(String, i64), sqlx::Error> = sqlx::query_as(
-        "SELECT hashed_password, account_id FROM account WHERE username=$1;"
-    ).bind(&payload.username)
-        .fetch_one(&state.db_pool)
-        .await;
-    if row.is_err() {
-        // TODO: better error message
-        return (StatusCode::BAD_REQUEST, Json(None));
-    }
-    let rowres = row.unwrap();
-    let stored_password = rowres.0;
-    let stored_account_id = rowres.1;
-    let valid = utils::verify_password(&payload.password, &stored_password);
-    if !valid {
+    let account = match sqlx::query_as!(
+        Account,
+        "SELECT hashed_password, account_id FROM account WHERE username=$1;",
+        &payload.username
+    ).fetch_one(&state.db_pool).await {
+        Ok(row) => row,
+        Err(_) => {
+            return (StatusCode::NOT_FOUND, Json(None));
+        }
+    };
+    if !utils::verify_password(&payload.password, &account.hashed_password) {
         // TODO: better error message
         return (StatusCode::UNAUTHORIZED, Json(None));
     }
 
     (StatusCode::OK, Json(Some(AuthToken {
-        token: utils::create_jwt(stored_account_id)
+        token: utils::create_jwt(account.account_id)
     })))
 }
