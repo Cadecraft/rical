@@ -45,7 +45,6 @@ pub fn create_jwt(user_id: i64) -> String {
     // TODO: expiration?
     let key = create_hmac_key();
     let mut claims = BTreeMap::new();
-    //let user_id_str = user_id.to_string();
     claims.insert("sub", user_id);
     let token_str = claims.sign_with_key(&key).expect("Could not sign");
     token_str
