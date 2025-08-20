@@ -10,11 +10,9 @@ use argon2::{
 };
 
 use hmac::{Hmac, Mac};
-use jwt::{ SignWithKey, VerifyWithKey, Error };
+use jwt::{ SignWithKey, VerifyWithKey };
 use sha2::Sha256;
 use std::collections::BTreeMap;
-use axum::http::header::HeaderMap;
-use axum_extra::{headers::{Authorization, authorization::Bearer}, TypedHeader};
 
 use std::env;
 
@@ -58,22 +56,12 @@ pub fn create_jwt(user_id: i64) -> String {
 pub fn verify_jwt(incoming_token: &str) -> Option<i64> {
     let key = create_hmac_key();
 
-    println!("Verifying");
     let verif_res: Result<BTreeMap<String, i64>, jwt::Error> = incoming_token.verify_with_key(&key);
     match verif_res {
-        Ok(claims) => {
-            println!("Claims ok");
-            match claims.get("sub") {
-                Some(res) => {
-                    println!("Sub some");
-                    Some(res.clone())
-                },
-                None => None
-            }
-        }
-        Err(err) => {
-            println!("With error: {}", err);
-            None
-        }
+        Ok(claims) => match claims.get("sub") {
+            Some(res) => Some(res.clone()),
+            None => None
+        },
+        Err(_) => None
     }
 }

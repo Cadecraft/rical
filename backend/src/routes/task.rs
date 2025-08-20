@@ -40,15 +40,22 @@ struct TaskId {
 }
 
 async fn get_task(
+    TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
     Path(task_id): Path<i64>
 ) -> (StatusCode, Json<Option<TaskData>>) {
-    // TODO: AUTH!!! Get user ID from token and use as parameter
+    // TODO: refactor into middleware?
+    let account_id = match utils::verify_jwt(bearer.token()) {
+        Some(id) => id,
+        None => {
+            return (StatusCode::UNAUTHORIZED, Json(None));
+        }
+    };
     let res = match sqlx::query_as!(TaskData, r#"
         SELECT year, month, day,
         start_min, end_min, title, description, complete
-        FROM task WHERE task_id=$1;
-    "#, &task_id
+        FROM task WHERE task_id=$1 AND account_id=$2;
+    "#, &task_id, &account_id
     ).fetch_one(&state.db_pool).await {
         Ok(row) => row,
         Err(_) => {
@@ -65,7 +72,6 @@ async fn post_task(
     Json(payload): Json<TaskData>,
 ) -> (StatusCode, Json<Option<TaskId>>) {
     // TODO: refactor into middleware?
-    println!("TOKEN IS: {}", bearer.token());
     let account_id = match utils::verify_jwt(bearer.token()) {
         Some(id) => id,
         None => {
