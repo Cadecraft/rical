@@ -5,6 +5,7 @@ use axum::{
     Json,
     Router,
 };
+use axum_extra::{headers::{Authorization, authorization::Bearer}, TypedHeader};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use sqlx;
@@ -16,8 +17,8 @@ pub fn get_routes(state: &Arc<AppState>) -> Router {
     Router::new()
         .route("/{id}", get(get_task))
         .route("/", post(post_task))
-        .route("/", patch(patch_task))
-        .route("/", delete(delete_task))
+        .route("/{id}", patch(patch_task))
+        .route("/{id}", delete(delete_task))
         .with_state(state.clone())
 }
 
@@ -33,6 +34,11 @@ struct TaskData {
     complete: bool
 }
 
+#[derive(Serialize)]
+struct TaskId {
+    task_id: i64
+}
+
 async fn get_task(
     State(state): State<Arc<AppState>>,
     Path(task_id): Path<i64>
@@ -44,11 +50,9 @@ async fn get_task(
         FROM task WHERE task_id=$1;
     "#, &task_id
     ).fetch_one(&state.db_pool).await {
-        Ok(row) => {
-            row
-        },
+        Ok(row) => row,
         Err(_) => {
-            return (StatusCode::BAD_REQUEST, Json(None));
+            return (StatusCode::NOT_FOUND, Json(None));
         }
     };
 
@@ -56,17 +60,31 @@ async fn get_task(
 }
 
 async fn post_task(
+    TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
-    Json(payload): Json<TaskData>
-) -> (StatusCode, Json<Option<TaskData>>) {
-    // TODO: AUTH!! Get user ID from token and use when constructing
-    /*let row: Result<(i64,)> = sqlx::query_as(r#"
+    Json(payload): Json<TaskData>,
+) -> (StatusCode, Json<Option<TaskId>>) {
+    // TODO: refactor into middleware?
+    println!("TOKEN IS: {}", bearer.token());
+    let account_id = match utils::verify_jwt(bearer.token()) {
+        Some(id) => id,
+        None => {
+            return (StatusCode::UNAUTHORIZED, Json(None));
+        }
+    };
+    let task_id = match sqlx::query_as!(TaskId, r#"
         INSERT INTO task
-        ()
+        (account_id, year, month, day, start_min, end_min, title, description, complete)
         VALUES
-        ($1, $2, $3)
-    "#).bind()*/
-    (StatusCode::IM_A_TEAPOT, Json(None))
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING task_id
+    "#, account_id, payload.year, payload.month, payload.day, payload.start_min, payload.end_min, payload.title, payload.description, payload.complete).fetch_one(&state.db_pool).await {
+        Ok(result) => result,
+        Err(_) => {
+            return (StatusCode::BAD_REQUEST, Json(None));
+        }
+    };
+    (StatusCode::CREATED, Json(Some(task_id)))
 }
 
 async fn patch_task(
