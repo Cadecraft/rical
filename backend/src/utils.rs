@@ -14,7 +14,7 @@ use jwt::{ SignWithKey, VerifyWithKey };
 use sha2::Sha256;
 use std::collections::BTreeMap;
 
-use std::env;
+use crate::config;
 
 /// Hash a password
 pub fn hash_password(password: &str) -> String {
@@ -34,8 +34,7 @@ pub fn verify_password(incoming: &str, stored_hash: &str) -> bool {
 }
 
 fn create_hmac_key() -> Hmac<Sha256> {
-    // TODO: load configuration in main to make sure fully configred
-    let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let jwt_secret = &config::get_config()["JWT_SECRET"];
     Hmac::new_from_slice(jwt_secret.as_bytes())
         .expect("Could not generate key")
 }

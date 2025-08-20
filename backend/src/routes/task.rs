@@ -126,6 +126,7 @@ async fn delete_task(
     Path(task_id): Path<i64>,
     Json(payload): Json<TaskId>
 ) -> StatusCode {
+    // TODO: remove unnecessary payload without causing errors
     let account_id = match utils::verify_jwt(bearer.token()) {
         Some(id) => id,
         None => {

@@ -1,7 +1,6 @@
 use axum::Router;
 use tokio;
 use std::sync::Arc;
-use std::env;
 use dotenvy;
 
 use sqlx::postgres::PgPoolOptions;
@@ -9,6 +8,7 @@ use sqlx::postgres::PgPoolOptions;
 mod routes;
 mod setup_schemas;
 mod utils;
+mod config;
 
 const PORT: &str = "3001";
 
@@ -22,12 +22,12 @@ async fn main() {
     // Initialize env variables
     dotenvy::dotenv().ok();
 
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db_url = &config::get_config()["DATABASE_URL"];
 
     println!("Connecting to db...");
     let pool = PgPoolOptions::new()
         .max_connections(10)
-        .connect(&db_url)
+        .connect(db_url)
         .await
         .expect("Couldn't connect to the database");
     println!("Connected to db");
