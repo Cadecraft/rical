@@ -34,7 +34,7 @@ struct TaskData {
     complete: bool
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 struct TaskId {
     task_id: i64
 }
@@ -124,13 +124,19 @@ async fn delete_task(
     TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
     Path(task_id): Path<i64>,
-    Json(payload): Json<TaskData>
-) -> (StatusCode, Json<Option<TaskData>>) {
+    Json(payload): Json<TaskId>
+) -> StatusCode {
     let account_id = match utils::verify_jwt(bearer.token()) {
         Some(id) => id,
         None => {
-            return (StatusCode::UNAUTHORIZED, Json(None));
+            return StatusCode::UNAUTHORIZED;
         }
     };
-    (StatusCode::IM_A_TEAPOT, Json(None))
+    match sqlx::query_as!(TaskData, r#"
+        DELETE FROM task
+        WHERE task_id = $1 AND account_id = $2
+    "#, task_id, account_id).fetch_one(&state.db_pool).await {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::BAD_REQUEST
+    }
 }
