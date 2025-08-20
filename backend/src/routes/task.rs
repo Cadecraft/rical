@@ -38,29 +38,20 @@ async fn get_task(
     Path(task_id): Path<i64>
 ) -> (StatusCode, Json<Option<TaskData>>) {
     // TODO: AUTH!!! Get user ID from token and use as parameter
-    let row: Result<(
-        i32, i32, i32, Option<i32>, Option<i32>, String, Option<String>, bool
-    ), sqlx::Error> = sqlx::query_as(r#"
+    let res = match sqlx::query_as!(TaskData, r#"
         SELECT year, month, day,
         start_min, end_min, title, description, complete
         FROM task WHERE task_id=$1;
-    "#).bind(&task_id)
-        .fetch_one(&state.db_pool)
-        .await;
-    if row.is_err() {
-        return (StatusCode::BAD_REQUEST, Json(None))
-    }
-    let unwrapped = row.unwrap();
-    let res = TaskData {
-        year: unwrapped.0,
-        month: unwrapped.1,
-        day: unwrapped.2,
-        start_min: unwrapped.3,
-        end_min: unwrapped.4,
-        title: unwrapped.5,
-        description: unwrapped.6,
-        complete: unwrapped.7,
+    "#, &task_id
+    ).fetch_one(&state.db_pool).await {
+        Ok(row) => {
+            row
+        },
+        Err(_) => {
+            return (StatusCode::BAD_REQUEST, Json(None));
+        }
     };
+
     (StatusCode::OK, Json(Some(res)))
 }
 
