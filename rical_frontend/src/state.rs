@@ -1,4 +1,6 @@
 /// Stores the entire hierarchy of state in the app
+/// `screen_state` deals with the state of the UI
+/// Other fields can be added to represent important global state
 #[derive(Clone)]
 pub struct RicalState {
     pub screen_state: ScreenState
@@ -45,3 +47,6 @@ pub enum SignupState {
         password: String
     }
 }
+
+// TODO: refactor so that FormState is a separate thing
+// TODO: ^ and can be reused??

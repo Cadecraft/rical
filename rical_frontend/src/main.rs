@@ -43,6 +43,8 @@ fn main() -> io::Result<()> {
 
         // TODO: should events be handled FIRST, and THEN render done after?
         // TODO: ^ as opposed to a semi-redundant second render
+        // TODO: ^ one idea: if keypress is None, then we ONLY render
+        // TODO: ^ and if keypress is Some, then we ONLY handle input
         let new_screen_state = components::root::render(&state, Some(&keypress), &mut stdout)?.1.screen_state;
         match new_screen_state {
             state::ScreenState::ShouldQuit => {

@@ -6,33 +6,35 @@ use crossterm::{
     style::{self, Stylize, Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
 };
 
-use crate::state::{self, RicalState};
+use crate::state;
 use crate::utils::{KeyInfo, RenderResult, key_pressed};
+
+pub fn render_mainmenu(key: Option<&KeyInfo>, stdout: &mut Stdout) -> io::Result<state::MenuState> {
+    if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
+        return Ok(state::MenuState::Login(
+            state::LoginState::EnteringInfo {
+                form_pos: 0,
+                username: String::new(),
+                password: String::new()
+            }
+        ));
+    }
+    queue!(stdout,
+        cursor::MoveTo(0,0),
+        style::PrintStyledContent("Main Menu".cyan()),
+        cursor::MoveTo(0,1),
+        style::PrintStyledContent("(l) Login".cyan()),
+        cursor::MoveTo(0,2),
+        style::PrintStyledContent("(Ctrl+Q) Quit".cyan()),
+    )?;
+    return Ok(state::MenuState::MainMenu);
+}
 
 pub fn render(currstate: &state::MenuState, key: Option<&KeyInfo>, stdout: &mut Stdout) -> io::Result<(RenderResult, state::ScreenState)> {
     // Render children, based on state
     let newstate = match &currstate {
         state::MenuState::MainMenu => {
-            if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
-                return Ok((RenderResult::Nominal, state::ScreenState::Menu(state::MenuState::Login(
-                    state::LoginState::EnteringInfo {
-                        form_pos: 0,
-                        username: String::new(),
-                        password: String::new()
-                    }
-                )
-                )));
-            }
-            // TODO: render the calendar component
-            queue!(stdout,
-                cursor::MoveTo(0,0),
-                style::PrintStyledContent("Main Menu".cyan()),
-                cursor::MoveTo(0,1),
-                style::PrintStyledContent("(l) Login".cyan()),
-                cursor::MoveTo(0,2),
-                style::PrintStyledContent("(Ctrl+Q) Quit".cyan()),
-            )?;
-            currstate.clone()
+            render_mainmenu(key, stdout)?
         },
         state::MenuState::Login(contents) => {
             if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
