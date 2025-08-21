@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
     execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
 
     let root = components::root::Root { };
-    root.render(&mut state, None, &mut stdout)?;
+    root.render(&state, None, &mut stdout)?;
     stdout.flush()?;
 
     while let Ok(event) = read() {
@@ -42,14 +42,17 @@ fn main() -> io::Result<()> {
         // TODO: use the keypress for input
         let keypress = utils::read_key_event(event);
 
-        match root.render(&mut state, Some(&keypress), &mut stdout)? {
-            utils::RenderResult::QuitProgram => {
+        let new_screen_state = root.render(&state, Some(&keypress), &mut stdout)?.1.screen_state;
+        match new_screen_state {
+            state::ScreenState::ShouldQuit => {
                 // Quit now
                 // TODO: any cleanup?
                 return Ok(())
             },
-            _ => ()
-        }
+            _ => {
+                state.screen_state = new_screen_state;
+            }
+        };
 
         stdout.flush()?;
 
