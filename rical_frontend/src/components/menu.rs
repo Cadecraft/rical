@@ -1,65 +1,57 @@
 use std::io::{self, Stdout};
 use crossterm::{
     queue,
-    cursor, terminal,
-    event::{KeyEvent, read, KeyCode, KeyModifiers},
+    cursor,
+    event::{KeyCode, KeyModifiers},
     style::{self, Stylize, Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
 };
 
-use crate::constants;
 use crate::state::{self, RicalState};
-use crate::utils::{KeyInfo, RenderResult};
+use crate::utils::{KeyInfo, RenderResult, key_pressed};
 
-/// The root component that renders all other components
-pub struct Menu {
-}
+pub fn render(currstate: &state::MenuState, key: Option<&KeyInfo>, stdout: &mut Stdout) -> io::Result<(RenderResult, state::ScreenState)> {
+    // Render children, based on state
+    let newstate = match &currstate {
+        state::MenuState::MainMenu => {
+            if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
+                return Ok((RenderResult::Nominal, state::ScreenState::Menu(state::MenuState::Login(
+                    state::LoginState::EnteringInfo {
+                        form_pos: 0,
+                        username: String::new(),
+                        password: String::new()
+                    }
+                )
+                )));
+            }
+            // TODO: render the calendar component
+            queue!(stdout,
+                cursor::MoveTo(0,0),
+                style::PrintStyledContent("Main Menu".cyan()),
+                cursor::MoveTo(0,1),
+                style::PrintStyledContent("(l) Login".cyan()),
+                cursor::MoveTo(0,2),
+                style::PrintStyledContent("(Ctrl+Q) Quit".cyan()),
+            )?;
+            currstate.clone()
+        },
+        state::MenuState::Login(contents) => {
+            if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
+                return Ok((RenderResult::Nominal, state::ScreenState::Menu(state::MenuState::MainMenu)));
+            }
+            queue!(stdout,
+                cursor::MoveTo(0,0),
+                style::PrintStyledContent("Login".cyan())
+            )?;
+            currstate.clone()
+        },
+        state::MenuState::Signup(contents) => {
+            queue!(stdout,
+                cursor::MoveTo(0,0),
+                style::PrintStyledContent("Signup".cyan())
+            )?;
+            currstate.clone()
+        },
+    };
 
-impl Menu {
-    pub fn render(&self, currstate: &state::MenuState, keypress: Option<&KeyInfo>, stdout: &mut Stdout) -> io::Result<(RenderResult, state::ScreenState)> {
-        // Handle keypress
-        match keypress {
-            Some(key) => {
-                if key.code == KeyCode::Char('l') {
-                    // Login
-                    // TODO: impl
-                    return Ok((RenderResult::Nominal, state::ScreenState::Menu(state::MenuState::Login(
-                        state::LoginState::EnteringInfo {
-                            form_pos: 0,
-                            username: String::new(),
-                            password: String::new()
-                        }
-                    )
-                    )));
-                }
-            }, _ => ()
-        };
-
-        // Render children, based on state
-        let newstate = match &currstate {
-            state::MenuState::MainMenu => {
-                // TODO: render the calendar component
-                queue!(stdout,
-                    cursor::MoveTo(0,0),
-                    style::PrintStyledContent("Main Menu".cyan())
-                )?;
-                currstate.clone()
-            },
-            state::MenuState::Login(contents) => {
-                queue!(stdout,
-                    cursor::MoveTo(0,0),
-                    style::PrintStyledContent("Login".cyan())
-                )?;
-                currstate.clone()
-            },
-            state::MenuState::Signup(contents) => {
-                queue!(stdout,
-                    cursor::MoveTo(0,0),
-                    style::PrintStyledContent("Signup".cyan())
-                )?;
-                currstate.clone()
-            },
-        };
-
-        Ok((RenderResult::Nominal, state::ScreenState::Menu(newstate)))
-    }
+    Ok((RenderResult::Nominal, state::ScreenState::Menu(newstate)))
 }

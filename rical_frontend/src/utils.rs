@@ -21,3 +21,16 @@ pub enum RenderResult {
     QuitProgram,
     Nominal
 }
+
+pub fn key_pressed(event: &Option<&KeyInfo>, modifiers: KeyModifiers, code: KeyCode) -> bool {
+    match event {
+        Some(key) => {
+            if key.code == code && key.modifiers == modifiers {
+                true
+            } else {
+                false
+            }
+        },
+        _ => false
+    }
+}

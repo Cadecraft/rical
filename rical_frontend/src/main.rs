@@ -28,8 +28,7 @@ fn main() -> io::Result<()> {
     let mut stdout = stdout();
     execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
 
-    let root = components::root::Root { };
-    root.render(&state, None, &mut stdout)?;
+    components::root::render(&state, None, &mut stdout)?;
     stdout.flush()?;
 
     while let Ok(event) = read() {
@@ -42,7 +41,9 @@ fn main() -> io::Result<()> {
         // TODO: use the keypress for input
         let keypress = utils::read_key_event(event);
 
-        let new_screen_state = root.render(&state, Some(&keypress), &mut stdout)?.1.screen_state;
+        // TODO: should events be handled FIRST, and THEN render done after?
+        // TODO: ^ as opposed to a semi-redundant second render
+        let new_screen_state = components::root::render(&state, Some(&keypress), &mut stdout)?.1.screen_state;
         match new_screen_state {
             state::ScreenState::ShouldQuit => {
                 // Quit now
@@ -53,6 +54,8 @@ fn main() -> io::Result<()> {
                 state.screen_state = new_screen_state;
             }
         };
+        // Render the results after the keypress
+        components::root::render(&state, Some(&keypress), &mut stdout)?;
 
         stdout.flush()?;
 
