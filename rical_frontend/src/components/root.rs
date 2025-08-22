@@ -1,4 +1,4 @@
-use std::io::{self, Stdout};
+use std::io;
 use crossterm::{
     queue,
     cursor,
@@ -8,8 +8,7 @@ use crossterm::{
 
 use crate::constants;
 use crate::state::{self, RicalState};
-use crate::utils::{KeyInfo, RenderResult, key_pressed};
-use crate::styles::{Styles, compose_styles};
+use crate::utils::{KeyInfo, key_pressed};
 
 use crate::components::menu;
 

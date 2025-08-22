@@ -20,6 +20,7 @@ pub enum ScreenState {
 #[derive(Clone)]
 pub enum MenuState {
     MainMenu,
+    About,
     Login(LoginState),
     Signup(SignupState)
 }
