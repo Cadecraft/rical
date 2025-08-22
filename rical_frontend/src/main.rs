@@ -12,7 +12,6 @@ use dotenvy;
 mod api;
 mod state;
 mod components;
-mod constants;
 mod utils;
 mod styles;
 

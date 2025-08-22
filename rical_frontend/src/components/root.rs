@@ -2,11 +2,11 @@ use std::io;
 use crossterm::{
     queue,
     cursor,
+    terminal,
     event::{KeyCode, KeyModifiers},
     style::{self, Stylize},
 };
 
-use crate::constants;
 use crate::state::{self, RicalState};
 use crate::utils::{KeyInfo, key_pressed};
 
@@ -44,16 +44,11 @@ pub fn handle_input(currstate: &RicalState, key: &KeyInfo) -> RicalState {
 pub fn render(currstate: &RicalState) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    // Background color
-    for y in 0..constants::WINDOW_HEIGHT {
-        for x in 0..constants::WINDOW_WIDTH {
-            queue!(
-                stdout,
-                cursor::MoveTo(x,y),
-                style::PrintStyledContent(" ".black())
-            )?;
-        }
-    }
+    // Clear performantly without flickering
+    queue!(
+        stdout,
+        terminal::Clear(terminal::ClearType::All),
+    )?;
 
     // Render children, based on state
     match &currstate.screen_state {
