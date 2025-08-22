@@ -9,6 +9,8 @@ use crossterm::{
 use crate::state;
 use crate::utils::{KeyInfo, key_pressed};
 
+use crate::components::login;
+
 fn handle_input_mainmenu(key: &KeyInfo) -> state::MenuState {
     if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
         state::MenuState::Login(
@@ -70,12 +72,8 @@ pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo) -> state::Scree
                 state::ScreenState::Menu(currstate.clone())
             }
         }
-        state::MenuState::Login(_) => {
-            if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
-                state::ScreenState::Menu(state::MenuState::MainMenu)
-            } else {
-                state::ScreenState::Menu(currstate.clone())
-            }
+        state::MenuState::Login(login_state) => {
+            login::handle_input(login_state, key)
         },
         state::MenuState::Signup(_) => {
             if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
@@ -106,11 +104,8 @@ pub fn render(currstate: &state::MenuState) -> io::Result<()> {
                 cursor::MoveTo(0,0),
             )?;
         },
-        state::MenuState::Login(_) => {
-            queue!(stdout,
-                cursor::MoveTo(0,0),
-                style::Print("Login")
-            )?;
+        state::MenuState::Login(login_state) => {
+            login::render(login_state)?;
         },
         state::MenuState::Signup(_) => {
             queue!(stdout,
