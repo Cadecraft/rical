@@ -11,6 +11,7 @@ mod state;
 mod components;
 mod constants;
 mod utils;
+mod styles;
 
 fn main() -> io::Result<()> {
     // TODO: connect to the API
@@ -24,11 +25,9 @@ fn main() -> io::Result<()> {
     };
 
     // Initial rendering setup only
-
     let mut stdout = stdout();
     execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
-
-    components::root::render(&state, None, &mut stdout)?;
+    components::root::render(&state)?;
     stdout.flush()?;
 
     while let Ok(event) = read() {
@@ -37,15 +36,10 @@ fn main() -> io::Result<()> {
         let Some(event) = event.as_key_press_event() else {
             continue;
         };
-
-        // TODO: use the keypress for input
         let keypress = utils::read_key_event(event);
 
-        // TODO: should events be handled FIRST, and THEN render done after?
-        // TODO: ^ as opposed to a semi-redundant second render
-        // TODO: ^ one idea: if keypress is None, then we ONLY render
-        // TODO: ^ and if keypress is Some, then we ONLY handle input
-        let new_screen_state = components::root::render(&state, Some(&keypress), &mut stdout)?.1.screen_state;
+        // Handle input and update state
+        let new_screen_state = components::root::handle_input(&state, &keypress).screen_state;
         match new_screen_state {
             state::ScreenState::ShouldQuit => {
                 // Quit now
@@ -57,11 +51,9 @@ fn main() -> io::Result<()> {
             }
         };
         // Render the results after the keypress
-        components::root::render(&state, Some(&keypress), &mut stdout)?;
+        components::root::render(&state)?;
 
         stdout.flush()?;
-
     }
-    
     Ok(())
 }

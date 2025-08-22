@@ -9,11 +9,41 @@ use crossterm::{
 use crate::constants;
 use crate::state::{self, RicalState};
 use crate::utils::{KeyInfo, RenderResult, key_pressed};
+use crate::styles::{Styles, compose_styles};
 
 use crate::components::menu;
 
-/// The root component that renders all other components
-pub fn render(currstate: &RicalState, key: Option<&KeyInfo>, stdout: &mut Stdout) -> io::Result<(RenderResult, RicalState)> {
+// The root component that renders all other components
+
+/// Handle a keypress and return the new state
+pub fn handle_input(currstate: &RicalState, key: &KeyInfo) -> RicalState {
+    // Handle GLOBAL inputs (as this is the top level component)
+    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('q')) {
+        // Quit
+        return state::RicalState {
+            screen_state: state::ScreenState::ShouldQuit
+        };
+    }
+
+    // Because we didn't capture any input yet,
+    // the children are responsible for updating the state
+    match &currstate.screen_state {
+        state::ScreenState::Calendar { month, day, year } => {
+            // TODO: handle via the calendar component
+            currstate.clone()
+        },
+        state::ScreenState::Menu(contents) => {
+            state::RicalState {
+                screen_state: menu::handle_input(contents, key)
+            }
+        },
+        _ => currstate.clone()
+    }
+}
+
+/// Render the screen based on the current state
+pub fn render(currstate: &RicalState) -> io::Result<()> {
+    let mut stdout = io::stdout();
 
     // Background color
     for y in 0..constants::WINDOW_HEIGHT {
@@ -26,33 +56,20 @@ pub fn render(currstate: &RicalState, key: Option<&KeyInfo>, stdout: &mut Stdout
         }
     }
 
-    // Handle GLOBAL inputs (as this is the top level component)
-    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('q')) {
-        // Quit
-        return Ok((RenderResult::QuitProgram, state::RicalState {
-            screen_state: state::ScreenState::ShouldQuit
-        }));
-    };
-
     // Render children, based on state
-    // Because we didn't capture any input yet,
-    // the children are responsible for updating the state
-    let newstate = match &currstate.screen_state {
+    match &currstate.screen_state {
         state::ScreenState::Calendar { month, day, year } => {
             // TODO: render the calendar component
             queue!(stdout,
                 cursor::MoveTo(0,0),
                 style::PrintStyledContent("Calendar".cyan())
             )?;
-            currstate.clone()
         },
         state::ScreenState::Menu(contents) => {
-            state::RicalState {
-                screen_state: menu::render(contents, key, stdout)?.1
-            }
+            menu::render(contents)?;
         },
-        _ => currstate.clone()
+        _ => ()
     };
 
-    Ok((RenderResult::Nominal, newstate))
+    Ok(())
 }

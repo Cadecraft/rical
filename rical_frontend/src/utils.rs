@@ -22,15 +22,6 @@ pub enum RenderResult {
     Nominal
 }
 
-pub fn key_pressed(event: &Option<&KeyInfo>, modifiers: KeyModifiers, code: KeyCode) -> bool {
-    match event {
-        Some(key) => {
-            if key.code == code && key.modifiers == modifiers {
-                true
-            } else {
-                false
-            }
-        },
-        _ => false
-    }
+pub fn key_pressed(key: &KeyInfo, modifiers: KeyModifiers, code: KeyCode) -> bool {
+    key.code == code && key.modifiers == modifiers
 }
