@@ -34,7 +34,7 @@ pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo) -> state::Scre
                 let (new_password, should_submit) = inputtext::handle_input(password, key);
                 if should_submit {
                     // Try to submit!
-                    // TODO: check against API, store token, etc.
+                    // TODO: check against API, store token, show failed screen if failed, etc.
                     state::ScreenState::Calendar {
                         month: 1, year: 2025, day: 1
                     }
@@ -61,7 +61,6 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
                 style::Print("Login failed. Make sure you have an account and that your username and password are correct."),
                 cursor::MoveTo(0,4),
                 style::Print(format!("Error message: {}", error_message)),
-                cursor::MoveTo(0,0),
             )?;
         },
         state::LoginState::EnteringInfo { form_pos, username, password } => {
@@ -70,13 +69,13 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
                 style::Print("(esc) back"),
                 cursor::MoveTo(0,2),
                 style::Print("Login"),
-                cursor::MoveTo(0,4),
             )?;
 
             inputtext::render("Username", username, styles::Styles {
                 margin_left: 0,
                 margin_top: 4,
                 width: Some(38),
+                active: *form_pos == 0,
                 ..styles::Styles::new()
             }, inputtext::InputMode::Normal)?;
 
@@ -84,6 +83,7 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
                 margin_left: 0,
                 margin_top: 5,
                 width: Some(38),
+                active: *form_pos == 1,
                 ..styles::Styles::new()
             }, inputtext::InputMode::Password)?;
 
@@ -91,21 +91,6 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
                 cursor::MoveTo(0, 7),
                 style::Print(if *form_pos == 0 { "(enter) Next field" } else { "(enter) Submit" })
             )?;
-
-            // TODO: reduce code duplication
-            if *form_pos == 0 {
-                inputtext::move_cursor("Username", username, styles::Styles {
-                    margin_left: 0,
-                    margin_top: 4,
-                    ..styles::Styles::new()
-                })?;
-            } else {
-                inputtext::move_cursor("Password", password, styles::Styles {
-                    margin_left: 0,
-                    margin_top: 5,
-                    ..styles::Styles::new()
-                })?;
-            }
         }
     };
 

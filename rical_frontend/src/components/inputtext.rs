@@ -3,7 +3,7 @@ use crossterm::{
     queue,
     cursor,
     event::{KeyCode, KeyModifiers},
-    style::{self},
+    style::{self, Stylize}
 };
 
 use crate::utils::KeyInfo;
@@ -80,21 +80,13 @@ pub fn render(label: &str, value: &str, styles: Styles, mode: InputMode) -> io::
         queue!(stdout, style::Print('_'))?;
         count += 1;
     }
-    // Return to the position
-    queue!(stdout, cursor::MoveTo(styles.margin_left + cursor_pos, styles.margin_top))?;
-
-    Ok(())
-}
-
-/// Move the cursor to the position in the form for entering
-pub fn move_cursor(label: &str, value: &str, styles: Styles) -> io::Result<()> {
-    let mut stdout = io::stdout();
-
-    let label_width = (label.chars().count() + 2) as u16;
-    let value_width = value.chars().count() as u16;
-
-    let cursor_pos = label_width + value_width;
-    queue!(stdout, cursor::MoveTo(styles.margin_left + cursor_pos, styles.margin_top))?;
+    // Render the "cursor" if the user is actively typing
+    if styles.active {
+        queue!(stdout,
+            cursor::MoveTo(styles.margin_left + cursor_pos, styles.margin_top),
+            style::PrintStyledContent("_".black().on_white())
+        )?;
+    }
 
     Ok(())
 }

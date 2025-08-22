@@ -5,7 +5,8 @@ pub struct Styles {
     pub margin_top: u16,
     pub color: Option<Color>,
     pub background_color: Option<Color>,
-    pub width: Option<u16>
+    pub width: Option<u16>,
+    pub active: bool
 }
 
 impl Styles {
@@ -25,7 +26,8 @@ impl Styles {
             margin_top: 0,
             color: None,
             background_color: None,
-            width: None
+            width: None,
+            active: false
         }
     }
 }
@@ -49,6 +51,7 @@ pub fn compose_styles(parent_styles: &Styles, child_styles: &Styles) -> Styles {
         width: match child_styles.width {
             Some(w) => Some(w),
             None => parent_styles.width
-        }
+        },
+        active: child_styles.active
     }
 }

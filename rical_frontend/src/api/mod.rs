@@ -1,4 +1,5 @@
-/// Random function for mod structure; this will be replaced with wrappers around API calls
-pub fn placeholder() -> bool {
-    return false;
+/// Log in and store the auth token
+/// Return the auth token if successful
+pub fn try_login() -> Option<String> {
+    return None;
 }

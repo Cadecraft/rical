@@ -55,7 +55,6 @@ fn render_mainmenu() -> io::Result<()> {
         style::Print("(a) About"),
         cursor::MoveTo(0,9),
         style::Print("(ctrl+q) Quit"),
-        cursor::MoveTo(0,0),
     )?;
     Ok(())
 }
@@ -101,7 +100,6 @@ pub fn render(currstate: &state::MenuState) -> io::Result<()> {
                 style::Print("Rical Frontend"),
                 cursor::MoveTo(0,4),
                 style::Print("By Cadecraft and any other Rical contributors (MIT license)"),
-                cursor::MoveTo(0,0),
             )?;
         },
         state::MenuState::Login(login_state) => {

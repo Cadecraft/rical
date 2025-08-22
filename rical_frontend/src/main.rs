@@ -3,6 +3,7 @@ use std::io::{self, stdout, Write};
 use crossterm::{
     execute,
     terminal,
+    cursor,
     event::read,
 };
 
@@ -14,8 +15,7 @@ mod utils;
 mod styles;
 
 fn main() -> io::Result<()> {
-    // TODO: connect to the API
-    api::placeholder();
+    // TODO: connect to the API/get auth token
 
     // State setup
     let mut state = state::RicalState {
@@ -26,7 +26,13 @@ fn main() -> io::Result<()> {
 
     // Initial rendering setup only
     let mut stdout = stdout();
-    execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
+    terminal::enable_raw_mode()?;
+
+    execute!(stdout,
+        terminal::EnterAlternateScreen,
+        terminal::Clear(terminal::ClearType::All),
+        cursor::Hide
+    )?;
     components::root::render(&state)?;
     stdout.flush()?;
 
@@ -43,8 +49,7 @@ fn main() -> io::Result<()> {
         match new_screen_state {
             state::ScreenState::ShouldQuit => {
                 // Quit now
-                // TODO: any cleanup?
-                return Ok(())
+                break;
             },
             _ => {
                 state.screen_state = new_screen_state;
@@ -55,5 +60,10 @@ fn main() -> io::Result<()> {
 
         stdout.flush()?;
     }
+
+    // Cleanup
+    // TODO: any other cleanup?
+    terminal::disable_raw_mode()?;
+
     Ok(())
 }
