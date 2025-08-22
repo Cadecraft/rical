@@ -5,7 +5,6 @@ pub struct KeyInfo {
     pub code: KeyCode
 }
 
-// The formatted key event
 pub fn read_key_event(event: KeyEvent) -> KeyInfo {
     KeyInfo {
         modifiers: event.modifiers, code: event.code

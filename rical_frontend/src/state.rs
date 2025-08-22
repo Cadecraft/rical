@@ -48,6 +48,3 @@ pub enum SignupState {
         password: String
     }
 }
-
-// TODO: refactor so that FormState is a separate thing
-// TODO: ^ and can be reused??

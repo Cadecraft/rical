@@ -11,11 +11,11 @@ pub struct Styles {
 
 impl Styles {
     /// Create the default Styles object
-    /// Example:
+    /// Can be used for easily constructing styles, e.g.
     /// ```
     /// Styles {
-    ///    margin_left: Some(1),
-    ///    margin_top: Some(2),
+    ///    margin_left: 1,
+    ///    margin_top: 2,
     ///    color: Some(Color::Red),
     ///    ..Styles::new()
     /// }

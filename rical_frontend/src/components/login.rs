@@ -36,7 +36,7 @@ pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo) -> state::Scre
                 let (new_password, should_submit) = inputtext::handle_input(password, key);
                 if should_submit {
                     // Try to submit!
-                    // TODO: check against API, store token, show failed screen if failed, etc.
+                    // TODO: show loading screen, store token
                     match api::try_login(username.clone(), new_password) {
                         Ok(token) => {
                             state::ScreenState::Calendar {
