@@ -2,22 +2,23 @@ use std::io;
 use crossterm::{
     queue,
     cursor,
+    terminal,
     event::{KeyCode, KeyModifiers},
     style::{self, Stylize},
 };
 
-use crate::constants;
 use crate::state::{self, RicalState};
 use crate::utils::{KeyInfo, key_pressed};
+use crate::api::ApiHandler;
 
 use crate::components::menu;
 
 // The root component that renders all other components
 
 /// Handle a keypress and return the new state
-pub fn handle_input(currstate: &RicalState, key: &KeyInfo) -> RicalState {
+pub fn handle_input(currstate: &RicalState, key: &KeyInfo, api_handler: &mut ApiHandler) -> RicalState {
     // Handle GLOBAL inputs (as this is the top level component)
-    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('q')) {
+    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('q')) || key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('c')) {
         // Quit
         return state::RicalState {
             screen_state: state::ScreenState::ShouldQuit
@@ -33,7 +34,7 @@ pub fn handle_input(currstate: &RicalState, key: &KeyInfo) -> RicalState {
         },
         state::ScreenState::Menu(contents) => {
             state::RicalState {
-                screen_state: menu::handle_input(contents, key)
+                screen_state: menu::handle_input(contents, key, api_handler)
             }
         },
         _ => currstate.clone()
@@ -44,16 +45,11 @@ pub fn handle_input(currstate: &RicalState, key: &KeyInfo) -> RicalState {
 pub fn render(currstate: &RicalState) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    // Background color
-    for y in 0..constants::WINDOW_HEIGHT {
-        for x in 0..constants::WINDOW_WIDTH {
-            queue!(
-                stdout,
-                cursor::MoveTo(x,y),
-                style::PrintStyledContent(" ".black())
-            )?;
-        }
-    }
+    // Clear performantly without flickering
+    queue!(
+        stdout,
+        terminal::Clear(terminal::ClearType::All),
+    )?;
 
     // Render children, based on state
     match &currstate.screen_state {
