@@ -12,6 +12,8 @@ use crate::utils::{KeyInfo, key_pressed};
 use crate::components::inputtext;
 use crate::styles;
 
+use crate::api;
+
 // The login screen
 
 pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo) -> state::ScreenState {
@@ -35,8 +37,17 @@ pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo) -> state::Scre
                 if should_submit {
                     // Try to submit!
                     // TODO: check against API, store token, show failed screen if failed, etc.
-                    state::ScreenState::Calendar {
-                        month: 1, year: 2025, day: 1
+                    match api::try_login(username.clone(), new_password) {
+                        Ok(token) => {
+                            state::ScreenState::Calendar {
+                                month: 1, year: 2025, day: 1
+                            }
+                        }, _ => {
+                            // TODO: better error message
+                            state::ScreenState::Menu(state::MenuState::Login(state::LoginState::Failed {
+                                error_message: "Could not log in".to_string()
+                            }))
+                        }
                     }
                 } else {
                     state::ScreenState::Menu(state::MenuState::Login(state::LoginState::EnteringInfo {
@@ -58,8 +69,10 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
                 cursor::MoveTo(0,0),
                 style::Print("(esc) back"),
                 cursor::MoveTo(0,2),
-                style::Print("Login failed. Make sure you have an account and that your username and password are correct."),
-                cursor::MoveTo(0,4),
+                style::Print("Login failed. Make sure your username and password are correct."),
+                cursor::MoveTo(0,3),
+                style::Print("If you don't have an account, sign up first!"),
+                cursor::MoveTo(0,5),
                 style::Print(format!("Error message: {}", error_message)),
             )?;
         },

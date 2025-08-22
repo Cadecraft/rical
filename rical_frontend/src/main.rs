@@ -7,6 +7,8 @@ use crossterm::{
     event::read,
 };
 
+use dotenvy;
+
 mod api;
 mod state;
 mod components;
@@ -16,6 +18,9 @@ mod styles;
 
 fn main() -> io::Result<()> {
     // TODO: connect to the API/get auth token
+
+    // Env setup
+    dotenvy::dotenv().ok();
 
     // State setup
     let mut state = state::RicalState {
@@ -63,6 +68,9 @@ fn main() -> io::Result<()> {
 
     // Cleanup
     // TODO: any other cleanup?
+    execute!(stdout,
+        terminal::LeaveAlternateScreen
+    )?;
     terminal::disable_raw_mode()?;
 
     Ok(())
