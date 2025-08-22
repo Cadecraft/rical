@@ -8,15 +8,14 @@ use crossterm::{
 
 use crate::state;
 use crate::utils::{KeyInfo, key_pressed};
+use crate::api::ApiHandler;
 
 use crate::components::inputtext;
 use crate::styles;
 
-use crate::api;
-
 // The login screen
 
-pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo) -> state::ScreenState {
+pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     // Always allow esc to exit
     if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
         return state::ScreenState::Menu(state::MenuState::MainMenu);
@@ -36,8 +35,8 @@ pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo) -> state::Scre
                 let (new_password, should_submit) = inputtext::handle_input(password, key);
                 if should_submit {
                     // Try to submit!
-                    // TODO: show loading screen, store token
-                    match api::try_login(username.clone(), new_password) {
+                    // TODO: show loading screen
+                    match api_handler.try_login(username.clone(), new_password) {
                         Ok(token) => {
                             state::ScreenState::Calendar {
                                 month: 1, year: 2025, day: 1

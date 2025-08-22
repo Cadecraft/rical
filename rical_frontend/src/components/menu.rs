@@ -8,6 +8,7 @@ use crossterm::{
 
 use crate::state;
 use crate::utils::{KeyInfo, key_pressed};
+use crate::api::ApiHandler;
 
 use crate::components::login;
 
@@ -54,12 +55,12 @@ fn render_mainmenu() -> io::Result<()> {
         cursor::MoveTo(0,8),
         style::Print("(a) About"),
         cursor::MoveTo(0,9),
-        style::Print("(ctrl+q) Quit"),
+        style::Print("(ctrl+q | ctrl+c) Quit"),
     )?;
     Ok(())
 }
 
-pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo) -> state::ScreenState {
+pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     match &currstate {
         state::MenuState::MainMenu => {
             state::ScreenState::Menu(handle_input_mainmenu(key))
@@ -72,7 +73,7 @@ pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo) -> state::Scree
             }
         }
         state::MenuState::Login(login_state) => {
-            login::handle_input(login_state, key)
+            login::handle_input(login_state, key, api_handler)
         },
         state::MenuState::Signup(_) => {
             if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {

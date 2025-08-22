@@ -21,12 +21,13 @@ fn main() -> io::Result<()> {
     // Env setup
     dotenvy::dotenv().ok();
 
-    // State setup
+    // State and data setup
     let mut state = state::RicalState {
         screen_state: state::ScreenState::Menu(
             state::MenuState::MainMenu
         )
     };
+    let mut api_handler = api::ApiHandler::new();
 
     // Initial rendering setup only
     let mut stdout = stdout();
@@ -49,7 +50,7 @@ fn main() -> io::Result<()> {
         let keypress = utils::read_key_event(event);
 
         // Handle input and update state
-        let new_screen_state = components::root::handle_input(&state, &keypress).screen_state;
+        let new_screen_state = components::root::handle_input(&state, &keypress, &mut api_handler).screen_state;
         match new_screen_state {
             state::ScreenState::ShouldQuit => {
                 // Quit now

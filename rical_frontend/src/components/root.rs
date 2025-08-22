@@ -9,15 +9,16 @@ use crossterm::{
 
 use crate::state::{self, RicalState};
 use crate::utils::{KeyInfo, key_pressed};
+use crate::api::ApiHandler;
 
 use crate::components::menu;
 
 // The root component that renders all other components
 
 /// Handle a keypress and return the new state
-pub fn handle_input(currstate: &RicalState, key: &KeyInfo) -> RicalState {
+pub fn handle_input(currstate: &RicalState, key: &KeyInfo, api_handler: &mut ApiHandler) -> RicalState {
     // Handle GLOBAL inputs (as this is the top level component)
-    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('q')) {
+    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('q')) || key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('c')) {
         // Quit
         return state::RicalState {
             screen_state: state::ScreenState::ShouldQuit
@@ -33,7 +34,7 @@ pub fn handle_input(currstate: &RicalState, key: &KeyInfo) -> RicalState {
         },
         state::ScreenState::Menu(contents) => {
             state::RicalState {
-                screen_state: menu::handle_input(contents, key)
+                screen_state: menu::handle_input(contents, key, api_handler)
             }
         },
         _ => currstate.clone()
