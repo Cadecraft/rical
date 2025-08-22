@@ -1,9 +1,4 @@
-use crossterm::{
-    execute, queue,
-    cursor, terminal,
-    event::{KeyEvent, read, KeyCode, KeyModifiers},
-    style::{self, Stylize, Color, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
-};
+use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
 
 pub struct KeyInfo {
     pub modifiers: KeyModifiers,
@@ -15,11 +10,6 @@ pub fn read_key_event(event: KeyEvent) -> KeyInfo {
     KeyInfo {
         modifiers: event.modifiers, code: event.code
     }
-}
-
-pub enum RenderResult {
-    QuitProgram,
-    Nominal
 }
 
 pub fn key_pressed(key: &KeyInfo, modifiers: KeyModifiers, code: KeyCode) -> bool {
