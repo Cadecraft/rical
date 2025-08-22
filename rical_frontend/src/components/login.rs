@@ -9,6 +9,9 @@ use crossterm::{
 use crate::state;
 use crate::utils::{KeyInfo, key_pressed};
 
+use crate::components::inputtext;
+use crate::styles;
+
 // The login screen
 
 pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo) -> state::ScreenState {
@@ -19,30 +22,27 @@ pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo) -> state::Scre
 
     match &currstate {
         state::LoginState::EnteringInfo { form_pos, username, password } => {
-            // TODO: handle
-            // TODO: refactor into an input component
-            if key.modifiers == KeyModifiers::NONE {
-                match key.code {
-                    KeyCode::Char(c) => {
-                        // TODO: depending on form pos
-                        let mut new_username = username.clone();
-                        new_username.push(c);
-                        state::ScreenState::Menu(state::MenuState::Login(state::LoginState::EnteringInfo {
-                            form_pos: *form_pos, username: new_username, password: password.clone()
-                        }))
-                    },
-                    KeyCode::Backspace => {
-                        // TODO: delete from password depending on form pos
-                        let mut chars = username.chars();
-                        chars.next_back();
-                        state::ScreenState::Menu(state::MenuState::Login(state::LoginState::EnteringInfo {
-                            form_pos: *form_pos, username: chars.as_str().to_string(), password: password.clone()
-                        }))
-                    },
-                    _ => state::ScreenState::Menu(state::MenuState::Login(currstate.clone()))
-                }
+            if *form_pos == 0 {
+                // Entering username
+                let (new_username, should_submit) = inputtext::handle_input(username, key);
+                let new_form_pos = if should_submit { *form_pos + 1 } else { *form_pos };
+                state::ScreenState::Menu(state::MenuState::Login(state::LoginState::EnteringInfo {
+                    form_pos: new_form_pos, username: new_username, password: password.clone()
+                }))
             } else {
-                state::ScreenState::Menu(state::MenuState::Login(currstate.clone()))
+                // Entering password
+                let (new_password, should_submit) = inputtext::handle_input(password, key);
+                if should_submit {
+                    // Try to submit!
+                    // TODO: check against API, store token, etc.
+                    state::ScreenState::Calendar {
+                        month: 1, year: 2025, day: 1
+                    }
+                } else {
+                    state::ScreenState::Menu(state::MenuState::Login(state::LoginState::EnteringInfo {
+                        form_pos: *form_pos, username: username.clone(), password: new_password
+                    }))
+                }
             }
         },
         _ => state::ScreenState::Menu(state::MenuState::Login(currstate.clone()))
@@ -58,7 +58,6 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
                 cursor::MoveTo(0,0),
                 style::Print("(esc) back"),
                 cursor::MoveTo(0,2),
-                // TODO: get and display version
                 style::Print("Login failed. Make sure you have an account and that your username and password are correct."),
                 cursor::MoveTo(0,4),
                 style::Print(format!("Error message: {}", error_message)),
@@ -70,28 +69,45 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
                 cursor::MoveTo(0,0),
                 style::Print("(esc) back"),
                 cursor::MoveTo(0,2),
-                // TODO: get and display version
                 style::Print("Login"),
                 cursor::MoveTo(0,4),
-                style::Print("Username: "),
             )?;
-            let mut count = 0;
-            for c in username.chars() {
-                queue!(stdout, style::Print(c))?;
-                count += 1;
+
+            inputtext::render("Username", username, styles::Styles {
+                margin_left: 0,
+                margin_top: 4,
+                width: Some(38),
+                ..styles::Styles::new()
+            }, inputtext::InputMode::Normal)?;
+
+            inputtext::render("Password", password, styles::Styles {
+                margin_left: 0,
+                margin_top: 5,
+                width: Some(38),
+                ..styles::Styles::new()
+            }, inputtext::InputMode::Password)?;
+
+            queue!(stdout,
+                cursor::MoveTo(0, 7),
+                style::Print(if *form_pos == 0 { "(enter) Next field" } else { "(enter) Submit" })
+            )?;
+
+            // TODO: reduce code duplication
+            if *form_pos == 0 {
+                inputtext::move_cursor("Username", username, styles::Styles {
+                    margin_left: 0,
+                    margin_top: 4,
+                    ..styles::Styles::new()
+                })?;
+            } else {
+                inputtext::move_cursor("Password", password, styles::Styles {
+                    margin_left: 0,
+                    margin_top: 5,
+                    ..styles::Styles::new()
+                })?;
             }
-            let cursor_pos = count;
-            // TODO: refactor into an input component
-            let max_input_width = 20;
-            while count < max_input_width {
-                queue!(stdout, style::Print('_'))?;
-                count += 1;
-            }
-            // Return to the position
-            queue!(stdout, cursor::MoveTo(cursor_pos, 4))?;
         }
     };
 
     Ok(())
 }
-

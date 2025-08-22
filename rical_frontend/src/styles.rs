@@ -1,13 +1,11 @@
-use crossterm::{
-    event::{KeyCode, KeyModifiers},
-    style::{self, Stylize, Color},
-};
+use crossterm::style::Color;
 
 pub struct Styles {
-    margin_left: u16,
-    margin_top: u16,
-    color: Option<Color>,
-    background_color: Option<Color>
+    pub margin_left: u16,
+    pub margin_top: u16,
+    pub color: Option<Color>,
+    pub background_color: Option<Color>,
+    pub width: Option<u16>
 }
 
 impl Styles {
@@ -26,7 +24,8 @@ impl Styles {
             margin_left: 0,
             margin_top: 0,
             color: None,
-            background_color: None
+            background_color: None,
+            width: None
         }
     }
 }
@@ -46,6 +45,10 @@ pub fn compose_styles(parent_styles: &Styles, child_styles: &Styles) -> Styles {
         background_color: match child_styles.background_color {
             Some(c) => Some(c),
             None => parent_styles.background_color
+        },
+        width: match child_styles.width {
+            Some(w) => Some(w),
+            None => parent_styles.width
         }
     }
 }
