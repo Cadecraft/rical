@@ -12,6 +12,7 @@ use crate::api::ApiHandler;
 
 use crate::components::inputtext;
 use crate::styles;
+use crate::components::text;
 
 // The login screen
 
@@ -58,28 +59,21 @@ pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo, api_handler: &
 }
 
 pub fn render(currstate: &state::LoginState) -> io::Result<()> {
-    let mut stdout = io::stdout();
-
     match &currstate {
         state::LoginState::Failed { error_message } => {
-            queue!(stdout,
-                cursor::MoveTo(0,0),
-                style::Print("(esc) back"),
-                cursor::MoveTo(0,2),
-                style::Print("Login failed. Make sure your username and password are correct."),
-                cursor::MoveTo(0,3),
-                style::Print("If you don't have an account, sign up first!"),
-                cursor::MoveTo(0,5),
-                style::Print(format!("Error message: {}", error_message)),
-            )?;
+            text::println(0, "(esc) back")?;
+            text::println(1, "")?;
+            text::println(2, "Login failed. Make sure your username and password are correct.")?;
+            text::println(3, "If you don't have an account, sign up first!")?;
+            text::println(4, "")?;
+            text::println(5, &format!("Error message: {}", error_message))?;
+            text::cleartoend()?;
         },
         state::LoginState::EnteringInfo { form_pos, username, password } => {
-            queue!(stdout,
-                cursor::MoveTo(0,0),
-                style::Print("(esc) back"),
-                cursor::MoveTo(0,2),
-                style::Print("Login"),
-            )?;
+            text::println(0, "(esc) back")?;
+            text::println(1, "")?;
+            text::println(2, "Login")?;
+            text::println(3, "")?;
 
             inputtext::render("Username", username, styles::Styles {
                 margin_left: 0,
@@ -97,10 +91,10 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
                 ..styles::Styles::new()
             }, inputtext::InputMode::Password)?;
 
-            queue!(stdout,
-                cursor::MoveTo(0, 7),
-                style::Print(if *form_pos == 0 { "(enter) Next field" } else { "(enter) Submit" })
-            )?;
+            text::println(6, "")?;
+
+            text::println(7, if *form_pos == 0 { "(enter) Next field" } else { "(enter) Submit" })?;
+            text::cleartoend()?;
         }
     };
 

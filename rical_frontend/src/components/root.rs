@@ -42,13 +42,8 @@ pub fn handle_input(currstate: &RicalState, key: &KeyInfo, api_handler: &mut Api
 
 /// Render the screen based on the current state
 pub fn render(currstate: &RicalState) -> io::Result<()> {
-    let mut stdout = io::stdout();
-
-    // Clear performantly without flickering
-    queue!(
-        stdout,
-        terminal::Clear(terminal::ClearType::All),
-    )?;
+    // Do not re-clear the screen every time, as components will write over any changed text
+    // This will prevent flickering
 
     // Render children, based on state
     match &currstate.screen_state {

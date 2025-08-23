@@ -3,6 +3,7 @@ use crossterm::{
     queue,
     cursor,
     event::{KeyCode, KeyModifiers},
+    terminal::{Clear, ClearType},
     style::{self, Stylize}
 };
 
@@ -10,7 +11,7 @@ use crate::utils::KeyInfo;
 
 use crate::styles::Styles;
 
-// A text input botx
+// A text input box
 
 pub enum InputMode {
     Normal,
@@ -62,8 +63,7 @@ pub fn render(label: &str, value: &str, styles: Styles, mode: InputMode) -> io::
     let label_width = (label.chars().count() + 2) as u16;
     let total_width = styles.width.unwrap_or(30);
 
-    queue!(
-        stdout,
+    queue!(stdout,
         cursor::MoveTo(styles.margin_left, styles.margin_top),
         style::Print(format!("{}: ", label))
     )?;
@@ -80,6 +80,10 @@ pub fn render(label: &str, value: &str, styles: Styles, mode: InputMode) -> io::
         queue!(stdout, style::Print('_'))?;
         count += 1;
     }
+    // Clear to the end of the line
+    queue!(stdout,
+        Clear(ClearType::UntilNewLine)
+    )?;
     // Render the "cursor" if the user is actively typing
     if styles.active {
         queue!(stdout,

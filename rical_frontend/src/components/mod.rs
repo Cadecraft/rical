@@ -4,3 +4,4 @@ mod menu;
 mod login;
 mod inputtext;
 mod calendar;
+mod text;
