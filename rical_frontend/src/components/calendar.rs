@@ -13,6 +13,8 @@ use crate::api::ApiHandler;
 use crate::components::inputtext;
 use crate::styles;
 
+use crate::components::text;
+
 // The main calendar screen
 
 pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
@@ -39,17 +41,19 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             match nav_res {
                 Some(res) => {
                     match res {
-                        utils::DayCoordsResult::PrevMonth => {
+                        utils::DayCoordsResult::PrevMonth(newday) => {
                             state::CalendarState {
-                                month: if currstate.month == 1 { 12 } else { currstate.month - 1 },
-                                year: if currstate.month == 1 { currstate.year - 1 } else { currstate.year },
+                                year: utils::prev_month(currstate.year, currstate.month as u32).0,
+                                month: utils::prev_month(currstate.year, currstate.month as u32).1 as i32,
+                                day: newday,
                                 ..currstate.clone()
                             }
                         },
-                        utils::DayCoordsResult::NextMonth => {
+                        utils::DayCoordsResult::NextMonth(newday) => {
                             state::CalendarState {
-                                month: if currstate.month == 12 { 1 } else { currstate.month + 1 },
-                                year: if currstate.month == 12 { currstate.year + 1 } else { currstate.year },
+                                year: utils::next_month(currstate.year, currstate.month as u32).0,
+                                month: utils::next_month(currstate.year, currstate.month as u32).1 as i32,
+                                day: newday,
                                 ..currstate.clone()
                             }
                         },
@@ -99,21 +103,13 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
     */
 
     // Main layout
+    text::println(0, "[username]'s Calendar ([private])")?;
+    text::println(1, "(Ctrl+M) main menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
+    text::println(2, "")?;
     // Individual sections
-    queue!(stdout,
-        cursor::MoveTo(0,0),
-        // TODO: obtain info on the calendar: username, whether public/private, etc.
-        style::Print("[username]'s Calendar ([private])"),
-        cursor::MoveTo(0,1),
-        style::Print("(Ctrl+M) main menu/log out | (Ctrl+S) settings | (Ctrl+C) quit"),
-        cursor::MoveTo(0,3),
-        // TODO: render a centered text component here, with the proper width
-        style::Print("MONTH PLACEHOLDER TEXT"),
-        cursor::MoveTo(0,4),
-        style::Print("____________________________|________________"),
-        cursor::MoveTo(0,5),
-        style::Print(" Su  Mo  Tu  We  Th  Fr  Sa |"),
-    )?;
+    text::println(3, &format!("MONTH PLACEHOLDER: {}/{}", currstate.year, currstate.month))?;
+    text::println(4, "____________________________|________________")?;
+    text::println(5, " Su  Mo  Tu  We  Th  Fr  Sa |")?;
     // Calendar
     // TODO: cache this?
     let calendar_frame = get_calendar_frame(currstate.year, currstate.month as u32);
@@ -161,6 +157,9 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
         )?;
         cursory += 3;
     }
+
+    // End
+    text::cleartoend()?;
 
     // Specifically highlighted section
 
