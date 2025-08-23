@@ -38,9 +38,7 @@ pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo, api_handler: &
                     // TODO: show loading screen
                     match api_handler.try_login(username.clone(), new_password) {
                         Ok(token) => {
-                            state::ScreenState::Calendar {
-                                month: 1, year: 2025, day: 1
-                            }
+                            state::ScreenState::Calendar(state::CalendarState::new())
                         }, _ => {
                             // TODO: better error message
                             state::ScreenState::Menu(state::MenuState::Login(state::LoginState::Failed {

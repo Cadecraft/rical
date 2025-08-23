@@ -8,11 +8,7 @@ pub struct RicalState {
 
 #[derive(Clone)]
 pub enum ScreenState {
-    Calendar {
-        month: i32,
-        year: i32,
-        day: i32
-    },
+    Calendar (CalendarState),
     Menu(MenuState),
     ShouldQuit
 }
@@ -47,4 +43,30 @@ pub enum SignupState {
         username: String,
         password: String
     }
+}
+
+#[derive(Clone)]
+pub struct CalendarState {
+    pub year: i32,
+    pub month: i32,
+    pub day: i32,
+    pub pane: CalendarPane
+}
+
+impl CalendarState {
+    pub fn new() -> CalendarState {
+        // TODO: get current year/day
+        CalendarState {
+            year: 2025,
+            month: 8,
+            day: 5,
+            pane: CalendarPane::Month
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum CalendarPane {
+    Month,
+    Tasks
 }
