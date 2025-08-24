@@ -14,6 +14,7 @@ mod state;
 mod components;
 mod utils;
 mod styles;
+mod types;
 
 fn main() -> io::Result<()> {
     // TODO: connect to the API/get auth token
@@ -22,6 +23,7 @@ fn main() -> io::Result<()> {
     dotenvy::dotenv().ok();
 
     // State and data setup
+    // TODO: default to main page, not calendar
     /*let mut state = state::RicalState {
         screen_state: state::ScreenState::Menu(
             state::MenuState::MainMenu
@@ -46,7 +48,7 @@ fn main() -> io::Result<()> {
         terminal::Clear(terminal::ClearType::All),
         cursor::Hide
     )?;
-    components::root::render(&state)?;
+    components::root::render(&state, &mut api_handler)?;
     stdout.flush()?;
 
     while let Ok(event) = read() {
@@ -69,7 +71,7 @@ fn main() -> io::Result<()> {
             }
         };
         // Render the results after the keypress
-        components::root::render(&state)?;
+        components::root::render(&state, &mut api_handler)?;
 
         stdout.flush()?;
     }

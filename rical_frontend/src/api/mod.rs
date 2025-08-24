@@ -2,6 +2,8 @@ use reqwest;
 use std::env;
 use serde::{Serialize, Deserialize};
 
+use crate::types;
+
 #[derive(Serialize)]
 struct Credentials {
     username: String,
@@ -42,5 +44,48 @@ impl ApiHandler {
         self.auth_token = Some(token.clone());
 
         return Ok(token);
+    }
+
+    /// Fetch a calendar from the API. If this year/month calendar was already fetched, just return that one
+    /// Only using this method could lead to data being out of sync
+    pub fn fetch_calendar_tasks_cached(&mut self, year: i32, month: u32) -> types::CalendarTasks {
+        // TODO: this is just dummy data; actually call the api
+        // TODO: caching
+        types::CalendarTasks {
+            days: vec![
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![
+                    types::TaskDataWithId {
+                        year: 2025,
+                        month: 8,
+                        day: 7,
+                        start_min: None,
+                        end_min: None,
+                        title: "Test".to_string(),
+                        description: None,
+                        complete: false,
+                        task_id: 38510935
+                    }
+                ],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+            ]
+        }
     }
 }

@@ -41,14 +41,14 @@ pub fn handle_input(currstate: &RicalState, key: &KeyInfo, api_handler: &mut Api
 }
 
 /// Render the screen based on the current state
-pub fn render(currstate: &RicalState) -> io::Result<()> {
+pub fn render(currstate: &RicalState, api_handler: &mut ApiHandler) -> io::Result<()> {
     // Do not re-clear the screen every time, as components will write over any changed text
     // This will prevent flickering
 
     // Render children, based on state
     match &currstate.screen_state {
         state::ScreenState::Calendar(contents) => {
-            calendar::render(contents)?;
+            calendar::render(contents, api_handler)?;
         },
         state::ScreenState::Menu(contents) => {
             menu::render(contents)?;

@@ -56,7 +56,42 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
     })
 }
 
-pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
+// TODO: use styles instead
+pub fn render_date(day_of_month: i32, x: u16, y: u16, is_selected: bool, is_today: bool) -> io::Result<()> {
+    let mut stdout = io::stdout();
+
+    let dateformat = if day_of_month > 9 {
+        format!(" {} ", day_of_month.to_string())
+    } else if day_of_month > 0 {
+        format!(" 0{} ", day_of_month.to_string())
+    } else {
+        " -- ".to_string()
+    };
+
+    queue!(stdout,
+        cursor::MoveTo(x, y),
+        style::PrintStyledContent(
+            if is_selected && is_today {
+                dateformat.dark_blue().on_white()
+            } else if is_selected {
+                dateformat.black().on_white()
+            } else if is_today {
+                dateformat.black().on_blue()
+            } else {
+                dateformat.reset()
+            }
+        )
+    )?;
+    // TODO: print events beneath
+    queue!(stdout,
+        cursor::MoveTo(x, y + 1),
+        cursor::MoveTo(x, y + 1),
+    )?;
+
+    Ok(())
+}
+
+pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     /*
@@ -86,6 +121,9 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                                     |
     */
 
+    // Fetch data
+    let calendar_tasks = api_handler.fetch_calendar_tasks_cached(currstate.year, currstate.month);
+
     // Main layout
     text::println(0, "[username]'s Calendar ([private])")?;
     text::println(1, "(Ctrl+M) main menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
@@ -105,36 +143,12 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
         let mut cursorx = 0;
         for date in week {
             // Date itself
+            // TODO: refactor
             // TODO: improve colors
-            let dateformat = if date > 9 {
-                format!(" {} ", date.to_string())
-            } else if date > 0 {
-                format!(" 0{} ", date.to_string())
-            } else {
-                " -- ".to_string()
-            };
             let curr_date = utils::RicalDate::today();
             let is_today = curr_date.year == currstate.year && curr_date.month == currstate.month && curr_date.day as i32 == date;
             let is_selected = date == currstate.day as i32;
-            queue!(stdout,
-                cursor::MoveTo(cursorx, cursory),
-                style::PrintStyledContent(
-                    if is_selected && is_today {
-                        dateformat.dark_blue().on_white()
-                    } else if is_selected {
-                        dateformat.black().on_white()
-                    } else if is_today {
-                        dateformat.black().on_blue()
-                    } else {
-                        dateformat.reset()
-                    }
-                )
-            )?;
-            // TODO: print events beneath
-            queue!(stdout,
-                cursor::MoveTo(cursorx, cursory + 1),
-                cursor::MoveTo(cursorx, cursory + 1),
-            )?;
+            render_date(date, cursorx, cursory, is_selected, is_today)?;
 
             cursorx += 4;
         }
