@@ -17,6 +17,7 @@ pub fn key_pressed(key: &KeyInfo, modifiers: KeyModifiers, code: KeyCode) -> boo
     key.code == code && key.modifiers == modifiers
 }
 
+/// Represent a date internally to Rical
 pub struct RicalDate {
     pub year: i32,
     pub month: u32,
@@ -25,8 +26,9 @@ pub struct RicalDate {
 
 impl RicalDate {
     pub fn new(year: i32, month: u32, day: u32) -> RicalDate {
-        if month == 0 || day == 0 {
-            panic!("A RicalDate can never have a month or day value of 0. Use 1-based days (i.e. January is 1)");
+        // Validate with chrono
+        if chrono::NaiveDate::from_ymd_opt(year, month, day).is_none() {
+            panic!("This date is invalid (be sure to use 1-based months and days): {}/{}/{}", year, month, day);
         }
 
         RicalDate { year, month, day }
@@ -40,10 +42,35 @@ impl RicalDate {
         }
     }
 
+    pub fn to_naive_date(&self) -> chrono::NaiveDate {
+        // self should be valid because of checks in the constructors
+        chrono::NaiveDate::from_ymd_opt(self.year, self.month, self.day).expect("The RicalDate is not valid")
+    }
+
     /// Return today's date (in local time)
     pub fn today() -> RicalDate {
         let curr_date = chrono::offset::Local::now().date_naive();
         RicalDate::new(curr_date.year(), curr_date.month0() + 1, curr_date.day0() + 1)
+    }
+
+    /// Add a certain number of days and return the new date
+    /// Might cross over into a different month or year
+    pub fn add_days(&self, days: u64) -> RicalDate {
+        RicalDate::from_naive_date(
+            self.to_naive_date()
+                .checked_add_days(chrono::Days::new(days))
+                .expect("Could not add days")
+        )
+    }
+
+    /// Subtract a certain number of days and return the new date
+    /// Might cross over into a different month or year
+    pub fn sub_days(&self, days: u64) -> RicalDate {
+        RicalDate::from_naive_date(
+            self.to_naive_date()
+            .checked_sub_days(chrono::Days::new(days))
+            .expect("Could not subtract days")
+        )
     }
 }
 
@@ -105,40 +132,12 @@ pub enum GridDirection {
 
 /// Navigate visually between days on the calendar grid, possibly going to a previous or next month
 /// Return the new year, month, and day
-pub fn calendar_grid_navigation(curryear: i32, currmonth: u32, currday: u32, direction: GridDirection) -> RicalDate {
+pub fn calendar_grid_navigation(current_date: &RicalDate, direction: GridDirection) -> RicalDate {
     // New navigation scheme
     match direction {
-        GridDirection::Left => {
-            RicalDate::from_naive_date(
-                NaiveDate::from_ymd_opt(curryear, currmonth, currday)
-                    .unwrap()
-                    .checked_sub_days(chrono::Days::new(1))
-                    .expect("Could not sub days (left)")
-            )
-        },
-        GridDirection::Right => {
-            RicalDate::from_naive_date(
-                NaiveDate::from_ymd_opt(curryear, currmonth, currday)
-                    .unwrap()
-                    .checked_add_days(chrono::Days::new(1))
-                    .expect("Could not add days (right)")
-            )
-        },
-        GridDirection::Up => {
-            RicalDate::from_naive_date(
-                NaiveDate::from_ymd_opt(curryear, currmonth, currday)
-                    .unwrap()
-                    .checked_sub_days(chrono::Days::new(7))
-                    .expect("Could not sub days")
-            )
-        },
-        GridDirection::Down => {
-            RicalDate::from_naive_date(
-                NaiveDate::from_ymd_opt(curryear, currmonth, currday)
-                    .unwrap()
-                    .checked_add_days(chrono::Days::new(7))
-                    .expect("Could not add days")
-            )
-        }
+        GridDirection::Left => current_date.sub_days(1),
+        GridDirection::Right => current_date.add_days(1),
+        GridDirection::Up => current_date.sub_days(7),
+        GridDirection::Down => current_date.add_days(7)
     }
 }

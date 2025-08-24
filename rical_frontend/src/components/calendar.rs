@@ -27,14 +27,16 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         state::CalendarPane::Month => {
             // Month navigation
 
+            let rical_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
+
             let nav_res = if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('j')) {
-                Some(utils::calendar_grid_navigation(currstate.year, currstate.month, currstate.day, utils::GridDirection::Down))
+                Some(utils::calendar_grid_navigation(&rical_date, utils::GridDirection::Down))
             } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('k')) {
-                Some(utils::calendar_grid_navigation(currstate.year, currstate.month, currstate.day, utils::GridDirection::Up))
+                Some(utils::calendar_grid_navigation(&rical_date, utils::GridDirection::Up))
             } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('h')) {
-                Some(utils::calendar_grid_navigation(currstate.year, currstate.month, currstate.day, utils::GridDirection::Left))
+                Some(utils::calendar_grid_navigation(&rical_date, utils::GridDirection::Left))
             } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
-                Some(utils::calendar_grid_navigation(currstate.year, currstate.month, currstate.day, utils::GridDirection::Right))
+                Some(utils::calendar_grid_navigation(&rical_date, utils::GridDirection::Right))
             } else {
                 None
             };
