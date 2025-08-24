@@ -48,8 +48,8 @@ pub enum SignupState {
 #[derive(Clone)]
 pub struct CalendarState {
     pub year: i32,
-    pub month: i32,
-    pub day: i32,
+    pub month: u32,
+    pub day: u32,
     pub pane: CalendarPane
 }
 

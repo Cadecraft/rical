@@ -40,29 +40,11 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             };
             match nav_res {
                 Some(res) => {
-                    match res {
-                        utils::DayCoordsResult::PrevMonth(newday) => {
-                            state::CalendarState {
-                                year: utils::prev_month(currstate.year, currstate.month as u32).0,
-                                month: utils::prev_month(currstate.year, currstate.month as u32).1 as i32,
-                                day: newday,
-                                ..currstate.clone()
-                            }
-                        },
-                        utils::DayCoordsResult::NextMonth(newday) => {
-                            state::CalendarState {
-                                year: utils::next_month(currstate.year, currstate.month as u32).0,
-                                month: utils::next_month(currstate.year, currstate.month as u32).1 as i32,
-                                day: newday,
-                                ..currstate.clone()
-                            }
-                        },
-                        utils::DayCoordsResult::SameMonth(newday) => {
-                            state::CalendarState {
-                                day: newday,
-                                ..currstate.clone()
-                            }
-                        },
+                    state::CalendarState {
+                        year: res.year,
+                        month: res.month,
+                        day: res.day,
+                        ..currstate.clone()
                     }
                 },
                 _ => currstate.clone()
@@ -112,7 +94,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
     text::println(5, " Su  Mo  Tu  We  Th  Fr  Sa |")?;
     // Calendar
     // TODO: cache this?
-    let calendar_frame = get_calendar_frame(currstate.year, currstate.month as u32);
+    let calendar_frame = get_calendar_frame(currstate.year, currstate.month);
     let mut cursory = 6;
     for week in calendar_frame {
         queue!(stdout,
@@ -129,15 +111,22 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
             } else {
                 " -- ".to_string()
             };
+            let curr_date = utils::RicalDate::today();
+            let is_today = curr_date.year == currstate.year && curr_date.month == currstate.month && curr_date.day as i32 == date;
+            let is_selected = date == currstate.day as i32;
             queue!(stdout,
                 cursor::MoveTo(cursorx, cursory),
-                if date == currstate.day {
-                    // Selection
-                    style::PrintStyledContent(dateformat.black().on_white())
-                } else {
-                    // TODO: highlight today's date as well
-                    style::PrintStyledContent(dateformat.reset())
-                }
+                style::PrintStyledContent(
+                    if is_selected && is_today {
+                        dateformat.dark_blue().on_white()
+                    } else if is_selected {
+                        dateformat.black().on_white()
+                    } else if is_today {
+                        dateformat.black().on_blue()
+                    } else {
+                        dateformat.reset()
+                    }
+                )
             )?;
             // TODO: print events beneath
             queue!(stdout,

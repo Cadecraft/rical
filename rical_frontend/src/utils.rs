@@ -17,6 +17,36 @@ pub fn key_pressed(key: &KeyInfo, modifiers: KeyModifiers, code: KeyCode) -> boo
     key.code == code && key.modifiers == modifiers
 }
 
+pub struct RicalDate {
+    pub year: i32,
+    pub month: u32,
+    pub day: u32
+}
+
+impl RicalDate {
+    pub fn new(year: i32, month: u32, day: u32) -> RicalDate {
+        if month == 0 || day == 0 {
+            panic!("A RicalDate can never have a month or day value of 0. Use 1-based days (i.e. January is 1)");
+        }
+
+        RicalDate { year, month, day }
+    }
+
+    pub fn from_naive_date(naive: chrono::NaiveDate) -> RicalDate {
+        RicalDate {
+            year: naive.year(),
+            month: naive.month0() + 1,
+            day: naive.day0() + 1
+        }
+    }
+
+    /// Return today's date (in local time)
+    pub fn today() -> RicalDate {
+        let curr_date = chrono::offset::Local::now().date_naive();
+        RicalDate::new(curr_date.year(), curr_date.month0() + 1, curr_date.day0() + 1)
+    }
+}
+
 fn get_days_in_month(year: i32, month: u32) -> u32 {
     NaiveDate::from_ymd_opt(
         next_month(year, month).0,
@@ -27,9 +57,11 @@ fn get_days_in_month(year: i32, month: u32) -> u32 {
         .signed_duration_since(NaiveDate::from_ymd_opt(year, month, 1).expect("Could not obtain days in month")).num_days() as u32
 }
 
+type CalendarFrame = Vec<Vec<i32>>;
+
 /// Get the 2d array of days for a calendar month (res[row][weekday] gets you the day number of the month)
 /// Negative values will represent days outside of the month
-pub fn get_calendar_frame(year: i32, month: u32) -> Vec<Vec<i32>> {
+pub fn get_calendar_frame(year: i32, month: u32) -> CalendarFrame {
     let mut res: Vec<Vec<i32>> = Vec::new();
     let days_in_month = get_days_in_month(year, month);
     const DAYS_PER_WEEK: usize = 7;
@@ -64,13 +96,6 @@ pub fn next_month(year: i32, month: u32) -> (i32, u32) {
     }
 }
 
-/// The direction of the month, and the day to go to
-pub enum DayCoordsResult {
-    PrevMonth(i32),
-    SameMonth(i32),
-    NextMonth(i32)
-}
-
 pub enum GridDirection {
     Left,
     Right,
@@ -79,77 +104,41 @@ pub enum GridDirection {
 }
 
 /// Navigate visually between days on the calendar grid, possibly going to a previous or next month
-pub fn calendar_grid_navigation(curryear: i32, currmonth: i32, currday: i32, direction: GridDirection) -> DayCoordsResult {
-    let frame = get_calendar_frame(curryear, currmonth as u32);
-
-    // TODO: make this code look less cooked
-    for row in 0..frame.len() {
-        for weekday in 0..frame[row].len() {
-            if frame[row][weekday] == currday {
-                match direction {
-                    GridDirection::Left => {
-                        if weekday == 0 {
-                            let prev = prev_month(curryear, currmonth as u32);
-                            let prev_frame = get_calendar_frame(prev.0, prev.1);
-                            let new_day = if row >= prev_frame.len() {
-                                prev_frame[prev_frame.len() - 1][6]
-                            } else {
-                                prev_frame[row][6]
-                            };
-                            return DayCoordsResult::PrevMonth(new_day);
-                        }
-                        let frameres = frame[row][weekday - 1];
-                        if frameres < 1 {
-                            return DayCoordsResult::PrevMonth(28);
-                        }
-                        return DayCoordsResult::SameMonth(frameres);
-                    },
-                    GridDirection::Right => {
-                        if weekday == 6 {
-                            let next = next_month(curryear, currmonth as u32);
-                            let next_frame = get_calendar_frame(next.0, next.1);
-                            let new_day = if row >= next_frame.len() {
-                                next_frame[next_frame.len() - 1][0]
-                            } else {
-                                next_frame[row][0]
-                            };
-                            return DayCoordsResult::NextMonth(new_day);
-                        }
-                        let frameres = frame[row][weekday + 1];
-                        if frameres < 1 {
-                            return DayCoordsResult::NextMonth(1);
-                        }
-                        return DayCoordsResult::SameMonth(frameres);
-                    },
-                    GridDirection::Up => {
-                        if row == 0 {
-                            let prev = prev_month(curryear, currmonth as u32);
-                            let prev_frame = get_calendar_frame(prev.0, prev.1);
-                            let new_day = prev_frame[prev_frame.len() - 1][weekday];
-                            return DayCoordsResult::PrevMonth(new_day);
-                        }
-                        let frameres = frame[row - 1][weekday];
-                        if frameres < 1 {
-                            return DayCoordsResult::PrevMonth(28);
-                        }
-                        return DayCoordsResult::SameMonth(frameres);
-                    },
-                    GridDirection::Down => {
-                        if row == frame.len() - 1 {
-                            let next = next_month(curryear, currmonth as u32);
-                            let next_frame = get_calendar_frame(next.0, next.1);
-                            let new_day = next_frame[0][weekday];
-                            return DayCoordsResult::NextMonth(new_day);
-                        }
-                        let frameres = frame[row + 1][weekday];
-                        if frameres < 1 {
-                            return DayCoordsResult::NextMonth(1);
-                        }
-                        return DayCoordsResult::SameMonth(frameres);
-                    },
-                }
-            }
+/// Return the new year, month, and day
+pub fn calendar_grid_navigation(curryear: i32, currmonth: u32, currday: u32, direction: GridDirection) -> RicalDate {
+    // New navigation scheme
+    match direction {
+        GridDirection::Left => {
+            RicalDate::from_naive_date(
+                NaiveDate::from_ymd_opt(curryear, currmonth, currday)
+                    .unwrap()
+                    .checked_sub_days(chrono::Days::new(1))
+                    .expect("Could not sub days (left)")
+            )
+        },
+        GridDirection::Right => {
+            RicalDate::from_naive_date(
+                NaiveDate::from_ymd_opt(curryear, currmonth, currday)
+                    .unwrap()
+                    .checked_add_days(chrono::Days::new(1))
+                    .expect("Could not add days (right)")
+            )
+        },
+        GridDirection::Up => {
+            RicalDate::from_naive_date(
+                NaiveDate::from_ymd_opt(curryear, currmonth, currday)
+                    .unwrap()
+                    .checked_sub_days(chrono::Days::new(7))
+                    .expect("Could not sub days")
+            )
+        },
+        GridDirection::Down => {
+            RicalDate::from_naive_date(
+                NaiveDate::from_ymd_opt(curryear, currmonth, currday)
+                    .unwrap()
+                    .checked_add_days(chrono::Days::new(7))
+                    .expect("Could not add days")
+            )
         }
     }
-    DayCoordsResult::SameMonth(currday)
 }
