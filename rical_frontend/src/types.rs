@@ -15,7 +15,7 @@ pub struct TaskData {
     pub complete: bool
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct TaskDataWithId {
     pub year: i32,
     pub month: i32,

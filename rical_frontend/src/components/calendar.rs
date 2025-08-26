@@ -12,6 +12,7 @@ use crate::api::ApiHandler;
 
 use crate::components::inputtext;
 use crate::styles;
+use crate::types;
 
 use crate::components::text;
 
@@ -57,7 +58,14 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
 }
 
 // TODO: use styles instead
-pub fn render_date(day_of_month: i32, x: u16, y: u16, is_selected: bool, is_today: bool) -> io::Result<()> {
+pub fn render_date(
+    day_of_month: i32,
+    x: u16,
+    y: u16,
+    is_selected: bool,
+    is_today: bool,
+    events: &Vec<types::TaskDataWithId>
+) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     let dateformat = if day_of_month > 9 {
@@ -83,9 +91,31 @@ pub fn render_date(day_of_month: i32, x: u16, y: u16, is_selected: bool, is_toda
         )
     )?;
     // TODO: print events beneath
+    // TODO: refactor this
     queue!(stdout,
+        // First 2 events
         cursor::MoveTo(x, y + 1),
-        cursor::MoveTo(x, y + 1),
+        style::Print(" "),
+        style::Print(if events.len() > 0 {
+            "▆"
+        } else { " " }),
+        style::Print(if events.len() > 1 {
+            "▆"
+        } else { " " }),
+        style::Print(" "),
+        // Second 2 events
+        cursor::MoveTo(x, y + 2),
+        style::Print(" "),
+        style::Print(if events.len() > 2 {
+            "▆"
+        } else { " " }),
+        style::Print(if events.len() > 3 {
+            "▆"
+        } else { " " }),
+        style::Print(" "),
+        // End
+        cursor::MoveTo(x, y + 3),
+        style::Print("   ")
     )?;
 
     Ok(())
@@ -148,7 +178,9 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             let curr_date = utils::RicalDate::today();
             let is_today = curr_date.year == currstate.year && curr_date.month == currstate.month && curr_date.day as i32 == date;
             let is_selected = date == currstate.day as i32;
-            render_date(date, cursorx, cursory, is_selected, is_today)?;
+            let empty_events = vec![];
+            let events = calendar_tasks.days.get((date - 1) as usize).unwrap_or(&empty_events);
+            render_date(date, cursorx, cursory, is_selected, is_today, events)?;
 
             cursorx += 4;
         }
@@ -159,8 +191,10 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             style::Print("|"),
             cursor::MoveTo(cursorx, cursory + 2),
             style::Print("|"),
+            cursor::MoveTo(cursorx, cursory + 3),
+            style::Print("|"),
         )?;
-        cursory += 3;
+        cursory += 4;
     }
 
     // End
