@@ -11,6 +11,8 @@ use crate::utils::KeyInfo;
 
 use crate::styles::Styles;
 
+use crate::components::text;
+
 // A text input box
 
 pub enum InputMode {
@@ -76,10 +78,7 @@ pub fn render(label: &str, value: &str, styles: Styles, mode: InputMode) -> io::
         count += 1;
     }
     let cursor_pos = count;
-    while count < total_width {
-        queue!(stdout, style::Print('_'))?;
-        count += 1;
-    }
+    text::pad_characters(total_width, cursor_pos, "_")?;
     // Clear to the end of the line
     queue!(stdout,
         Clear(ClearType::UntilNewLine)

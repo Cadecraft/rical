@@ -27,3 +27,16 @@ pub fn cleartoend() -> io::Result<()> {
     )?;
     Ok(())
 }
+
+/// Pad characters to the remaining space
+pub fn pad_characters(total_width: u16, taken_up: u16, ch: &str) -> io::Result<()> {
+    let mut stdout = io::stdout();
+
+    if taken_up >= total_width {
+        return Ok(());
+    }
+    for _i in taken_up..total_width {
+        queue!(stdout, style::Print(ch))?;
+    }
+    Ok(())
+}

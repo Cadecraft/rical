@@ -72,6 +72,24 @@ impl RicalDate {
             .expect("Could not subtract days")
         )
     }
+
+    /// Format the date as a YYYY/MM/DD string
+    pub fn format(&self) -> String {
+        format!("{}/{}/{}", self.year, fmt_twodigit(self.month), fmt_twodigit(self.day))
+    }
+
+    pub fn weekday_name(&self) -> String {
+        const WEEKDAY_NAMES: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        let weekday = self.to_naive_date().weekday().number_from_sunday() - 1;
+        WEEKDAY_NAMES[weekday as usize].to_string()
+    }
+}
+
+fn next_month(year: i32, month: u32) -> (i32, u32) {
+    match month {
+        12 => (year + 1, 1),
+        _ => (year, month + 1)
+    }
 }
 
 fn get_days_in_month(year: i32, month: u32) -> u32 {
@@ -109,20 +127,6 @@ pub fn get_calendar_frame(year: i32, month: u32) -> CalendarFrame {
     res
 }
 
-pub fn prev_month(year: i32, month: u32) -> (i32, u32) {
-    match month {
-        1 => (year - 1, 12),
-        _ => (year, month - 1)
-    }
-}
-
-pub fn next_month(year: i32, month: u32) -> (i32, u32) {
-    match month {
-        12 => (year + 1, 1),
-        _ => (year, month + 1)
-    }
-}
-
 pub enum GridDirection {
     Left,
     Right,
@@ -139,5 +143,16 @@ pub fn calendar_grid_navigation(current_date: &RicalDate, direction: GridDirecti
         GridDirection::Right => current_date.add_days(1),
         GridDirection::Up => current_date.sub_days(7),
         GridDirection::Down => current_date.add_days(7)
+    }
+}
+
+/// Format a two-digit number with a leading zero
+pub fn fmt_twodigit(number: u32) -> String {
+    if number < 10 {
+        let mut s = "0".to_string();
+        s.push_str(&number.to_string());
+        s
+    }  else {
+        number.to_string()
     }
 }

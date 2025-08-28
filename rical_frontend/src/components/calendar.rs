@@ -79,7 +79,10 @@ pub fn render_date(
     queue!(stdout,
         cursor::MoveTo(x, y),
         style::PrintStyledContent(
-            if is_selected && is_today {
+            if day_of_month <= 0 {
+                dateformat.dark_grey()
+            }
+            else if is_selected && is_today {
                 dateformat.dark_blue().on_white()
             } else if is_selected {
                 dateformat.black().on_white()
@@ -151,20 +154,29 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
                                     |
     */
 
+    // Organize state
+    let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
+
     // Fetch data
-    let calendar_tasks = api_handler.fetch_calendar_tasks_cached(currstate.year, currstate.month);
+    let calendar_tasks = api_handler.fetch_calendar_tasks_cached(selected_date.year, selected_date.month);
 
     // Main layout
     text::println(0, "[username]'s Calendar ([private])")?;
     text::println(1, "(Ctrl+M) main menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
     text::println(2, "")?;
     // Individual sections
-    text::println(3, &format!("MONTH PLACEHOLDER: {}/{}", currstate.year, currstate.month))?;
+    text::println(3, &format!(
+        "{}/{}                         Tasks",
+        selected_date.year,
+        utils::fmt_twodigit(selected_date.month)
+    ))?;
     text::println(4, "____________________________|________________")?;
-    text::println(5, " Su  Mo  Tu  We  Th  Fr  Sa |")?;
+    queue!(stdout,
+        cursor::MoveTo(0, 5),
+        style::Print(" Su  Mo  Tu  We  Th  Fr  Sa |")
+    )?;
     // Calendar
-    // TODO: cache this?
-    let calendar_frame = get_calendar_frame(currstate.year, currstate.month);
+    let calendar_frame = get_calendar_frame(selected_date.year, selected_date.month);
     let mut cursory = 6;
     for week in calendar_frame {
         queue!(stdout,
@@ -175,9 +187,9 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             // Date itself
             // TODO: refactor
             // TODO: improve colors
-            let curr_date = utils::RicalDate::today();
-            let is_today = curr_date.year == currstate.year && curr_date.month == currstate.month && curr_date.day as i32 == date;
-            let is_selected = date == currstate.day as i32;
+            let today = utils::RicalDate::today();
+            let is_today = today.year == selected_date.year && today.month == selected_date.month && today.day as i32 == date;
+            let is_selected = date == selected_date.day as i32;
             let empty_events = vec![];
             let events = calendar_tasks.days.get((date - 1) as usize).unwrap_or(&empty_events);
             render_date(date, cursorx, cursory, is_selected, is_today, events)?;
@@ -196,8 +208,33 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         )?;
         cursory += 4;
     }
+    let calendarframe_bottom_y = cursory;
+    // Tasks menu
+    // This should display tasks grouped by the current day and the days surrounding it
+    const DAYS_DISPLAYED: u64 = 4;
+    cursory = 5;
+    let mut cursorx = 29;
+    const TASKS_PANE_WIDTH: u16 = 30;
+    for date_offset in 0..DAYS_DISPLAYED {
+        let date = selected_date.add_days(date_offset);
+        if date.month != currstate.month {
+            // Displaying tasks from other months overcomplicates the logic
+            break;
+        }
+        let date_title = format!(" {} - {} ", date.format(), date.weekday_name());
+        let date_title_len = date_title.len();
+        queue!(stdout,
+            cursor::MoveTo(cursorx, cursory),
+            style::PrintStyledContent(if date_offset == 0 { date_title.on_dark_grey() } else { date_title.dark_grey() }),
+        )?;
+        cursory += 3;
+        text::pad_characters(TASKS_PANE_WIDTH, date_title_len as u16, " ")?;
+        queue!(stdout, style::Print("|"))?;
+        // TODO: get the tasks for this date and render them and their times (calendar_tasks.days.get)
+    }
 
     // End
+    queue!(stdout, cursor::MoveTo(0, calendarframe_bottom_y))?;
     text::cleartoend()?;
 
     // Specifically highlighted section
