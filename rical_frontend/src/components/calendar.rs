@@ -10,8 +10,6 @@ use crate::state;
 use crate::utils::{self, KeyInfo, key_pressed, get_calendar_frame};
 use crate::api::ApiHandler;
 
-use crate::components::inputtext;
-use crate::styles;
 use crate::types;
 
 use crate::components::text;
@@ -164,12 +162,18 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     text::println(0, "[username]'s Calendar ([private])")?;
     text::println(1, "(Ctrl+M) menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
     text::println(2, "")?;
+    const CALENDAR_WIDTH: u16 = 29;
+    const TASKS_PANE_WIDTH: u16 = 46;
     // Individual sections
-    text::println(3, &format!(
-        "   {}/{}                      Tasks",
+    queue!(stdout, cursor::MoveTo(0, 3))?;
+    text::padded_text(&format!(
+        "  {}/{} - {}",
         selected_date.year,
-        utils::fmt_twodigit(selected_date.month)
-    ))?;
+        utils::fmt_twodigit(selected_date.month),
+        utils::get_month_name(selected_date.month)
+    ), CALENDAR_WIDTH, " ")?;
+    text::padded_text("  Tasks", TASKS_PANE_WIDTH, " ")?;
+    queue!(stdout, cursor::MoveTo(0, 4))?;
     text::println(4, "____________________________|______________________________________________|")?;
     queue!(stdout,
         cursor::MoveTo(0, 5),
@@ -211,10 +215,9 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     let calendarframe_bottom_y = cursory;
     // Tasks menu
     // This should display tasks grouped by the current day and the days surrounding it
-    const DAYS_DISPLAYED: u64 = 5;
+    const DAYS_DISPLAYED: u64 = 7;
     cursory = 5;
     let cursorx = 29;
-    const TASKS_PANE_WIDTH: u16 = 46;
     for date_offset in 0..DAYS_DISPLAYED {
         let date = selected_date.add_days(date_offset);
         if date.month != currstate.month {
@@ -224,9 +227,20 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         // Date title
         let date_title = format!(" {} - {} ", date.format(), date.weekday_name());
         let date_title_len = date_title.len();
+        let is_today = date == utils::RicalDate::today();
         queue!(stdout,
             cursor::MoveTo(cursorx, cursory),
-            style::PrintStyledContent(if date_offset == 0 { date_title.on_dark_grey() } else { date_title.dark_grey() }),
+            style::PrintStyledContent(
+                if date_offset == 0 && is_today {
+                    date_title.white().on_dark_blue()
+                } else if date_offset == 0 {
+                    date_title.on_dark_grey()
+                } else if is_today {
+                    date_title.blue()
+                } else {
+                    date_title.dark_grey()
+                }
+            ),
         )?;
         text::pad_characters(TASKS_PANE_WIDTH, date_title_len as u16, " ")?;
         queue!(stdout, style::Print("|"))?;
@@ -238,11 +252,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
             // Time column
             const COL_TIME_WIDTH: u16 = 15;
-            let timerange = format!("   {}", utils::fmt_timerange(task.start_min, task.end_min));
-            let timerange_len = timerange.len();
-            // TODO: refactor into "padded text"
-            queue!(stdout, style::Print(timerange))?;
-            text::pad_characters(COL_TIME_WIDTH, timerange_len as u16, " ")?;
+            text::padded_text(&format!("   {}", utils::fmt_timerange(task.start_min, task.end_min)), COL_TIME_WIDTH, " ")?;
             // Checkbox column
             queue!(stdout, if task.complete {
                 style::PrintStyledContent("[x] ".dark_grey())
@@ -253,10 +263,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             // TODO: multiline
             // TODO: descriptions too?
             // TODO: what if user selects it
-            let task_text = format!("{}", task.title);
-            let task_text_len = task_text.len();
-            queue!(stdout, style::Print(task_text))?;
-            text::pad_characters(TASKS_PANE_WIDTH - COL_TIME_WIDTH - 4, task_text_len as u16, " ")?;
+            text::padded_text(&task.title, TASKS_PANE_WIDTH - COL_TIME_WIDTH - 4, " ")?;
             queue!(stdout, style::Print("|"))?;
             cursory += 1;
         }

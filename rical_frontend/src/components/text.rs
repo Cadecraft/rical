@@ -40,3 +40,18 @@ pub fn pad_characters(total_width: u16, taken_up: u16, ch: &str) -> io::Result<(
     }
     Ok(())
 }
+
+/// Render text padded to a constant width at wherever the cursor currently is
+pub fn padded_text(text: &str, total_width: u16, ch: &str) -> io::Result<()> {
+    let mut stdout = io::stdout();
+
+    let len = text.len();
+    queue!(stdout, style::Print(text))?;
+    pad_characters(total_width, len as u16, ch)?;
+    Ok(())
+}
+
+/// Render styled text padded to a constant width
+pub fn padded_text_styled() {
+    let mut stdout = io::stdout();
+}

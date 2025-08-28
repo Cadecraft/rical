@@ -78,10 +78,17 @@ impl RicalDate {
         format!("{}/{}/{}", self.year, fmt_twodigit(self.month), fmt_twodigit(self.day))
     }
 
+    /// Get the name of this date's weekday
     pub fn weekday_name(&self) -> String {
         const WEEKDAY_NAMES: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         let weekday = self.to_naive_date().weekday().number_from_sunday() - 1;
         WEEKDAY_NAMES[weekday as usize].to_string()
+    }
+}
+
+impl PartialEq for RicalDate {
+    fn eq(&self, other: &RicalDate) -> bool {
+        self.year == other.year && self.month == other.month && self.day == other.day
     }
 }
 
@@ -171,4 +178,23 @@ pub fn fmt_timerange(start_min: Option<i32>, end_min: Option<i32>) -> String {
         return String::new()
     }
     format!("{}-{}", fmt_mins(start_min), fmt_mins(end_min))
+}
+
+/// Get a 1-indexed month name
+pub fn get_month_name(month: u32) -> String {
+    const MONTH_NAMES: [&str; 12] = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ];
+    MONTH_NAMES[month as usize - 1].to_string()
 }
