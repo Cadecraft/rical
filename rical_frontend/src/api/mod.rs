@@ -62,6 +62,28 @@ impl ApiHandler {
             complete: false,
             task_id: 38510935
         };
+        let dummy_task_2 = types::TaskDataWithId {
+            year: 2025,
+            month: 8,
+            day: 7,
+            start_min: Some(360),
+            end_min: Some(450),
+            title: "Test 2".to_string(),
+            description: None,
+            complete: false,
+            task_id: 38510935
+        };
+        let dummy_task_3 = types::TaskDataWithId {
+            year: 2025,
+            month: 8,
+            day: 7,
+            start_min: Some(480),
+            end_min: None,
+            title: "Test 3".to_string(),
+            description: None,
+            complete: true,
+            task_id: 38510935
+        };
         types::CalendarTasks {
             days: vec![
                 vec![],
@@ -71,17 +93,17 @@ impl ApiHandler {
                 vec![],
                 vec![],
                 vec![
-                    dummy_task.clone(),
-                    dummy_task.clone(),
+                    dummy_task_2.clone(),
+                    dummy_task_3.clone(),
                     dummy_task.clone(),
                 ],
                 vec![
-                    dummy_task.clone(),
+                    dummy_task_2.clone(),
                     dummy_task.clone(),
                 ],
                 vec![],
                 vec![
-                    dummy_task.clone(),
+                    dummy_task_3.clone(),
                     dummy_task.clone(),
                 ],
                 vec![],

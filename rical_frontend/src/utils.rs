@@ -156,3 +156,19 @@ pub fn fmt_twodigit(number: u32) -> String {
         number.to_string()
     }
 }
+
+/// Turn minutes into a 24-hour HR:MN format, or an empty string if None
+fn fmt_mins(mins_opt: Option<i32>) -> String {
+    match mins_opt {
+        Some(mins) => format!("{}:{}", fmt_twodigit(mins as u32 / 60), fmt_twodigit(mins as u32 % 60)),
+        None => String::new()
+    }
+}
+
+/// Format a time range of minutes
+pub fn fmt_timerange(start_min: Option<i32>, end_min: Option<i32>) -> String {
+    if start_min.is_none() && end_min.is_none() {
+        return String::new()
+    }
+    format!("{}-{}", fmt_mins(start_min), fmt_mins(end_min))
+}
