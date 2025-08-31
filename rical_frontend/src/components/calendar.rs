@@ -16,42 +16,68 @@ use crate::components::text;
 
 // The main calendar screen
 
+enum CalAction {
+    Move(utils::GridDirection),
+    SwitchToMonth,
+    SwitchToTasks,
+    None
+}
+
 pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('m')) {
         return state::ScreenState::Menu(state::MenuState::MainMenu);
     }
 
-    state::ScreenState::Calendar(match &currstate.pane {
-        // TODO: allow switching panes, etc.
+    let action = match &currstate.pane {
+        // TODO: better-document how to switch panes via the ui (maybe a help menu or bottom bar)
         state::CalendarPane::Month => {
-            // Month navigation
-
-            let rical_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
-
-            let nav_res = if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('j')) {
-                Some(utils::calendar_grid_navigation(&rical_date, utils::GridDirection::Down))
-            } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('k')) {
-                Some(utils::calendar_grid_navigation(&rical_date, utils::GridDirection::Up))
-            } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('h')) {
-                Some(utils::calendar_grid_navigation(&rical_date, utils::GridDirection::Left))
-            } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
-                Some(utils::calendar_grid_navigation(&rical_date, utils::GridDirection::Right))
+            if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('j')) {
+                CalAction::Move(utils::GridDirection::Down)
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('k')) {
+                CalAction::Move(utils::GridDirection::Up)
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('h')) {
+                CalAction::Move(utils::GridDirection::Left)
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('l')) {
+                CalAction::Move(utils::GridDirection::Right)
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Enter) {
+                CalAction::SwitchToTasks
             } else {
-                None
-            };
-            match nav_res {
-                Some(res) => {
-                    state::CalendarState {
-                        year: res.year,
-                        month: res.month,
-                        day: res.day,
-                        ..currstate.clone()
-                    }
-                },
-                _ => currstate.clone()
+                CalAction::None
             }
         },
-        _ => currstate.clone()
+        state::CalendarPane::Tasks => {
+            if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
+                CalAction::SwitchToMonth
+            } else {
+                CalAction::None
+            }
+        }
+    };
+
+    state::ScreenState::Calendar(match action {
+        CalAction::Move(dir) => {
+            let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
+            let res = utils::calendar_grid_navigation(&selected_date, dir);
+            state::CalendarState {
+                year: res.year,
+                month: res.month,
+                day: res.day,
+                ..currstate.clone()
+            }
+        },
+        CalAction::SwitchToTasks => {
+            state::CalendarState {
+                pane: state::CalendarPane::Tasks,
+                ..currstate.clone()
+            }
+        },
+        CalAction::SwitchToMonth => {
+            state::CalendarState {
+                pane: state::CalendarPane::Month,
+                ..currstate.clone()
+            }
+        },
+        CalAction::None => currstate.clone()
     })
 }
 
@@ -62,7 +88,8 @@ pub fn render_date(
     y: u16,
     is_selected: bool,
     is_today: bool,
-    tasks: &Vec<types::TaskDataWithId>
+    tasks: &Vec<types::TaskDataWithId>,
+    pane: &state::CalendarPane
 ) -> io::Result<()> {
     let mut stdout = io::stdout();
 
@@ -81,9 +108,15 @@ pub fn render_date(
                 dateformat.dark_grey()
             }
             else if is_selected && is_today {
-                dateformat.dark_blue().on_white()
+                match pane {
+                    state::CalendarPane::Month => dateformat.dark_blue().on_white(),
+                    state::CalendarPane::Tasks => dateformat.dark_blue().on_dark_grey(),
+                }
             } else if is_selected {
-                dateformat.black().on_white()
+                match pane {
+                    state::CalendarPane::Month => dateformat.black().on_white(),
+                    state::CalendarPane::Tasks => dateformat.black().on_dark_grey(),
+                }
             } else if is_today {
                 dateformat.black().on_blue()
             } else {
@@ -162,8 +195,9 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     text::println(0, "[username]'s Calendar ([private])")?;
     text::println(1, "(Ctrl+M) menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
     text::println(2, "")?;
-    const CALENDAR_WIDTH: u16 = 29;
+    const CALENDAR_WIDTH: u16 = 30;
     const TASKS_PANE_WIDTH: u16 = 46;
+    const DATE_HEIGHT: u16 = 4;
     // Individual sections
     queue!(stdout, cursor::MoveTo(0, 3))?;
     text::padded_text(&format!(
@@ -174,10 +208,11 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     ), CALENDAR_WIDTH, " ")?;
     text::padded_text("  Tasks", TASKS_PANE_WIDTH, " ")?;
     queue!(stdout, cursor::MoveTo(0, 4))?;
-    text::println(4, "____________________________|______________________________________________|")?;
+    text::println(4, "┌────────────────────────────┬──────────────────────────────────────────────┐")?;
     queue!(stdout,
         cursor::MoveTo(0, 5),
-        style::Print(" Su  Mo  Tu  We  Th  Fr  Sa |")
+        style::Print("│"),
+        style::Print(" Su  Mo  Tu  We  Th  Fr  Sa │")
     )?;
     // Calendar
     let calendar_frame = get_calendar_frame(selected_date.year, selected_date.month);
@@ -185,8 +220,9 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     for week in calendar_frame {
         queue!(stdout,
             cursor::MoveTo(0, cursory),
+            style::Print("│"),
         )?;
-        let mut cursorx = 0;
+        let mut cursorx = 1;
         for date in week {
             // Date itself
             // TODO: refactor
@@ -196,28 +232,27 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             let is_selected = date == selected_date.day as i32;
             let empty_tasks = vec![];
             let tasks = calendar_tasks.days.get((date - 1) as usize).unwrap_or(&empty_tasks);
-            render_date(date, cursorx, cursory, is_selected, is_today, tasks)?;
+            render_date(date, cursorx, cursory, is_selected, is_today, tasks, &currstate.pane)?;
 
-            cursorx += 4;
+            cursorx += DATE_HEIGHT;
         }
-        queue!(stdout,
-            cursor::MoveTo(cursorx, cursory),
-            style::Print("|"),
-            cursor::MoveTo(cursorx, cursory + 1),
-            style::Print("|"),
-            cursor::MoveTo(cursorx, cursory + 2),
-            style::Print("|"),
-            cursor::MoveTo(cursorx, cursory + 3),
-            style::Print("|"),
-        )?;
-        cursory += 4;
+        for _i in 0..DATE_HEIGHT {
+            queue!(stdout,
+                cursor::MoveTo(0, cursory),
+                style::Print("│"),
+                cursor::MoveTo(cursorx, cursory),
+                style::Print("│"),
+            )?;
+            cursory += 1;
+        }
     }
+    // TODO: have a constant-height calendar for consistency
     let calendarframe_bottom_y = cursory;
     // Tasks menu
     // This should display tasks grouped by the current day and the days surrounding it
     const DAYS_DISPLAYED: u64 = 7;
     cursory = 5;
-    let cursorx = 29;
+    let cursorx = CALENDAR_WIDTH;
     for date_offset in 0..DAYS_DISPLAYED {
         let date = selected_date.add_days(date_offset);
         if date.month != currstate.month {
@@ -227,14 +262,21 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         // Date title
         let date_title = format!(" {} - {} ", date.format(), date.weekday_name());
         let date_title_len = date_title.len();
+        let is_selected = date_offset == 0;
         let is_today = date == utils::RicalDate::today();
         queue!(stdout,
             cursor::MoveTo(cursorx, cursory),
             style::PrintStyledContent(
-                if date_offset == 0 && is_today {
-                    date_title.white().on_dark_blue()
-                } else if date_offset == 0 {
-                    date_title.on_dark_grey()
+                if is_selected && is_today {
+                    match currstate.pane {
+                        state::CalendarPane::Month => date_title.black().on_dark_blue(),
+                        state::CalendarPane::Tasks => date_title.dark_blue().on_white(),
+                    }
+                } else if is_selected {
+                    match currstate.pane {
+                        state::CalendarPane::Month => date_title.black().on_dark_grey(),
+                        state::CalendarPane::Tasks => date_title.black().on_white(),
+                    }
                 } else if is_today {
                     date_title.blue()
                 } else {
@@ -243,7 +285,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             ),
         )?;
         text::pad_characters(TASKS_PANE_WIDTH, date_title_len as u16, " ")?;
-        queue!(stdout, style::Print("|"))?;
+        queue!(stdout, style::Print("│"))?;
         cursory += 1;
         // Tasks below the date
         let empty_tasks = vec![];
@@ -264,23 +306,22 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             // TODO: descriptions too?
             // TODO: what if user selects it
             text::padded_text(&task.title, TASKS_PANE_WIDTH - COL_TIME_WIDTH - 4, " ")?;
-            queue!(stdout, style::Print("|"))?;
+            queue!(stdout, style::Print("│"))?;
             cursory += 1;
         }
         queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
         text::pad_characters(TASKS_PANE_WIDTH, 0, " ")?;
-        queue!(stdout, style::Print("|"))?;
+        queue!(stdout, style::Print("│"))?;
         cursory += 1;
         // Divider between selected date and upcoming dates
         if date_offset == 0 {
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
-            queue!(stdout, style::PrintStyledContent("_________ Upcoming _________".dark_grey()))?;
-            text::pad_characters(TASKS_PANE_WIDTH, 28, " ")?;
-            queue!(stdout, style::Print("|"))?;
+            text::padded_text_styled("──── Upcoming ".dark_grey(), TASKS_PANE_WIDTH, "─".dark_grey())?;
+            queue!(stdout, style::Print("│"))?;
             cursory += 1;
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
             text::pad_characters(TASKS_PANE_WIDTH, 0, " ")?;
-            queue!(stdout, style::Print("|"))?;
+            queue!(stdout, style::Print("│"))?;
             cursory += 1;
         }
     }
@@ -289,11 +330,16 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         // Clear out this line
         queue!(stdout, cursor::MoveTo(cursorx, newy))?;
         text::pad_characters(TASKS_PANE_WIDTH, 0, " ")?;
-        queue!(stdout, style::Print("|"))?;
+        queue!(stdout, style::Print("│"))?;
     }
+    cursory = calendarframe_bottom_y;
+    // Bottom frame closer
+    queue!(stdout, cursor::MoveTo(0, cursory))?;
+    text::println(cursory, "└────────────────────────────┴──────────────────────────────────────────────┘")?;
+    cursory += 1;
 
     // End
-    queue!(stdout, cursor::MoveTo(0, calendarframe_bottom_y))?;
+    queue!(stdout, cursor::MoveTo(0, cursory))?;
     text::cleartoend()?;
 
     // Specifically highlighted section

@@ -2,7 +2,7 @@ use std::io;
 use crossterm::{
     queue,
     cursor,
-    style::{self},
+    style,
     terminal::{Clear, ClearType}
 };
 
@@ -32,11 +32,18 @@ pub fn cleartoend() -> io::Result<()> {
 pub fn pad_characters(total_width: u16, taken_up: u16, ch: &str) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    if taken_up >= total_width {
-        return Ok(());
-    }
     for _i in taken_up..total_width {
         queue!(stdout, style::Print(ch))?;
+    }
+    Ok(())
+}
+
+/// Pad characters to the remaining space (styled)
+pub fn pad_characters_styled(total_width: u16, taken_up: u16, ch: style::StyledContent<&str>) -> io::Result<()> {
+    let mut stdout = io::stdout();
+
+    for _i in taken_up..total_width {
+        queue!(stdout, style::PrintStyledContent(ch))?;
     }
     Ok(())
 }
@@ -45,13 +52,18 @@ pub fn pad_characters(total_width: u16, taken_up: u16, ch: &str) -> io::Result<(
 pub fn padded_text(text: &str, total_width: u16, ch: &str) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    let len = text.len();
+    let len = text.chars().count();
     queue!(stdout, style::Print(text))?;
     pad_characters(total_width, len as u16, ch)?;
     Ok(())
 }
 
-/// Render styled text padded to a constant width
-pub fn padded_text_styled() {
+/// Render text padded to a constant width at wherever the cursor currently is (styled)
+pub fn padded_text_styled(text: style::StyledContent<&str>, total_width: u16, ch: style::StyledContent<&str>) -> io::Result<()> {
     let mut stdout = io::stdout();
+
+    let len = text.content().chars().count();
+    queue!(stdout, style::PrintStyledContent(text))?;
+    pad_characters_styled(total_width, len as u16, ch)?;
+    Ok(())
 }
