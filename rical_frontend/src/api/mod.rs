@@ -2,6 +2,7 @@ use reqwest;
 use std::env;
 use serde::{Serialize, Deserialize};
 
+use crate::utils;
 use crate::types;
 
 #[derive(Serialize)]
@@ -44,6 +45,12 @@ impl ApiHandler {
         self.auth_token = Some(token.clone());
 
         return Ok(token);
+    }
+
+    pub fn fetch_tasks_at_date_cached(&mut self, date: &utils::RicalDate) -> Vec<types::TaskDataWithId> {
+        let calendar_tasks = self.fetch_calendar_tasks_cached(date.year, date.month);
+        let empty_res: Vec<types::TaskDataWithId> = vec![];
+        calendar_tasks.days.get(date.day as usize - 1).unwrap_or(&empty_res).clone()
     }
 
     /// Fetch a calendar from the API. If this year/month calendar was already fetched, just return that one

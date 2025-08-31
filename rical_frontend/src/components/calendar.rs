@@ -52,6 +52,12 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::SelectTaskDown
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('k')) {
                 CalAction::SelectTaskUp
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('b')) {
+                // Back a day
+                CalAction::Move(utils::GridDirection::Left)
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('w')) {
+                // Forward a day
+                CalAction::Move(utils::GridDirection::Right)
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
                 CalAction::SwitchToMonth
             } else {
@@ -86,7 +92,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         },
         CalAction::SelectTaskUp => {
-            let calendar_tasks = api_handler.fetch_calendar_tasks_cached(selected_date.year, selected_date.month);
+            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
 
             // Select the task above the current one, or none (signifying we've reached the date)
             // If there is no task before the current one, deselect any task so that the date alone is selected
@@ -94,9 +100,35 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
 
             match currstate.task_id {
                 Some(id) => {
-                    // Previous task or the parent date
-                    // TODO: impl
-                    currstate.clone()
+                    let curr_task_index = date_tasks.iter().position(|task| task.task_id == id);
+                    match curr_task_index {
+                        Some(0) => {
+                            // Parent date
+                            state::CalendarState {
+                                task_id: None,
+                                ..currstate.clone()
+                            }
+                        },
+                        Some(index) => {
+                            state::CalendarState {
+                                task_id: Some(date_tasks[index - 1].task_id),
+                                ..currstate.clone()
+                            }
+                        }
+                        None => {
+                            // Previous date
+                            let res = selected_date.sub_days(1);
+                            // TODO: the "previous date's last task" specification above
+                            // TODO: reduce code duplication?
+                            state::CalendarState {
+                                year: res.year,
+                                month: res.month,
+                                day: res.day,
+                                task_id: None,
+                                ..currstate.clone()
+                            }
+                        }
+                    }
                 },
                 None => {
                     // Previous date
@@ -113,12 +145,68 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         }
         CalAction::SelectTaskDown => {
+            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
+
             // Select the task after the current one
             // If there is no current one, select the next task or the next date
             // If there is no task after the current one, move to the next date
             // TODO: the full specification above
-            state::CalendarState {
-                ..currstate.clone()
+            match currstate.task_id {
+                Some(id) => {
+                    // Next task or next date
+                    let curr_task_index = date_tasks.iter().position(|task| task.task_id == id);
+                    match curr_task_index {
+                        Some(index) => {
+                            if index == date_tasks.len() - 1 {
+                                // Next date
+                                let res = selected_date.add_days(1);
+                                state::CalendarState {
+                                    year: res.year,
+                                    month: res.month,
+                                    day: res.day,
+                                    task_id: None,
+                                    ..currstate.clone()
+                                }
+                            } else {
+                                // Next task
+                                state::CalendarState {
+                                    task_id: Some(date_tasks[index + 1].task_id),
+                                    ..currstate.clone()
+                                }
+                            }
+                        },
+                        None => {
+                            // Next date
+                            let res = selected_date.add_days(1);
+                            state::CalendarState {
+                                year: res.year,
+                                month: res.month,
+                                day: res.day,
+                                task_id: None,
+                                ..currstate.clone()
+                            }
+                        }
+                    }
+                },
+                None => {
+                    // First task or next date
+                    if date_tasks.len() > 0 {
+                        state::CalendarState {
+                            task_id: Some(date_tasks[0].task_id),
+                            ..currstate.clone()
+                        }
+                    } else {
+                        // Next date
+                        let res = selected_date.add_days(1);
+                        state::CalendarState {
+                            year: res.year,
+                            month: res.month,
+                            day: res.day,
+                            task_id: None,
+                            ..currstate.clone()
+                        }
+                    }
+                }
             }
         }
         CalAction::None => currstate.clone()
@@ -252,34 +340,32 @@ pub fn render_tasks_date(
         const COL_TIME_WIDTH: u16 = 15;
         text::padded_text(&format!("   {}", utils::fmt_timerange(task.start_min, task.end_min)), COL_TIME_WIDTH, " ")?;
         // Checkbox column
-        let is_task_selected = match selected_task_id {
-            Some(id) => {
-                // Is this the current task?
-                // TODO: impl
-                true
-            },
+        let is_task_selected = is_selected && match selected_task_id {
+            Some(id) => task.task_id == id,
             None => false
         };
         queue!(stdout, if task.complete {
-            let checkbox = "[x] ";
-            style::PrintStyledContent(if is_task_selected && is_selected {
-                // TODO: dark grey or black?
-                checkbox.black().on_white()
-            } else if is_task_selected {
-                checkbox.black().on_dark_grey()
+            let checkbox = "[x]";
+            style::PrintStyledContent(if is_task_selected {
+                match pane {
+                    // TODO: dark grey or black?
+                    state::CalendarPane::Month => checkbox.black().on_dark_grey(),
+                    state::CalendarPane::Tasks => checkbox.black().on_white(),
+                }
             } else {
                 checkbox.dark_grey()
             })
         } else {
-            let checkbox = "[ ] ";
-            style::PrintStyledContent(if is_task_selected && is_selected {
-                checkbox.black().on_white()
-            } else if is_task_selected {
-                checkbox.black().on_dark_grey()
+            let checkbox = "[ ]";
+            style::PrintStyledContent(if is_task_selected {
+                match pane {
+                    state::CalendarPane::Month => checkbox.black().on_dark_grey(),
+                    state::CalendarPane::Tasks => checkbox.black().on_white(),
+                }
             } else {
                 checkbox.reset()
             })
-        })?;
+        }, style::Print(" "))?;
         // Task text column
         // TODO: multiline
         // TODO: descriptions too?
