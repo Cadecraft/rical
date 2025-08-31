@@ -94,16 +94,13 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         CalAction::SelectTaskUp => {
             let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
 
-            // Select the task above the current one, or none (signifying we've reached the date)
-            // If there is no task before the current one, deselect any task so that the date alone is selected
-            // If there is no current task (i.e. the date is selected), move to the last task of the previous date
-
+            // Select the task/day above the current one
             match currstate.task_id {
                 Some(id) => {
                     let curr_task_index = date_tasks.iter().position(|task| task.task_id == id);
                     match curr_task_index {
-                        Some(0) => {
-                            // Parent date
+                        Some(0) | None => {
+                            // Reset to the parent date
                             state::CalendarState {
                                 task_id: None,
                                 ..currstate.clone()
@@ -115,31 +112,28 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                                 ..currstate.clone()
                             }
                         }
-                        None => {
-                            // Previous date
-                            let res = selected_date.sub_days(1);
-                            // TODO: the "previous date's last task" specification above
-                            // TODO: reduce code duplication?
-                            state::CalendarState {
-                                year: res.year,
-                                month: res.month,
-                                day: res.day,
-                                task_id: None,
-                                ..currstate.clone()
-                            }
-                        }
                     }
                 },
                 None => {
-                    // Previous date
+                    // Previous date's last task
                     let res = selected_date.sub_days(1);
-                    // TODO: the "previous date's last task" specification above
-                    state::CalendarState {
-                        year: res.year,
-                        month: res.month,
-                        day: res.day,
-                        task_id: None,
-                        ..currstate.clone()
+                    let date_tasks_prev = api_handler.fetch_tasks_at_date_cached(&res);
+                    if date_tasks_prev.len() > 0 {
+                        state::CalendarState {
+                            year: res.year,
+                            month: res.month,
+                            day: res.day,
+                            task_id: Some(date_tasks_prev[date_tasks_prev.len() - 1].task_id),
+                            ..currstate.clone()
+                        }
+                    } else {
+                        state::CalendarState {
+                            year: res.year,
+                            month: res.month,
+                            day: res.day,
+                            task_id: None,
+                            ..currstate.clone()
+                        }
                     }
                 }
             }
@@ -147,10 +141,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         CalAction::SelectTaskDown => {
             let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
 
-            // Select the task after the current one
-            // If there is no current one, select the next task or the next date
-            // If there is no task after the current one, move to the next date
-            // TODO: the full specification above
+            // Select the task/day after the current one
             match currstate.task_id {
                 Some(id) => {
                     // Next task or next date
@@ -176,12 +167,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                             }
                         },
                         None => {
-                            // Next date
-                            let res = selected_date.add_days(1);
+                            // Should never happen; just reset
                             state::CalendarState {
-                                year: res.year,
-                                month: res.month,
-                                day: res.day,
                                 task_id: None,
                                 ..currstate.clone()
                             }
@@ -246,8 +233,8 @@ pub fn render_date(
             }
             else if is_selected && is_today {
                 match pane {
-                    state::CalendarPane::Month => dateformat.dark_blue().on_white(),
-                    state::CalendarPane::Tasks => dateformat.dark_blue().on_dark_grey(),
+                    state::CalendarPane::Month => dateformat.black().on_dark_cyan(),
+                    state::CalendarPane::Tasks => dateformat.cyan().on_dark_grey(),
                 }
             } else if is_selected {
                 match pane {
@@ -255,7 +242,7 @@ pub fn render_date(
                     state::CalendarPane::Tasks => dateformat.black().on_dark_grey(),
                 }
             } else if is_today {
-                dateformat.black().on_blue()
+                dateformat.cyan()
             } else {
                 dateformat.reset()
             }
@@ -315,8 +302,8 @@ pub fn render_tasks_date(
         style::PrintStyledContent(
             if is_title_selected && is_today {
                 match pane {
-                    state::CalendarPane::Month => date_title.black().on_dark_blue(),
-                    state::CalendarPane::Tasks => date_title.dark_blue().on_white(),
+                    state::CalendarPane::Month => date_title.cyan().on_dark_grey(),
+                    state::CalendarPane::Tasks => date_title.black().on_dark_cyan(),
                 }
             } else if is_title_selected {
                 match pane {
@@ -324,7 +311,7 @@ pub fn render_tasks_date(
                     state::CalendarPane::Tasks => date_title.black().on_white(),
                 }
             } else if is_today {
-                date_title.blue()
+                date_title.cyan()
             } else {
                 date_title.dark_grey()
             }
@@ -421,15 +408,19 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     text::println(0, "[username]'s Calendar ([private])")?;
     text::println(1, "(Ctrl+M) menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
     text::println(2, "")?;
-    // Individual sections
-    queue!(stdout, cursor::MoveTo(0, 3))?;
-    text::padded_text(&format!(
-        "  {}/{} - {}",
-        selected_date.year,
-        utils::fmt_twodigit(selected_date.month),
-        utils::get_month_name(selected_date.month)
-    ), CALENDAR_WIDTH, " ")?;
-    text::padded_text("  Tasks", TASKS_PANE_WIDTH, " ")?;
+    // Titles
+    queue!(stdout, cursor::MoveTo(0, 3), style::Print(" "))?;
+    let calendar_title = format!(" {}/{} - {} ", selected_date.year, utils::fmt_twodigit(selected_date.month), utils::get_month_name(selected_date.month));
+    let calendar_title_str: &str = &calendar_title;
+    text::padded_text_styled(match currstate.pane {
+        state::CalendarPane::Month => calendar_title_str.black().on_dark_blue(),
+        state::CalendarPane::Tasks => calendar_title_str.reset(),
+    }, CALENDAR_WIDTH - 1, " ".reset())?;
+    let tasks_title_str = " Tasks ";
+    text::padded_text_styled(match currstate.pane {
+        state::CalendarPane::Month => tasks_title_str.reset(),
+        state::CalendarPane::Tasks => tasks_title_str.black().on_dark_blue(),
+    }, TASKS_PANE_WIDTH, " ".reset())?;
     queue!(stdout, cursor::MoveTo(0, 4))?;
     text::println(4, "┌────────────────────────────┬──────────────────────────────────────────────┐")?;
     queue!(stdout,
@@ -437,6 +428,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         style::Print("│"),
         style::Print(" Su  Mo  Tu  We  Th  Fr  Sa │")
     )?;
+    // Individual sections
     // Calendar
     let calendar_frame = get_calendar_frame(selected_date.year, selected_date.month);
     let mut cursory = 6;
