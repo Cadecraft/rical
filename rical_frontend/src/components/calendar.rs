@@ -81,6 +81,11 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
     })
 }
 
+// Rendering constants
+const CALENDAR_WIDTH: u16 = 30;
+const TASKS_PANE_WIDTH: u16 = 46;
+const DATE_HEIGHT: u16 = 4;
+
 // TODO: use styles instead
 pub fn render_date(
     day_of_month: i32,
@@ -155,6 +160,72 @@ pub fn render_date(
     Ok(())
 }
 
+/// Render a date and its tasks in the tasks menu, returning its height in number of rows
+pub fn render_tasks_date(
+    date: utils::RicalDate,
+    x: u16,
+    y: u16,
+    is_selected: bool,
+    is_today: bool,
+    tasks: &Vec<types::TaskDataWithId>,
+    pane: &state::CalendarPane
+) -> io::Result<u16> {
+    let mut stdout = io::stdout();
+
+    let mut cursory = y;
+    // Date title
+    let date_title = format!(" {} - {} ", date.format(), date.weekday_name());
+    let date_title_len = date_title.len();
+    queue!(stdout,
+        cursor::MoveTo(x, cursory),
+        style::PrintStyledContent(
+            if is_selected && is_today {
+                match pane {
+                    state::CalendarPane::Month => date_title.black().on_dark_blue(),
+                    state::CalendarPane::Tasks => date_title.dark_blue().on_white(),
+                }
+            } else if is_selected {
+                match pane {
+                    state::CalendarPane::Month => date_title.black().on_dark_grey(),
+                    state::CalendarPane::Tasks => date_title.black().on_white(),
+                }
+            } else if is_today {
+                date_title.blue()
+            } else {
+                date_title.dark_grey()
+            }
+        ),
+    )?;
+    text::pad_characters(TASKS_PANE_WIDTH, date_title_len as u16, " ")?;
+    queue!(stdout, style::Print("│"))?;
+    cursory += 1;
+    // Tasks below the date
+    for task in tasks {
+        queue!(stdout, cursor::MoveTo(x, cursory))?;
+        // Time column
+        const COL_TIME_WIDTH: u16 = 15;
+        text::padded_text(&format!("   {}", utils::fmt_timerange(task.start_min, task.end_min)), COL_TIME_WIDTH, " ")?;
+        // Checkbox column
+        queue!(stdout, if task.complete {
+            style::PrintStyledContent("[x] ".dark_grey())
+        } else {
+            style::PrintStyledContent("[ ] ".reset())
+        })?;
+        // Task text column
+        // TODO: multiline
+        // TODO: descriptions too?
+        // TODO: what if user selects it
+        text::padded_text(&task.title, TASKS_PANE_WIDTH - COL_TIME_WIDTH - 4, " ")?;
+        queue!(stdout, style::Print("│"))?;
+        cursory += 1;
+    }
+    queue!(stdout, cursor::MoveTo(x, cursory))?;
+    text::pad_characters(TASKS_PANE_WIDTH, 0, " ")?;
+    queue!(stdout, style::Print("│"))?;
+    cursory += 1;
+    Ok(cursory)
+}
+
 pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) -> io::Result<()> {
     let mut stdout = io::stdout();
 
@@ -195,9 +266,6 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     text::println(0, "[username]'s Calendar ([private])")?;
     text::println(1, "(Ctrl+M) menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
     text::println(2, "")?;
-    const CALENDAR_WIDTH: u16 = 30;
-    const TASKS_PANE_WIDTH: u16 = 46;
-    const DATE_HEIGHT: u16 = 4;
     // Individual sections
     queue!(stdout, cursor::MoveTo(0, 3))?;
     text::padded_text(&format!(
@@ -259,60 +327,11 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             // Displaying tasks from other months overcomplicates the logic
             break;
         }
-        // Date title
-        let date_title = format!(" {} - {} ", date.format(), date.weekday_name());
-        let date_title_len = date_title.len();
         let is_selected = date_offset == 0;
         let is_today = date == utils::RicalDate::today();
-        queue!(stdout,
-            cursor::MoveTo(cursorx, cursory),
-            style::PrintStyledContent(
-                if is_selected && is_today {
-                    match currstate.pane {
-                        state::CalendarPane::Month => date_title.black().on_dark_blue(),
-                        state::CalendarPane::Tasks => date_title.dark_blue().on_white(),
-                    }
-                } else if is_selected {
-                    match currstate.pane {
-                        state::CalendarPane::Month => date_title.black().on_dark_grey(),
-                        state::CalendarPane::Tasks => date_title.black().on_white(),
-                    }
-                } else if is_today {
-                    date_title.blue()
-                } else {
-                    date_title.dark_grey()
-                }
-            ),
-        )?;
-        text::pad_characters(TASKS_PANE_WIDTH, date_title_len as u16, " ")?;
-        queue!(stdout, style::Print("│"))?;
-        cursory += 1;
-        // Tasks below the date
         let empty_tasks = vec![];
         let tasks = calendar_tasks.days.get((date.day - 1) as usize).unwrap_or(&empty_tasks);
-        for task in tasks {
-            queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
-            // Time column
-            const COL_TIME_WIDTH: u16 = 15;
-            text::padded_text(&format!("   {}", utils::fmt_timerange(task.start_min, task.end_min)), COL_TIME_WIDTH, " ")?;
-            // Checkbox column
-            queue!(stdout, if task.complete {
-                style::PrintStyledContent("[x] ".dark_grey())
-            } else {
-                style::PrintStyledContent("[ ] ".reset())
-            })?;
-            // Task text column
-            // TODO: multiline
-            // TODO: descriptions too?
-            // TODO: what if user selects it
-            text::padded_text(&task.title, TASKS_PANE_WIDTH - COL_TIME_WIDTH - 4, " ")?;
-            queue!(stdout, style::Print("│"))?;
-            cursory += 1;
-        }
-        queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
-        text::pad_characters(TASKS_PANE_WIDTH, 0, " ")?;
-        queue!(stdout, style::Print("│"))?;
-        cursory += 1;
+        cursory = render_tasks_date(date, cursorx, cursory, is_selected, is_today, tasks, &currstate.pane)?;
         // Divider between selected date and upcoming dates
         if date_offset == 0 {
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
