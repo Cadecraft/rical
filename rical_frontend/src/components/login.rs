@@ -37,7 +37,7 @@ pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo, api_handler: &
                 if should_submit {
                     // Try to submit!
                     // TODO: show loading screen
-                    match api_handler.try_login(username.clone(), new_password) {
+                    match api_handler.try_login(username.contents.clone(), new_password.contents) {
                         Ok(token) => {
                             state::ScreenState::Calendar(state::CalendarState::new())
                         }, _ => {

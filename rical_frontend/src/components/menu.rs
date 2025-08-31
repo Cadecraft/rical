@@ -15,16 +15,16 @@ fn handle_input_mainmenu(key: &KeyInfo) -> state::MenuState {
         state::MenuState::Login(
             state::LoginState::EnteringInfo {
                 form_pos: 0,
-                username: String::new(),
-                password: String::new()
+                username: state::TextInputState::new(),
+                password: state::TextInputState::new(),
             }
         )
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('s')) {
         state::MenuState::Signup(
             state::SignupState::EnteringInfo {
                 form_pos: 0,
-                username: String::new(),
-                password: String::new()
+                username: state::TextInputState::new(),
+                password: state::TextInputState::new(),
             }
         )
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('a')) {

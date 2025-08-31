@@ -28,8 +28,8 @@ pub enum LoginState {
     },
     EnteringInfo {
         form_pos: u32,
-        username: String,
-        password: String
+        username: TextInputState,
+        password: TextInputState
     }
 }
 
@@ -40,8 +40,24 @@ pub enum SignupState {
     },
     EnteringInfo {
         form_pos: u32,
-        username: String,
-        password: String
+        username: TextInputState,
+        password: TextInputState
+    }
+}
+
+/// The info for any text input
+#[derive(Clone)]
+pub struct TextInputState {
+    pub cursor_pos: usize,
+    pub contents: String
+}
+
+impl TextInputState {
+    pub fn new() -> TextInputState {
+        TextInputState {
+            cursor_pos: 0,
+            contents: String::new()
+        }
     }
 }
 
