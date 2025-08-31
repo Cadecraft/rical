@@ -19,11 +19,22 @@ pub fn println(y: u16, line: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub fn cleartoend() -> io::Result<()> {
+/// Clear the screen from the cursor down
+pub fn clear_to_end() -> io::Result<()> {
     let mut stdout = io::stdout();
 
     queue!(stdout,
         Clear(ClearType::FromCursorDown),
+    )?;
+    Ok(())
+}
+
+/// Clear one line from the cursor to the end
+pub fn clear_rest_of_line() -> io::Result<()> {
+    let mut stdout = io::stdout();
+
+    queue!(stdout,
+        Clear(ClearType::UntilNewLine),
     )?;
     Ok(())
 }

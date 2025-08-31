@@ -2,6 +2,7 @@ use std::io;
 use crossterm::{
     queue,
     cursor,
+    terminal,
     event::{KeyCode, KeyModifiers},
     style::{self, Stylize},
 };
@@ -202,7 +203,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
 
 // Rendering constants
 const CALENDAR_WIDTH: u16 = 30;
-const TASKS_PANE_WIDTH: u16 = 46;
+const TASKS_PANE_WIDTH_MIN: u16 = 24;
+const TASKS_PANE_WIDTH_MAX: u16 = 90;
 const DATE_HEIGHT: u16 = 4;
 
 /// A small, colorful representation of a task
@@ -315,6 +317,7 @@ pub fn render_tasks_date(
     date: utils::RicalDate,
     x: u16,
     y: u16,
+    tasks_pane_width: u16,
     is_selected: bool,
     selected_task_id: Option<i64>,
     is_today: bool,
@@ -348,7 +351,7 @@ pub fn render_tasks_date(
             }
         ),
     )?;
-    text::pad_characters(TASKS_PANE_WIDTH, date_title_len as u16, " ")?;
+    text::pad_characters(tasks_pane_width, date_title_len as u16, " ")?;
     queue!(stdout, style::Print("│"))?;
     cursory += 1;
     // Tasks below the date
@@ -392,12 +395,12 @@ pub fn render_tasks_date(
         // TODO: multiline
         // TODO: descriptions too?
         // TODO: what if user selects it
-        text::padded_text_styled(if task.complete { (&task.title as &str).dark_grey() } else { (&task.title as &str).reset() }, TASKS_PANE_WIDTH - COL_TIME_WIDTH - 6, " ".reset())?;
+        text::padded_text_styled(if task.complete { (&task.title as &str).dark_grey() } else { (&task.title as &str).reset() }, tasks_pane_width - COL_TIME_WIDTH - 6, " ".reset())?;
         queue!(stdout, style::Print("│"))?;
         cursory += 1;
     }
     queue!(stdout, cursor::MoveTo(x, cursory))?;
-    text::pad_characters(TASKS_PANE_WIDTH, 0, " ")?;
+    text::pad_characters(tasks_pane_width, 0, " ")?;
     queue!(stdout, style::Print("│"))?;
     cursory += 1;
     Ok(cursory)
@@ -406,38 +409,15 @@ pub fn render_tasks_date(
 pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    /*
-        0         1         2         3         4
-        01234567890123456789012345678901234567890123456789
-
-        myusername's Calendar (private)
-        (Ctrl+M) Logout/menu | (Ctrl+S) Settings | (Ctrl+C Quit)
-
-                2025/05 - May           2025/05/05
-        ____________________________|________________
-         Su  Mo  Tu  We  Th  Fr  Sa |
-         01  02  03  04  05  06  07 |
-         xx  x=  ==  =   =x      =  |
-         x   ==          =          |
-         08  09  10  11  12  13  14 |
-                                    |
-                                    |
-         15  16  17  18  19  20  21 |
-                                    |
-                                    |
-         22  23  24  25  26  27  28 |
-                                    |
-                                    |
-         29  30  31  01  02  03  04 |
-                                    |
-                                    |
-    */
-
     // Organize state
     let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
 
     // Fetch data
     let calendar_tasks = api_handler.fetch_calendar_tasks_cached(selected_date.year, selected_date.month);
+
+    // Terminal width (for responsive layout)
+    let terminal_width = terminal::size()?.0;
+    let tasks_pane_width = std::cmp::min(TASKS_PANE_WIDTH_MAX, std::cmp::max(TASKS_PANE_WIDTH_MIN, terminal_width - CALENDAR_WIDTH - 2));
 
     // Main layout
     text::println(0, "[username]'s Calendar ([private])")?;
@@ -455,9 +435,14 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     text::padded_text_styled(match currstate.pane {
         state::CalendarPane::Month => tasks_title_str.reset(),
         state::CalendarPane::Tasks => tasks_title_str.black().on_dark_blue(),
-    }, TASKS_PANE_WIDTH, " ".reset())?;
-    queue!(stdout, cursor::MoveTo(0, 4))?;
-    text::println(4, "┌────────────────────────────┬──────────────────────────────────────────────┐")?;
+    }, tasks_pane_width, " ".reset())?;
+    // Top container edge
+    queue!(stdout, cursor::MoveTo(0, 4), style::Print("┌"))?;
+    text::pad_characters(CALENDAR_WIDTH - 2, 0, "─")?;
+    queue!(stdout, style::Print("┬"))?;
+    text::pad_characters(tasks_pane_width, 0, "─")?;
+    queue!(stdout, style::Print("┐"))?;
+    text::clear_rest_of_line()?;
     queue!(stdout,
         cursor::MoveTo(0, 5),
         style::Print("│"),
@@ -514,15 +499,15 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         let is_today = date == utils::RicalDate::today();
         let empty_tasks = vec![];
         let tasks = calendar_tasks.days.get((date.day - 1) as usize).unwrap_or(&empty_tasks);
-        cursory = render_tasks_date(date, cursorx, cursory, is_selected, currstate.task_id, is_today, tasks, &currstate.pane)?;
+        cursory = render_tasks_date(date, cursorx, cursory, tasks_pane_width, is_selected, currstate.task_id, is_today, tasks, &currstate.pane)?;
         // Divider between selected date and upcoming dates
         if date_offset == 0 {
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
-            text::padded_text_styled("──── Upcoming ".dark_grey(), TASKS_PANE_WIDTH, "─".dark_grey())?;
+            text::padded_text_styled("──── Upcoming ".dark_grey(), tasks_pane_width, "─".dark_grey())?;
             queue!(stdout, style::Print("│"))?;
             cursory += 1;
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
-            text::pad_characters(TASKS_PANE_WIDTH, 0, " ")?;
+            text::pad_characters(tasks_pane_width, 0, " ")?;
             queue!(stdout, style::Print("│"))?;
             cursory += 1;
         }
@@ -531,18 +516,22 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     for newy in cursory..calendarframe_bottom_y {
         // Clear out this line
         queue!(stdout, cursor::MoveTo(cursorx, newy))?;
-        text::pad_characters(TASKS_PANE_WIDTH, 0, " ")?;
+        text::pad_characters(tasks_pane_width, 0, " ")?;
         queue!(stdout, style::Print("│"))?;
     }
     cursory = calendarframe_bottom_y;
-    // Bottom frame closer
-    queue!(stdout, cursor::MoveTo(0, cursory))?;
-    text::println(cursory, "└────────────────────────────┴──────────────────────────────────────────────┘")?;
+    // Bottom container edge
+    queue!(stdout, cursor::MoveTo(0, cursory), style::Print("└"))?;
+    text::pad_characters(CALENDAR_WIDTH - 2, 0, "─")?;
+    queue!(stdout, style::Print("┴"))?;
+    text::pad_characters(tasks_pane_width, 0, "─")?;
+    queue!(stdout, style::Print("┘"))?;
+    text::clear_rest_of_line()?;
     cursory += 1;
 
     // End
     queue!(stdout, cursor::MoveTo(0, cursory))?;
-    text::cleartoend()?;
+    text::clear_to_end()?;
 
     // Specifically highlighted section
 

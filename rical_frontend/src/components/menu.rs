@@ -45,7 +45,7 @@ fn render_mainmenu() -> io::Result<()> {
     text::println(7, "System")?;
     text::println(8, "(a) About")?;
     text::println(9, "(Ctrl+C | Ctrl+Q) Quit")?;
-    text::cleartoend()?;
+    text::clear_to_end()?;
 
     Ok(())
 }
@@ -88,7 +88,7 @@ pub fn render(currstate: &state::MenuState) -> io::Result<()> {
             text::println(2, "Rical Frontend")?;
             text::println(3, "")?;
             text::println(4, "By Cadecraft and any other Rical contributors (MIT license)")?;
-            text::cleartoend()?;
+            text::clear_to_end()?;
         },
         state::MenuState::Login(login_state) => {
             login::render(login_state)?;
@@ -98,7 +98,7 @@ pub fn render(currstate: &state::MenuState) -> io::Result<()> {
             text::println(0, "(esc) back")?;
             text::println(1, "")?;
             text::println(2, "Signup")?;
-            text::cleartoend()?;
+            text::clear_to_end()?;
         },
     };
 

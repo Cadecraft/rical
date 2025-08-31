@@ -67,7 +67,7 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
             text::println(3, "If you don't have an account, sign up first!")?;
             text::println(4, "")?;
             text::println(5, &format!("Error message: {}", error_message))?;
-            text::cleartoend()?;
+            text::clear_to_end()?;
         },
         state::LoginState::EnteringInfo { form_pos, username, password } => {
             text::println(0, "(esc) back")?;
@@ -94,7 +94,7 @@ pub fn render(currstate: &state::LoginState) -> io::Result<()> {
             text::println(6, "")?;
 
             text::println(7, if *form_pos == 0 { "(enter) Next field" } else { "(enter) Submit" })?;
-            text::cleartoend()?;
+            text::clear_to_end()?;
         }
     };
 
