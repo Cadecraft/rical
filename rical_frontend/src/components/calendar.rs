@@ -20,6 +20,8 @@ enum CalAction {
     Move(utils::GridDirection),
     SwitchToMonth,
     SwitchToTasks,
+    SelectTaskUp,
+    SelectTaskDown,
     None
 }
 
@@ -46,7 +48,11 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         },
         state::CalendarPane::Tasks => {
-            if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
+            if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('j')) {
+                CalAction::SelectTaskDown
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('k')) {
+                CalAction::SelectTaskUp
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
                 CalAction::SwitchToMonth
             } else {
                 CalAction::None
@@ -54,14 +60,16 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         }
     };
 
+    let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
+
     state::ScreenState::Calendar(match action {
         CalAction::Move(dir) => {
-            let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
             let res = utils::calendar_grid_navigation(&selected_date, dir);
             state::CalendarState {
                 year: res.year,
                 month: res.month,
                 day: res.day,
+                task_id: None,
                 ..currstate.clone()
             }
         },
@@ -77,6 +85,42 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 ..currstate.clone()
             }
         },
+        CalAction::SelectTaskUp => {
+            let calendar_tasks = api_handler.fetch_calendar_tasks_cached(selected_date.year, selected_date.month);
+
+            // Select the task above the current one, or none (signifying we've reached the date)
+            // If there is no task before the current one, deselect any task so that the date alone is selected
+            // If there is no current task (i.e. the date is selected), move to the last task of the previous date
+
+            match currstate.task_id {
+                Some(id) => {
+                    // Previous task or the parent date
+                    // TODO: impl
+                    currstate.clone()
+                },
+                None => {
+                    // Previous date
+                    let res = selected_date.sub_days(1);
+                    // TODO: the "previous date's last task" specification above
+                    state::CalendarState {
+                        year: res.year,
+                        month: res.month,
+                        day: res.day,
+                        task_id: None,
+                        ..currstate.clone()
+                    }
+                }
+            }
+        }
+        CalAction::SelectTaskDown => {
+            // Select the task after the current one
+            // If there is no current one, select the next task or the next date
+            // If there is no task after the current one, move to the next date
+            // TODO: the full specification above
+            state::CalendarState {
+                ..currstate.clone()
+            }
+        }
         CalAction::None => currstate.clone()
     })
 }
@@ -166,6 +210,7 @@ pub fn render_tasks_date(
     x: u16,
     y: u16,
     is_selected: bool,
+    selected_task_id: Option<i64>,
     is_today: bool,
     tasks: &Vec<types::TaskDataWithId>,
     pane: &state::CalendarPane
@@ -176,15 +221,16 @@ pub fn render_tasks_date(
     // Date title
     let date_title = format!(" {} - {} ", date.format(), date.weekday_name());
     let date_title_len = date_title.len();
+    let is_title_selected = is_selected && selected_task_id.is_none();
     queue!(stdout,
         cursor::MoveTo(x, cursory),
         style::PrintStyledContent(
-            if is_selected && is_today {
+            if is_title_selected && is_today {
                 match pane {
                     state::CalendarPane::Month => date_title.black().on_dark_blue(),
                     state::CalendarPane::Tasks => date_title.dark_blue().on_white(),
                 }
-            } else if is_selected {
+            } else if is_title_selected {
                 match pane {
                     state::CalendarPane::Month => date_title.black().on_dark_grey(),
                     state::CalendarPane::Tasks => date_title.black().on_white(),
@@ -206,10 +252,33 @@ pub fn render_tasks_date(
         const COL_TIME_WIDTH: u16 = 15;
         text::padded_text(&format!("   {}", utils::fmt_timerange(task.start_min, task.end_min)), COL_TIME_WIDTH, " ")?;
         // Checkbox column
+        let is_task_selected = match selected_task_id {
+            Some(id) => {
+                // Is this the current task?
+                // TODO: impl
+                true
+            },
+            None => false
+        };
         queue!(stdout, if task.complete {
-            style::PrintStyledContent("[x] ".dark_grey())
+            let checkbox = "[x] ";
+            style::PrintStyledContent(if is_task_selected && is_selected {
+                // TODO: dark grey or black?
+                checkbox.black().on_white()
+            } else if is_task_selected {
+                checkbox.black().on_dark_grey()
+            } else {
+                checkbox.dark_grey()
+            })
         } else {
-            style::PrintStyledContent("[ ] ".reset())
+            let checkbox = "[ ] ";
+            style::PrintStyledContent(if is_task_selected && is_selected {
+                checkbox.black().on_white()
+            } else if is_task_selected {
+                checkbox.black().on_dark_grey()
+            } else {
+                checkbox.reset()
+            })
         })?;
         // Task text column
         // TODO: multiline
@@ -331,7 +400,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         let is_today = date == utils::RicalDate::today();
         let empty_tasks = vec![];
         let tasks = calendar_tasks.days.get((date.day - 1) as usize).unwrap_or(&empty_tasks);
-        cursory = render_tasks_date(date, cursorx, cursory, is_selected, is_today, tasks, &currstate.pane)?;
+        cursory = render_tasks_date(date, cursorx, cursory, is_selected, currstate.task_id, is_today, tasks, &currstate.pane)?;
         // Divider between selected date and upcoming dates
         if date_offset == 0 {
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;

@@ -50,16 +50,18 @@ pub struct CalendarState {
     pub year: i32,
     pub month: u32,
     pub day: u32,
+    pub task_id: Option<i64>,
     pub pane: CalendarPane
 }
 
 impl CalendarState {
     pub fn new() -> CalendarState {
-        // TODO: get current year/day
+        // TODO: get current year/day, or ask for those as parameters
         CalendarState {
             year: 2025,
             month: 8,
             day: 5,
+            task_id: None,
             pane: CalendarPane::Month
         }
     }

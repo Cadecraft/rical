@@ -66,6 +66,7 @@ pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo, api_handler: &m
             login::handle_input(login_state, key, api_handler)
         },
         state::MenuState::Signup(_) => {
+            // TODO: impl signup
             if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
                 state::ScreenState::Menu(state::MenuState::MainMenu)
             } else {
@@ -93,6 +94,7 @@ pub fn render(currstate: &state::MenuState) -> io::Result<()> {
             login::render(login_state)?;
         },
         state::MenuState::Signup(_) => {
+            // TODO: impl signup
             text::println(0, "(esc) back")?;
             text::println(1, "")?;
             text::println(2, "Signup")?;

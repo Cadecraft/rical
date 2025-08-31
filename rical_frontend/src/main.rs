@@ -34,6 +34,7 @@ fn main() -> io::Result<()> {
             year: 2025,
             month: 8,
             day: 2,
+            task_id: None,
             pane: state::CalendarPane::Month
         })
     };
