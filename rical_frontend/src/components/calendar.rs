@@ -205,76 +205,107 @@ const CALENDAR_WIDTH: u16 = 30;
 const TASKS_PANE_WIDTH: u16 = 46;
 const DATE_HEIGHT: u16 = 4;
 
+/// A small, colorful representation of a task
+pub fn render_task_candy(x: u16, y: u16, task: &types::TaskDataWithId, overdue: bool) -> io::Result<()> {
+    let mut stdout = io::stdout();
+
+    // TODO: in the future, determine whether overdue here? (issue only arises with demo fake api data)
+
+    let task_char = if task.start_min.is_some() && task.end_min.is_none() {
+        "▼"
+    } else { match task.duration_mins() {
+        Some(dur) => {
+            if dur <= 15 { "▂" }
+            else if dur <= 30 { "▃" }
+            else if dur <= 45 { "▄" }
+            else if dur <= 60 { "▅" }
+            else if dur <= 120 { "▆" }
+            else { "█" }
+        }
+        None => "•",
+    } };
+
+    queue!(stdout,
+        cursor::MoveTo(x, y),
+        style::PrintStyledContent(
+            if task.complete {
+                task_char.dark_green()
+            } else if overdue {
+                task_char.dark_yellow()
+            } else {
+                task_char.dark_blue()
+            }
+        )
+    )?;
+    Ok(())
+}
+
 // TODO: use styles instead
-pub fn render_date(
-    day_of_month: i32,
+pub fn render_date_square(
+    date: Option<utils::RicalDate>,
     x: u16,
     y: u16,
     is_selected: bool,
-    is_today: bool,
     tasks: &Vec<types::TaskDataWithId>,
     pane: &state::CalendarPane
 ) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    let dateformat = if day_of_month > 9 {
-        format!(" {} ", day_of_month.to_string())
-    } else if day_of_month > 0 {
-        format!(" 0{} ", day_of_month.to_string())
-    } else {
-        " -- ".to_string()
+    let dayformat = match &date {
+        Some(d) => {
+            if d.day > 9 {
+                format!(" {} ", d.day.to_string())
+            } else {
+                format!(" 0{} ", d.day.to_string())
+            }
+        },
+        None => " -- ".to_string()
     };
+
+    let is_today = match &date { Some(d) => *d == utils::RicalDate::today(), None => false };
+    let is_overdue = match &date { Some(d) => *d < utils::RicalDate::today(), None => false };
 
     queue!(stdout,
         cursor::MoveTo(x, y),
         style::PrintStyledContent(
-            if day_of_month <= 0 {
-                dateformat.dark_grey()
+            if date.is_none() {
+                dayformat.dark_grey()
             }
             else if is_selected && is_today {
                 match pane {
-                    state::CalendarPane::Month => dateformat.black().on_dark_cyan(),
-                    state::CalendarPane::Tasks => dateformat.cyan().on_dark_grey(),
+                    state::CalendarPane::Month => dayformat.black().on_dark_cyan(),
+                    state::CalendarPane::Tasks => dayformat.cyan().on_dark_grey(),
                 }
             } else if is_selected {
                 match pane {
-                    state::CalendarPane::Month => dateformat.black().on_white(),
-                    state::CalendarPane::Tasks => dateformat.black().on_dark_grey(),
+                    state::CalendarPane::Month => dayformat.black().on_white(),
+                    state::CalendarPane::Tasks => dayformat.black().on_dark_grey(),
                 }
             } else if is_today {
-                dateformat.cyan()
+                dayformat.cyan()
             } else {
-                dateformat.reset()
+                dayformat.reset()
             }
         )
     )?;
     // TODO: print tasks beneath
     // TODO: refactor this
-    queue!(stdout,
-        // First 2 tasks
-        cursor::MoveTo(x, y + 1),
-        style::Print(" "),
-        style::Print(if tasks.len() > 0 {
-            "▆"
-        } else { " " }),
-        style::Print(if tasks.len() > 1 {
-            "▆"
-        } else { " " }),
-        style::Print(" "),
-        // Second 2 tasks
-        cursor::MoveTo(x, y + 2),
-        style::Print(" "),
-        style::Print(if tasks.len() > 2 {
-            "▆"
-        } else { " " }),
-        style::Print(if tasks.len() > 3 {
-            "▆"
-        } else { " " }),
-        style::Print(" "),
-        // End
-        cursor::MoveTo(x, y + 3),
-        style::Print("   ")
-    )?;
+    const MAX_TASKS_DISPLAYED: usize = 6;
+    for i in 0..MAX_TASKS_DISPLAYED {
+        let task_x = x + i as u16 % 2;
+        let task_y = y + 1 + i as u16 / 2;
+        match tasks.get(i) {
+            Some(task) => {
+                render_task_candy(task_x, task_y, &task, is_overdue)?;
+            },
+            None => {
+                queue!(stdout,
+                    cursor::MoveTo(task_x, task_y),
+                    style::Print(" ")
+                )?;
+            }
+        }
+    }
 
     Ok(())
 }
@@ -322,10 +353,14 @@ pub fn render_tasks_date(
     cursory += 1;
     // Tasks below the date
     for task in tasks {
-        queue!(stdout, cursor::MoveTo(x, cursory))?;
+        queue!(stdout, cursor::MoveTo(x, cursory), style::Print(" "))?;
+        // Candy column
+        let overdue = date < utils::RicalDate::today();
+        render_task_candy(x + 1, cursory, task, overdue)?;
         // Time column
-        const COL_TIME_WIDTH: u16 = 15;
-        text::padded_text(&format!("   {}", utils::fmt_timerange(task.start_min, task.end_min)), COL_TIME_WIDTH, " ")?;
+        const COL_TIME_WIDTH: u16 = 13;
+        let timerange_text = format!(" {}", utils::fmt_timerange(task.start_min, task.end_min));
+        text::padded_text_styled(if task.complete { (&timerange_text as &str).dark_grey() } else { (&timerange_text as &str).reset() }, COL_TIME_WIDTH, " ".reset())?;
         // Checkbox column
         let is_task_selected = is_selected && match selected_task_id {
             Some(id) => task.task_id == id,
@@ -336,11 +371,11 @@ pub fn render_tasks_date(
             style::PrintStyledContent(if is_task_selected {
                 match pane {
                     // TODO: dark grey or black?
-                    state::CalendarPane::Month => checkbox.black().on_dark_grey(),
-                    state::CalendarPane::Tasks => checkbox.black().on_white(),
+                    state::CalendarPane::Month => checkbox.green().on_dark_grey(),
+                    state::CalendarPane::Tasks => checkbox.black().on_dark_green(),
                 }
             } else {
-                checkbox.dark_grey()
+                checkbox.green()
             })
         } else {
             let checkbox = "[ ]";
@@ -357,7 +392,7 @@ pub fn render_tasks_date(
         // TODO: multiline
         // TODO: descriptions too?
         // TODO: what if user selects it
-        text::padded_text(&task.title, TASKS_PANE_WIDTH - COL_TIME_WIDTH - 4, " ")?;
+        text::padded_text_styled(if task.complete { (&task.title as &str).dark_grey() } else { (&task.title as &str).reset() }, TASKS_PANE_WIDTH - COL_TIME_WIDTH - 6, " ".reset())?;
         queue!(stdout, style::Print("│"))?;
         cursory += 1;
     }
@@ -440,14 +475,15 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         let mut cursorx = 1;
         for date in week {
             // Date itself
-            // TODO: refactor
-            // TODO: improve colors
-            let today = utils::RicalDate::today();
-            let is_today = today.year == selected_date.year && today.month == selected_date.month && today.day as i32 == date;
             let is_selected = date == selected_date.day as i32;
             let empty_tasks = vec![];
             let tasks = calendar_tasks.days.get((date - 1) as usize).unwrap_or(&empty_tasks);
-            render_date(date, cursorx, cursory, is_selected, is_today, tasks, &currstate.pane)?;
+            let date_opt = if date > 0 {
+                Some(utils::RicalDate::new(selected_date.year, selected_date.month, date as u32))
+            } else {
+                None
+            };
+            render_date_square(date_opt, cursorx, cursory, is_selected, tasks, &currstate.pane)?;
 
             cursorx += DATE_HEIGHT;
         }

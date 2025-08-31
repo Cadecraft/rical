@@ -96,8 +96,8 @@ impl ApiHandler {
             month: 8,
             day: 7,
             start_min: Some(480),
-            end_min: None,
-            title: "Test 3".to_string(),
+            end_min: Some(497),
+            title: "Test 4".to_string(),
             description: None,
             complete: true,
             task_id: 6

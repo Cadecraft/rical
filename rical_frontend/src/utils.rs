@@ -1,4 +1,5 @@
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
+use std::cmp::Ordering;
 
 use chrono::{NaiveDate, Datelike};
 
@@ -18,6 +19,7 @@ pub fn key_pressed(key: &KeyInfo, modifiers: KeyModifiers, code: KeyCode) -> boo
 }
 
 /// Represent a date internally to Rical
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct RicalDate {
     pub year: i32,
     pub month: u32,
@@ -83,12 +85,6 @@ impl RicalDate {
         const WEEKDAY_NAMES: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         let weekday = self.to_naive_date().weekday().number_from_sunday() - 1;
         WEEKDAY_NAMES[weekday as usize].to_string()
-    }
-}
-
-impl PartialEq for RicalDate {
-    fn eq(&self, other: &RicalDate) -> bool {
-        self.year == other.year && self.month == other.month && self.day == other.day
     }
 }
 

@@ -28,6 +28,16 @@ pub struct TaskDataWithId {
     pub task_id: i64
 }
 
+impl TaskDataWithId {
+    pub fn duration_mins(&self) -> Option<i32> {
+        if self.start_min.is_some() && self.end_min.is_some() {
+            Some(self.end_min.unwrap() - self.start_min.unwrap())
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Serialize)]
 pub struct CalendarTasks {
     pub days: Vec<Vec<TaskDataWithId>>
