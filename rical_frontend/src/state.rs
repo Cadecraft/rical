@@ -1,3 +1,5 @@
+use crate::utils::RicalDate;
+
 /// Stores the entire hierarchy of state in the app
 /// `screen_state` deals with the state of the UI
 /// Other fields can be added to represent important global state
@@ -67,7 +69,8 @@ pub struct CalendarState {
     pub month: u32,
     pub day: u32,
     pub task_id: Option<i64>,
-    pub pane: CalendarPane
+    pub pane: CalendarPane,
+    pub making_new_task: Option<CalendarNewTaskState>,
 }
 
 impl CalendarState {
@@ -78,7 +81,31 @@ impl CalendarState {
             month: 8,
             day: 5,
             task_id: None,
-            pane: CalendarPane::Month
+            pane: CalendarPane::Month,
+            making_new_task: None
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct CalendarNewTaskState {
+    pub form_pos: u32,
+    pub date: RicalDate,
+    pub start_time: TextInputState,
+    pub end_time: TextInputState,
+    pub title: TextInputState,
+    pub descr: TextInputState
+}
+
+impl CalendarNewTaskState {
+    pub fn new(current_date: RicalDate) -> CalendarNewTaskState {
+        CalendarNewTaskState {
+            form_pos: 0,
+            date: current_date.clone(),
+            start_time: TextInputState::new(),
+            end_time: TextInputState::new(),
+            title: TextInputState::new(),
+            descr: TextInputState::new()
         }
     }
 }

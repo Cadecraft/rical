@@ -1,5 +1,4 @@
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
-use std::cmp::Ordering;
 
 use chrono::{NaiveDate, Datelike};
 
@@ -19,7 +18,7 @@ pub fn key_pressed(key: &KeyInfo, modifiers: KeyModifiers, code: KeyCode) -> boo
 }
 
 /// Represent a date internally to Rical
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RicalDate {
     pub year: i32,
     pub month: u32,

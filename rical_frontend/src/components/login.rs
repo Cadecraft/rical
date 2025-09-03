@@ -1,9 +1,6 @@
 use std::io;
 use crossterm::{
-    queue,
-    cursor,
     event::{KeyCode, KeyModifiers},
-    style::{self},
 };
 
 use crate::state;

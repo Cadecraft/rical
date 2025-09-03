@@ -65,6 +65,7 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> (state:
             KeyCode::Home => {
                 (state::TextInputState { cursor_pos: 0, ..currstate.clone() }, false)
             },
+            // TODO: allow "tab" to go forwards but not submit
             _ => (currstate.clone(), false)
         },
         KeyModifiers::SHIFT => match key.code {
@@ -83,6 +84,7 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> (state:
                 chars.remove(cursor_pos - 1);
                 (state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos - 1 }, false)
             },
+            // TODO: allow "shift+tab" to go backwards
             _ => (currstate.clone(), false)
         },
         KeyModifiers::CONTROL => match key.code {
@@ -145,10 +147,15 @@ pub fn render(label: &str, currstate: &state::TextInputState, styles: Styles, mo
         count += 1;
     }
     text::pad_characters(total_width, count, "_")?;
-    // Clear to the end of the line
-    queue!(stdout,
-        Clear(ClearType::UntilNewLine)
-    )?;
+    // Clear to the end of the line unless explicitly told not to
+    match styles.last_in_row {
+        Some(is_last) => if is_last {
+            text::clear_rest_of_line()?;
+        },
+        _ => {
+            text::clear_rest_of_line()?;
+        }
+    };
     // Render the "cursor" if the user is actively typing
     if styles.active {
         let char_under_cursor = currstate.contents.chars().nth(currstate.cursor_pos).unwrap_or('_').to_string();

@@ -14,6 +14,7 @@ use crate::api::ApiHandler;
 use crate::types;
 
 use crate::components::text;
+use crate::components::new_task_form;
 
 // The main calendar screen
 
@@ -23,10 +24,15 @@ enum CalAction {
     SwitchToTasks,
     SelectTaskUp,
     SelectTaskDown,
+    StartNewTask,
     None
 }
 
 pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
+    if currstate.making_new_task.is_some() {
+        return new_task_form::handle_input(currstate, key, api_handler);
+    }
+
     if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('m')) {
         return state::ScreenState::Menu(state::MenuState::MainMenu);
     }
@@ -42,6 +48,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::Move(utils::GridDirection::Left)
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('l')) {
                 CalAction::Move(utils::GridDirection::Right)
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('o')) {
+                CalAction::StartNewTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Enter) {
                 CalAction::SwitchToTasks
             } else {
@@ -59,6 +67,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('w')) {
                 // Forward a day
                 CalAction::Move(utils::GridDirection::Right)
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('o')) {
+                CalAction::StartNewTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
                 CalAction::SwitchToMonth
             } else {
@@ -92,6 +102,12 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 ..currstate.clone()
             }
         },
+        CalAction::StartNewTask => {
+            state::CalendarState {
+                making_new_task: Some(state::CalendarNewTaskState::new(selected_date)),
+                ..currstate.clone()
+            }
+        }
         CalAction::SelectTaskUp => {
             let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
 
@@ -290,11 +306,9 @@ pub fn render_date_square(
             }
         )
     )?;
-    // TODO: print tasks beneath
-    // TODO: refactor this
     const MAX_TASKS_DISPLAYED: usize = 6;
     for i in 0..MAX_TASKS_DISPLAYED {
-        let task_x = x + i as u16 % 2;
+        let task_x = 1 + x + i as u16 % 2;
         let task_y = y + 1 + i as u16 / 2;
         match tasks.get(i) {
             Some(task) => {
@@ -307,6 +321,11 @@ pub fn render_date_square(
                 )?;
             }
         }
+    }
+    // Clear the rest of the space beneath the date
+    for clear_y in 0..3 {
+        queue!(stdout, cursor::MoveTo(x, y + clear_y + 1), style::Print(" "))?;
+        queue!(stdout, cursor::MoveTo(x + 3, y + clear_y + 1), style::Print(" "))?;
     }
 
     Ok(())
@@ -407,6 +426,10 @@ pub fn render_tasks_date(
 }
 
 pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) -> io::Result<()> {
+    if currstate.making_new_task.is_some() {
+        return new_task_form::render(currstate);
+    }
+
     let mut stdout = io::stdout();
 
     // Organize state
@@ -532,8 +555,6 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     // End
     queue!(stdout, cursor::MoveTo(0, cursory))?;
     text::clear_to_end()?;
-
-    // Specifically highlighted section
 
     Ok(())
 }

@@ -35,7 +35,8 @@ fn main() -> io::Result<()> {
             month: 8,
             day: 2,
             task_id: None,
-            pane: state::CalendarPane::Month
+            pane: state::CalendarPane::Month,
+            making_new_task: None
         })
     };
     let mut api_handler = api::ApiHandler::new();
