@@ -372,6 +372,7 @@ pub fn render_tasks_date(
     )?;
     text::pad_characters(tasks_pane_width, date_title_len as u16, " ")?;
     queue!(stdout, style::Print("│"))?;
+    queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
     cursory += 1;
     // Tasks below the date
     for task in tasks {
@@ -416,11 +417,13 @@ pub fn render_tasks_date(
         // TODO: what if user selects it
         text::padded_text_styled(if task.complete { (&task.title as &str).dark_grey() } else { (&task.title as &str).reset() }, tasks_pane_width - COL_TIME_WIDTH - 6, " ".reset())?;
         queue!(stdout, style::Print("│"))?;
+        queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         cursory += 1;
     }
     queue!(stdout, cursor::MoveTo(x, cursory))?;
     text::pad_characters(tasks_pane_width, 0, " ")?;
     queue!(stdout, style::Print("│"))?;
+    queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
     cursory += 1;
     Ok(cursory)
 }
@@ -446,35 +449,45 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     text::println(0, "[username]'s Calendar ([private])")?;
     text::println(1, "(Ctrl+M) menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
     text::println(2, "")?;
-    // Titles
-    queue!(stdout, cursor::MoveTo(0, 3), style::Print(" "))?;
+    // Titles and top container edge
+    queue!(stdout, cursor::MoveTo(0, 3), style::Print("┌"))?;
+    queue!(stdout, style::PrintStyledContent(match currstate.pane {
+        state::CalendarPane::Month => "─".blue(),
+        state::CalendarPane::Tasks => "─".reset()
+    }))?;
     let calendar_title = format!(" {}/{} - {} ", selected_date.year, utils::fmt_twodigit(selected_date.month), utils::get_month_name(selected_date.month));
     let calendar_title_str: &str = &calendar_title;
     text::padded_text_styled(match currstate.pane {
-        state::CalendarPane::Month => calendar_title_str.black().on_dark_blue(),
-        state::CalendarPane::Tasks => calendar_title_str.reset(),
-    }, CALENDAR_WIDTH - 1, " ".reset())?;
+        state::CalendarPane::Month => calendar_title_str.blue(),
+        state::CalendarPane::Tasks => calendar_title_str.dark_grey(),
+    }, CALENDAR_WIDTH - 3, match currstate.pane {
+        state::CalendarPane::Month => "─".blue(),
+        state::CalendarPane::Tasks => "─".reset(),
+    })?;
+    queue!(stdout, style::Print("┬"))?;
+    queue!(stdout, style::PrintStyledContent(match currstate.pane {
+        state::CalendarPane::Month => "─".reset(),
+        state::CalendarPane::Tasks => "─".blue()
+    }))?;
     let tasks_title_str = " Tasks ";
     text::padded_text_styled(match currstate.pane {
-        state::CalendarPane::Month => tasks_title_str.reset(),
-        state::CalendarPane::Tasks => tasks_title_str.black().on_dark_blue(),
-    }, tasks_pane_width, " ".reset())?;
-    // Top container edge
-    queue!(stdout, cursor::MoveTo(0, 4), style::Print("┌"))?;
-    text::pad_characters(CALENDAR_WIDTH - 2, 0, "─")?;
-    queue!(stdout, style::Print("┬"))?;
-    text::pad_characters(tasks_pane_width, 0, "─")?;
+        state::CalendarPane::Month => tasks_title_str.dark_grey(),
+        state::CalendarPane::Tasks => tasks_title_str.blue(),
+    }, tasks_pane_width - 1, match currstate.pane {
+        state::CalendarPane::Month => "─".reset(),
+        state::CalendarPane::Tasks => "─".blue(),
+    })?;
     queue!(stdout, style::Print("┐"))?;
     text::clear_rest_of_line()?;
     queue!(stdout,
-        cursor::MoveTo(0, 5),
+        cursor::MoveTo(0, 4),
         style::Print("│"),
         style::Print(" Su  Mo  Tu  We  Th  Fr  Sa │")
     )?;
     // Individual sections
     // Calendar
     let calendar_frame = get_calendar_frame(selected_date.year, selected_date.month);
-    let mut cursory = 6;
+    let mut cursory = 5;
     for week in calendar_frame {
         queue!(stdout,
             cursor::MoveTo(0, cursory),
@@ -510,7 +523,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     // Tasks menu
     // This should display tasks grouped by the current day and the days surrounding it
     const DAYS_DISPLAYED: u64 = 7;
-    cursory = 5;
+    cursory = 4;
     let cursorx = CALENDAR_WIDTH;
     for date_offset in 0..DAYS_DISPLAYED {
         let date = selected_date.add_days(date_offset);
@@ -528,10 +541,12 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
             text::padded_text_styled("──── Upcoming ".dark_grey(), tasks_pane_width, "─".dark_grey())?;
             queue!(stdout, style::Print("│"))?;
+            queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
             cursory += 1;
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
             text::pad_characters(tasks_pane_width, 0, " ")?;
             queue!(stdout, style::Print("│"))?;
+            queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
             cursory += 1;
         }
     }
