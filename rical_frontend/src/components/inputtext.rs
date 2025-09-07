@@ -3,7 +3,6 @@ use crossterm::{
     queue,
     cursor,
     event::{KeyCode, KeyModifiers},
-    terminal::{Clear, ClearType},
     style::{self, Stylize}
 };
 

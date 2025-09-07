@@ -44,7 +44,7 @@ fn render_mainmenu() -> io::Result<()> {
     text::println(6, "")?;
     text::println(7, "System")?;
     text::println(8, "(a) About")?;
-    text::println(9, "(Ctrl+C | Ctrl+Q) Quit")?;
+    text::println(9, "(^C) Quit")?;
     text::clear_to_end()?;
 
     Ok(())

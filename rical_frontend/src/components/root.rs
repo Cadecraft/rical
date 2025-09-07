@@ -1,7 +1,5 @@
 use std::io;
 use crossterm::{
-    queue,
-    terminal,
     event::{KeyCode, KeyModifiers}
 };
 
@@ -16,8 +14,7 @@ use crate::components::{menu, calendar};
 /// Handle a keypress and return the new state
 pub fn handle_input(currstate: &RicalState, key: &KeyInfo, api_handler: &mut ApiHandler) -> RicalState {
     // Handle GLOBAL inputs (as this is the top level component)
-    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('q')) || key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('c')) {
-        // Quit
+    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('c')) {
         return state::RicalState {
             screen_state: state::ScreenState::ShouldQuit
         };

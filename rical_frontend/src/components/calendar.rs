@@ -219,9 +219,24 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
 
 // Rendering constants
 const CALENDAR_WIDTH: u16 = 30;
+const CALENDAR_MARGIN_TOP: u16 = 2;
 const TASKS_PANE_WIDTH_MIN: u16 = 24;
 const TASKS_PANE_WIDTH_MAX: u16 = 90;
-const DATE_HEIGHT: u16 = 4;
+const DATE_SQUARE_WIDTH: u16 = 4;
+/// The largest vertial height of the terminal where we need Mini Mode
+/// (i.e. dates in the calendar are collapsed to take up less height)
+const MINI_HEIGHT_BREAKPOINT: u16 = 29;
+
+fn get_viewport_width() -> io::Result<u16> {
+    let terminal_width = terminal::size()?.0;
+    Ok(terminal_width - 1)
+}
+
+/// Whether the height is small enough that the dates must be collapsed vertically
+fn is_mini_mode() -> io::Result<bool> {
+    let terminal_height = terminal::size()?.1;
+    Ok(terminal_height <= MINI_HEIGHT_BREAKPOINT)
+}
 
 /// A small, colorful representation of a task
 pub fn render_task_candy(x: u16, y: u16, task: &types::TaskDataWithId, overdue: bool) -> io::Result<()> {
@@ -283,6 +298,8 @@ pub fn render_date_square(
     let is_today = match &date { Some(d) => *d == utils::RicalDate::today(), None => false };
     let is_overdue = match &date { Some(d) => *d < utils::RicalDate::today(), None => false };
 
+    let date_height: u16 = if is_mini_mode()? { 3 } else { 4 };
+
     queue!(stdout,
         cursor::MoveTo(x, y),
         style::PrintStyledContent(
@@ -306,11 +323,11 @@ pub fn render_date_square(
             }
         )
     )?;
-    const MAX_TASKS_DISPLAYED: usize = 6;
-    for i in 0..MAX_TASKS_DISPLAYED {
-        let task_x = 1 + x + i as u16 % 2;
-        let task_y = y + 1 + i as u16 / 2;
-        match tasks.get(i) {
+    let max_tasks_displayed = (date_height - 1) * 2;
+    for i in 0..max_tasks_displayed {
+        let task_x = 1 + x + i % 2;
+        let task_y = y + 1 + i / 2;
+        match tasks.get(i as usize) {
             Some(task) => {
                 render_task_candy(task_x, task_y, &task, is_overdue)?;
             },
@@ -323,7 +340,7 @@ pub fn render_date_square(
         }
     }
     // Clear the rest of the space beneath the date
-    for clear_y in 0..3 {
+    for clear_y in 0..(date_height - 1) {
         queue!(stdout, cursor::MoveTo(x, y + clear_y + 1), style::Print(" "))?;
         queue!(stdout, cursor::MoveTo(x + 3, y + clear_y + 1), style::Print(" "))?;
     }
@@ -441,16 +458,20 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     // Fetch data
     let calendar_tasks = api_handler.fetch_calendar_tasks_cached(selected_date.year, selected_date.month);
 
-    // Terminal width (for responsive layout)
-    let terminal_width = terminal::size()?.0;
-    let tasks_pane_width = std::cmp::min(TASKS_PANE_WIDTH_MAX, std::cmp::max(TASKS_PANE_WIDTH_MIN, terminal_width - CALENDAR_WIDTH - 2));
+    // Responsive layout
+    let viewport_width = get_viewport_width()?;
+    let tasks_pane_width = std::cmp::min(TASKS_PANE_WIDTH_MAX, std::cmp::max(TASKS_PANE_WIDTH_MIN, viewport_width - CALENDAR_WIDTH - 1));
+    let date_height: u16 = if is_mini_mode()? { 3 } else { 4 };
 
     // Main layout
-    text::println(0, "[username]'s Calendar ([private])")?;
-    text::println(1, "(Ctrl+M) menu/log out | (Ctrl+S) settings | (Ctrl+C) quit")?;
-    text::println(2, "")?;
+    let top_right_str = "(^M) menu/log out | (^S) settings | (^C) quit";
+    queue!(stdout, cursor::MoveTo(0, 0))?;
+    text::padded_text("[username]'s Calendar ([private])", viewport_width - top_right_str.chars().count() as u16, " ")?;
+    queue!(stdout, style::Print(top_right_str))?;
+    queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
+    text::println(1, "")?;
     // Titles and top container edge
-    queue!(stdout, cursor::MoveTo(0, 3), style::Print("┌"))?;
+    queue!(stdout, cursor::MoveTo(0, CALENDAR_MARGIN_TOP), style::Print("┌"))?;
     queue!(stdout, style::PrintStyledContent(match currstate.pane {
         state::CalendarPane::Month => "─".blue(),
         state::CalendarPane::Tasks => "─".reset()
@@ -480,14 +501,14 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     queue!(stdout, style::Print("┐"))?;
     text::clear_rest_of_line()?;
     queue!(stdout,
-        cursor::MoveTo(0, 4),
+        cursor::MoveTo(0, CALENDAR_MARGIN_TOP + 1),
         style::Print("│"),
         style::Print(" Su  Mo  Tu  We  Th  Fr  Sa │")
     )?;
     // Individual sections
     // Calendar
     let calendar_frame = get_calendar_frame(selected_date.year, selected_date.month);
-    let mut cursory = 5;
+    let mut cursory = CALENDAR_MARGIN_TOP + 2;
     for week in calendar_frame {
         queue!(stdout,
             cursor::MoveTo(0, cursory),
@@ -506,9 +527,9 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             };
             render_date_square(date_opt, cursorx, cursory, is_selected, tasks, &currstate.pane)?;
 
-            cursorx += DATE_HEIGHT;
+            cursorx += DATE_SQUARE_WIDTH;
         }
-        for _i in 0..DATE_HEIGHT {
+        for _i in 0..date_height {
             queue!(stdout,
                 cursor::MoveTo(0, cursory),
                 style::Print("│"),
@@ -523,7 +544,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     // Tasks menu
     // This should display tasks grouped by the current day and the days surrounding it
     const DAYS_DISPLAYED: u64 = 7;
-    cursory = 4;
+    cursory = CALENDAR_MARGIN_TOP + 1;
     let cursorx = CALENDAR_WIDTH;
     for date_offset in 0..DAYS_DISPLAYED {
         let date = selected_date.add_days(date_offset);
@@ -556,6 +577,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         queue!(stdout, cursor::MoveTo(cursorx, newy))?;
         text::pad_characters(tasks_pane_width, 0, " ")?;
         queue!(stdout, style::Print("│"))?;
+        queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
     }
     cursory = calendarframe_bottom_y;
     // Bottom container edge
