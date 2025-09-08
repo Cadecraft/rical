@@ -1,0 +1,164 @@
+use std::io;
+use crossterm::event::{KeyCode, KeyModifiers};
+
+use crate::state;
+use crate::utils::{KeyInfo, key_pressed};
+use crate::styles;
+
+use crate::components::text;
+use crate::components::inputtext;
+
+// A reusable form with multiple inputs
+
+enum FormAction {
+    CancelAll,
+    NextField,
+    PrevField,
+    Submit,
+    NormalTyping
+}
+
+pub enum FormResult {
+    InProgress,
+    // TODO: put a hashmap of the result (name: key) in Submit?
+    Submit,
+    CancelAll
+}
+
+pub fn handle_input(currstate: &state::FormState, key: &KeyInfo) -> (state::FormState, FormResult) {
+    if currstate.error_message.is_some() {
+        if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
+            return (currstate.clone(), FormResult::CancelAll);
+        } else {
+            return (currstate.clone(), FormResult::InProgress);
+        }
+
+    }
+
+    // Form navigation behavior is shared across all inputs
+    let num_fields = currstate.fields.len();
+    let action = if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
+        FormAction::CancelAll
+    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Enter) {
+        if currstate.form_pos == num_fields - 1 {
+            FormAction::Submit
+        } else {
+            FormAction::NextField
+        }
+    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Up) {
+        // Used up arrow because Shift+Tab may not be accessible in terminals
+        if currstate.form_pos > 0 {
+            FormAction::PrevField
+        } else {
+            FormAction::NormalTyping
+        }
+    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Tab)
+        || key_pressed(&key, KeyModifiers::NONE, KeyCode::Down) {
+        if currstate.form_pos != num_fields - 1 {
+            FormAction::NextField
+        } else {
+            FormAction::NormalTyping
+        }
+    } else {
+        FormAction::NormalTyping
+    };
+
+    match action {
+        FormAction::CancelAll => {
+            return (currstate.clone(), FormResult::CancelAll);
+        },
+        FormAction::Submit => {
+            return (currstate.clone(), FormResult::Submit);
+        },
+        FormAction::NextField => {
+            return (state::FormState {
+                form_pos: currstate.form_pos + 1,
+                ..currstate.clone()
+            }, FormResult::InProgress)
+        },
+        FormAction::PrevField => {
+            return (state::FormState {
+                form_pos: currstate.form_pos - 1,
+                ..currstate.clone()
+            }, FormResult::InProgress)
+        },
+        FormAction::NormalTyping => ()
+    };
+
+    let selected = &currstate.fields[currstate.form_pos];
+    // TODO: remove the bool return tuple from inputtext since forms now manage navigation
+    let res_singular = inputtext::handle_input(selected, key);
+    let mut res_all = currstate.fields.clone();
+    res_all[currstate.form_pos] = res_singular.0;
+    (state::FormState {
+        fields: res_all,
+        ..currstate.clone()
+    }, FormResult::InProgress)
+}
+
+pub struct FormFieldParameters {
+    pub name: String,
+    pub styles: styles::Styles,
+    pub input_mode: inputtext::InputMode
+}
+
+pub struct FormDecorationParameters {
+    pub text: String,
+    pub x: u16,
+    pub y: u16
+}
+
+pub struct FormRenderParameters {
+    /// The string that appears at the top of the form
+    pub title: String,
+    /// The y-position of the input hint line (e.g. `(enter) Submit`). No elements should be below this
+    pub hint_y: u16,
+    /// The length of `fields` must equal the number of fields in the state
+    /// and fields[i] must describe the same field as `currstate.fields[i]`
+    pub fields: Vec<FormFieldParameters>,
+    /// Additional strings to render on certain lines (e.g. to pad between two input fields on one line)
+    pub decoration_strings: Vec<FormDecorationParameters>,
+    /// The line numbers to make blank, no less than line 4 as lines 0..=3 are prehandled
+    pub clear_lines: Vec<u16>
+}
+
+pub fn render(currstate: &state::FormState, render_params: FormRenderParameters) -> io::Result<()> {
+    let num_fields = currstate.fields.len();
+
+    text::println(0, "(esc) back")?;
+    text::println(1, "")?;
+    text::println(2, &render_params.title)?;
+    text::println(3, "")?;
+
+    match &currstate.error_message {
+        Some(error) => {
+            for (i, error_line) in error.iter().enumerate() {
+                text::println(4 + i as u16, &error_line)?;
+            }
+            text::clear_to_end()?;
+        },
+        None => {
+            for (i, field) in currstate.fields.iter().enumerate() {
+                let field_params = &render_params.fields[i];
+                let field_styles = styles::Styles {
+                    active: i == currstate.form_pos,
+                    ..field_params.styles.clone()
+                };
+                inputtext::render(&field_params.name, &field, &field_styles, &field_params.input_mode)?;
+            }
+            for y in render_params.clear_lines {
+                text::println(y, "")?;
+            }
+
+            // TODO: allow a multi-line input?
+            // TODO: render decoration_strings
+            text::println(render_params.hint_y, if currstate.form_pos == num_fields - 1 {
+                "(enter) Submit"
+            } else {
+                "(enter) Next field"
+            })?;
+            text::clear_to_end()?;
+        }
+    };
+    Ok(())
+}

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct Styles {
     pub margin_left: u16,
     pub margin_top: u16,

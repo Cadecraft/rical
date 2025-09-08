@@ -12,13 +12,7 @@ use crate::components::text;
 
 fn handle_input_mainmenu(key: &KeyInfo) -> state::MenuState {
     if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
-        state::MenuState::Login(
-            state::LoginState::EnteringInfo {
-                form_pos: 0,
-                username: state::TextInputState::new(),
-                password: state::TextInputState::new(),
-            }
-        )
+        state::MenuState::Login(state::FormState::new(2))
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('s')) {
         state::MenuState::Signup(
             state::SignupState::EnteringInfo {
@@ -62,8 +56,8 @@ pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo, api_handler: &m
                 state::ScreenState::Menu(currstate.clone())
             }
         }
-        state::MenuState::Login(login_state) => {
-            login::handle_input(login_state, key, api_handler)
+        state::MenuState::Login(login_form) => {
+            login::handle_input(login_form, key, api_handler)
         },
         state::MenuState::Signup(_) => {
             // TODO: impl signup

@@ -127,7 +127,7 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> (state:
     }
 }
 
-pub fn render(label: &str, currstate: &state::TextInputState, styles: Styles, mode: InputMode) -> io::Result<()> {
+pub fn render(label: &str, currstate: &state::TextInputState, styles: &Styles, mode: &InputMode) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     let label_width = (label.chars().count() + 2) as u16;

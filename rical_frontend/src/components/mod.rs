@@ -6,3 +6,4 @@ mod inputtext;
 mod new_task_form;
 mod calendar;
 mod text;
+mod form;

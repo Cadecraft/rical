@@ -1,99 +1,75 @@
 use std::io;
-use crossterm::{
-    event::{KeyCode, KeyModifiers},
-};
 
 use crate::state;
-use crate::utils::{KeyInfo, key_pressed};
+use crate::utils::{KeyInfo};
 use crate::api::ApiHandler;
 
 use crate::components::inputtext;
+use crate::components::form;
 use crate::styles;
-use crate::components::text;
 
 // The login screen
 
-pub fn handle_input(currstate: &state::LoginState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
-    // Always allow esc to exit
-    if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
-        return state::ScreenState::Menu(state::MenuState::MainMenu);
-    }
-
-    match &currstate {
-        state::LoginState::EnteringInfo { form_pos, username, password } => {
-            if *form_pos == 0 {
-                // Entering username
-                let (new_username, should_submit) = inputtext::handle_input(username, key);
-                let new_form_pos = if should_submit { *form_pos + 1 } else { *form_pos };
-                state::ScreenState::Menu(state::MenuState::Login(state::LoginState::EnteringInfo {
-                    form_pos: new_form_pos, username: new_username, password: password.clone()
-                }))
-            } else {
-                // Entering password
-                let (new_password, should_submit) = inputtext::handle_input(password, key);
-                if should_submit {
-                    // Try to submit!
-                    // TODO: show loading screen
-                    match api_handler.try_login(username.contents.clone(), new_password.contents) {
-                        Ok(token) => {
-                            state::ScreenState::Calendar(state::CalendarState::new())
-                        }, _ => {
-                            // TODO: better error message
-                            state::ScreenState::Menu(state::MenuState::Login(state::LoginState::Failed {
-                                error_message: "Could not log in".to_string()
-                            }))
-                        }
-                    }
-                } else {
-                    state::ScreenState::Menu(state::MenuState::Login(state::LoginState::EnteringInfo {
-                        form_pos: *form_pos, username: username.clone(), password: new_password
+pub fn handle_input(currstate: &state::FormState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
+    let res = form::handle_input(currstate, key);
+    match res.1 {
+        form::FormResult::InProgress => {
+            state::ScreenState::Menu(state::MenuState::Login(res.0))
+        },
+        form::FormResult::CancelAll => {
+            state::ScreenState::Menu(state::MenuState::MainMenu)
+        },
+        form::FormResult::Submit => {
+            // TODO: show loading screen
+            let username = res.0.fields[0].contents.clone();
+            let password = res.0.fields[1].contents.clone();
+            match api_handler.try_login(username, password) {
+                Ok(token) => {
+                    state::ScreenState::Calendar(state::CalendarState::new())
+                }, _ => {
+                    // TODO: better error message
+                    state::ScreenState::Menu(state::MenuState::Login(state::FormState {
+                        error_message: Some(vec![
+                            "Login failed. Make sure your username and password are correct.".to_string(),
+                            "If you don't have an account, sign up first!".to_string()
+                        ]),
+                        ..res.0
                     }))
                 }
             }
-        },
-        _ => state::ScreenState::Menu(state::MenuState::Login(currstate.clone()))
+        }
     }
 }
 
-pub fn render(currstate: &state::LoginState) -> io::Result<()> {
-    match &currstate {
-        state::LoginState::Failed { error_message } => {
-            text::println(0, "(esc) back")?;
-            text::println(1, "")?;
-            text::println(2, "Login failed. Make sure your username and password are correct.")?;
-            text::println(3, "If you don't have an account, sign up first!")?;
-            text::println(4, "")?;
-            text::println(5, &format!("Error message: {}", error_message))?;
-            text::clear_to_end()?;
-        },
-        state::LoginState::EnteringInfo { form_pos, username, password } => {
-            text::println(0, "(esc) back")?;
-            text::println(1, "")?;
-            text::println(2, "Login")?;
-            text::println(3, "")?;
-
-            inputtext::render("Username", username, styles::Styles {
-                margin_left: 0,
-                margin_top: 4,
-                width: Some(38),
-                active: *form_pos == 0,
-                ..styles::Styles::new()
-            }, inputtext::InputMode::Normal)?;
-
-            inputtext::render("Password", password, styles::Styles {
-                margin_left: 0,
-                margin_top: 5,
-                width: Some(38),
-                active: *form_pos == 1,
-                ..styles::Styles::new()
-            }, inputtext::InputMode::Password)?;
-
-            text::println(6, "")?;
-
-            text::println(7, if *form_pos == 0 { "(enter) Next field" } else { "(enter) Submit" })?;
-            text::clear_to_end()?;
-        }
+pub fn render(currstate: &state::FormState) -> io::Result<()> {
+    let render_params = form::FormRenderParameters {
+        title: "Login".to_string(),
+        hint_y: 7,
+        fields: vec![
+            form::FormFieldParameters {
+                name: "Username".to_string(),
+                styles: styles::Styles {
+                    margin_left: 0,
+                    margin_top: 4,
+                    width: Some(38),
+                    ..styles::Styles::new()
+                },
+                input_mode: inputtext::InputMode::Normal
+            },
+            form::FormFieldParameters {
+                name: "Password".to_string(),
+                styles: styles::Styles {
+                    margin_left: 0,
+                    margin_top: 5,
+                    width: Some(38),
+                    ..styles::Styles::new()
+                },
+                input_mode: inputtext::InputMode::Password
+            }
+        ],
+        decoration_strings: vec![],
+        clear_lines: vec![6]
     };
-
+    form::render(currstate, render_params)?;
     Ok(())
 }

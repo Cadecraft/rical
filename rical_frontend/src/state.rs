@@ -1,4 +1,5 @@
 use crate::utils::RicalDate;
+use crate::styles;
 
 /// Stores the entire hierarchy of state in the app
 /// `screen_state` deals with the state of the UI
@@ -19,20 +20,8 @@ pub enum ScreenState {
 pub enum MenuState {
     MainMenu,
     About,
-    Login(LoginState),
+    Login(FormState),
     Signup(SignupState)
-}
-
-#[derive(Clone)]
-pub enum LoginState {
-    Failed {
-        error_message: String
-    },
-    EnteringInfo {
-        form_pos: u32,
-        username: TextInputState,
-        password: TextInputState
-    }
 }
 
 #[derive(Clone)]
@@ -59,6 +48,27 @@ impl TextInputState {
         TextInputState {
             cursor_pos: 0,
             contents: String::new()
+        }
+    }
+}
+
+/// The info for any form
+#[derive(Clone)]
+pub struct FormState {
+    pub form_pos: usize,
+    pub fields: Vec<TextInputState>,
+    /// If some, then an error has occured
+    /// This can be multiple lines (multiple elements in the Vec)
+    pub error_message: Option<Vec<String>>
+}
+
+impl FormState {
+    /// Create
+    pub fn new(field_count: usize) -> FormState {
+        FormState {
+            form_pos: 0,
+            fields: vec![TextInputState::new(); field_count],
+            error_message: None
         }
     }
 }
