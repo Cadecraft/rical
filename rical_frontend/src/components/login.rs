@@ -10,7 +10,7 @@ use crate::styles;
 
 // The login screen
 
-pub fn handle_input(currstate: &state::FormState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
+pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     let res = form::handle_input(currstate, key);
     match res.1 {
         form::FormResult::InProgress => {
@@ -41,11 +41,11 @@ pub fn handle_input(currstate: &state::FormState, key: &KeyInfo, api_handler: &m
     }
 }
 
-pub fn render(currstate: &state::FormState) -> io::Result<()> {
+pub fn render(currstate: &state::FormState<2>) -> io::Result<()> {
     let render_params = form::FormRenderParameters {
         title: "Login".to_string(),
         hint_y: 7,
-        fields: vec![
+        fields: [
             form::FormFieldParameters {
                 name: "Username".to_string(),
                 styles: styles::Styles {

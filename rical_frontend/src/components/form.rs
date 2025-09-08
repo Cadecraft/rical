@@ -25,7 +25,7 @@ pub enum FormResult {
     CancelAll
 }
 
-pub fn handle_input(currstate: &state::FormState, key: &KeyInfo) -> (state::FormState, FormResult) {
+pub fn handle_input<const N: usize>(currstate: &state::FormState<N>, key: &KeyInfo) -> (state::FormState<N>, FormResult) {
     if currstate.error_message.is_some() {
         if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
             return (currstate.clone(), FormResult::CancelAll);
@@ -108,21 +108,21 @@ pub struct FormDecorationParameters {
     pub y: u16
 }
 
-pub struct FormRenderParameters {
+pub struct FormRenderParameters<const N: usize> {
     /// The string that appears at the top of the form
     pub title: String,
     /// The y-position of the input hint line (e.g. `(enter) Submit`). No elements should be below this
     pub hint_y: u16,
-    /// The length of `fields` must equal the number of fields in the state
-    /// and fields[i] must describe the same field as `currstate.fields[i]`
-    pub fields: Vec<FormFieldParameters>,
+    /// The length of `fields` (N) must equal the number of fields in the state
+    /// so that fields[i] must describe the same field as `currstate.fields[i]`
+    pub fields: [FormFieldParameters; N],
     /// Additional strings to render on certain lines (e.g. to pad between two input fields on one line)
     pub decoration_strings: Vec<FormDecorationParameters>,
     /// The line numbers to make blank, no less than line 4 as lines 0..=3 are prehandled
     pub clear_lines: Vec<u16>
 }
 
-pub fn render(currstate: &state::FormState, render_params: FormRenderParameters) -> io::Result<()> {
+pub fn render<const N: usize>(currstate: &state::FormState<N>, render_params: FormRenderParameters<N>) -> io::Result<()> {
     let num_fields = currstate.fields.len();
 
     text::println(0, "(esc) back")?;

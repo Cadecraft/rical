@@ -20,7 +20,7 @@ pub enum ScreenState {
 pub enum MenuState {
     MainMenu,
     About,
-    Login(FormState),
+    Login(FormState<2>),
     Signup(SignupState)
 }
 
@@ -54,20 +54,20 @@ impl TextInputState {
 
 /// The info for any form
 #[derive(Clone)]
-pub struct FormState {
+pub struct FormState<const N: usize> {
     pub form_pos: usize,
-    pub fields: Vec<TextInputState>,
+    pub fields: [TextInputState; N],
     /// If some, then an error has occured
     /// This can be multiple lines (multiple elements in the Vec)
     pub error_message: Option<Vec<String>>
 }
 
-impl FormState {
+impl<const N: usize> FormState<N> {
     /// Create
-    pub fn new(field_count: usize) -> FormState {
+    pub fn new() -> FormState<N> {
         FormState {
             form_pos: 0,
-            fields: vec![TextInputState::new(); field_count],
+            fields: core::array::from_fn::<TextInputState, N, _>(|_| TextInputState::new()),
             error_message: None
         }
     }
