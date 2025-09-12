@@ -3,10 +3,10 @@ use std::io;
 use crate::state;
 use crate::utils::{KeyInfo};
 use crate::api::ApiHandler;
+use crate::styles;
 
 use crate::components::inputtext;
 use crate::components::form;
-use crate::styles;
 
 // The login screen
 

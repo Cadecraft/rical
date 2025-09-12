@@ -104,7 +104,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         },
         CalAction::StartNewTask => {
             state::CalendarState {
-                making_new_task: Some(state::CalendarNewTaskState::new(selected_date)),
+                making_new_task: Some(state::FormState::<4>::new()),
                 ..currstate.clone()
             }
         }

@@ -175,6 +175,70 @@ pub fn fmt_timerange(start_min: Option<i32>, end_min: Option<i32>) -> String {
     format!("{}-{}", fmt_mins(start_min), fmt_mins(end_min))
 }
 
+enum PeriodType {
+    AM,
+    PM,
+    TwentyFourHour
+}
+
+/// Parse a user-inputted time shorthand string and return the minutes
+/// If this fails, returns None
+/// 3 -> 3:00 AM
+/// E.g. 3am -> 3:00 AM
+/// E.g. 3 PM -> 3:00 PM
+/// E.g. 15:45 -> 3:45 PM
+/// E.g. 15pm -> INVALID
+pub fn time_shorthand_to_mins(s: &str) -> Option<i32> {
+    let no_whitespace: String = s.chars().filter(|c| !c.is_whitespace()).collect();
+    let formatted = no_whitespace.to_lowercase();
+    // Valid structure: (<number 0..24>)(:<number 0..60> (?))(<pm | am> (?))
+    let period = if formatted.ends_with("am") {
+        PeriodType::AM
+    } else if formatted.ends_with("pm") {
+        PeriodType::PM
+    } else {
+        PeriodType::TwentyFourHour
+    };
+    let mut hours: i32 = 0;
+    let mut minutes: i32 = 0;
+    let mut processing_minutes = false;
+    for c in formatted.chars() {
+        if c.is_ascii_digit() {
+            if processing_minutes {
+                minutes *= 10;
+                minutes += c.to_digit(10).unwrap() as i32;
+            } else {
+                hours *= 10;
+                hours += c.to_digit(10).unwrap() as i32;
+            }
+        } else if c == ':' {
+            processing_minutes = true;
+        }
+    }
+    // Special case: 12pm -> 12, but 12am -> 0
+    match period {
+        PeriodType::AM => {
+            if hours == 12 {
+                hours = 0;
+            }
+        },
+        PeriodType::PM => {
+            if hours != 12 {
+                hours += 12;
+            }
+        },
+        PeriodType::TwentyFourHour => ()
+    }
+
+    let total_minutes = hours * 60 + minutes;
+    let minutes_per_day = 24 * 60;
+    if total_minutes < 0 || total_minutes >= minutes_per_day {
+        None
+    } else {
+        Some(total_minutes)
+    }
+}
+
 /// Get a 1-indexed month name
 pub fn get_month_name(month: u32) -> String {
     const MONTH_NAMES: [&str; 12] = [
@@ -192,4 +256,26 @@ pub fn get_month_name(month: u32) -> String {
         "December"
     ];
     MONTH_NAMES[month as usize - 1].to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_time_shorthand_to_mins() {
+        assert_eq!(time_shorthand_to_mins("3"), Some(3 * 60));
+        assert_eq!(time_shorthand_to_mins("3am"), Some(3 * 60));
+        assert_eq!(time_shorthand_to_mins(" 3 PM  "), Some(15 * 60));
+        assert_eq!(time_shorthand_to_mins(" 5: 22 PM  "), Some(17 * 60 + 22));
+        assert_eq!(time_shorthand_to_mins("3:30pm"), Some(15 * 60 + 30));
+        assert_eq!(time_shorthand_to_mins("15"), Some(15 * 60));
+        assert_eq!(time_shorthand_to_mins("15pm"), None);
+        assert_eq!(time_shorthand_to_mins("0"), Some(0));
+        assert_eq!(time_shorthand_to_mins("23:59"), Some(23 * 60 + 59));
+        assert_eq!(time_shorthand_to_mins("11pm"), Some(23 * 60));
+        assert_eq!(time_shorthand_to_mins("12pm"), Some(12 * 60));
+        assert_eq!(time_shorthand_to_mins("12am"), Some(0));
+        assert_eq!(time_shorthand_to_mins("24"), None);
+    }
 }

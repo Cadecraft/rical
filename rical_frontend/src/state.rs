@@ -80,7 +80,7 @@ pub struct CalendarState {
     pub day: u32,
     pub task_id: Option<i64>,
     pub pane: CalendarPane,
-    pub making_new_task: Option<CalendarNewTaskState>,
+    pub making_new_task: Option<FormState<4>>,
 }
 
 impl CalendarState {

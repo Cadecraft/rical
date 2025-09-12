@@ -1,5 +1,11 @@
 use std::io;
-use crossterm::event::{KeyCode, KeyModifiers};
+use crossterm::{
+    queue,
+    cursor,
+    terminal,
+    event::{KeyCode, KeyModifiers},
+    style
+};
 
 use crate::state;
 use crate::utils::{KeyInfo, key_pressed};
@@ -20,7 +26,7 @@ enum FormAction {
 
 pub enum FormResult {
     InProgress,
-    // TODO: put a hashmap of the result (name: key) in Submit?
+    // TODO: put a hashmap of the result (name: key) in Submit? Requires passing field names array into handle_input
     Submit,
     CancelAll
 }
@@ -105,7 +111,8 @@ pub struct FormFieldParameters {
 pub struct FormDecorationParameters {
     pub text: String,
     pub x: u16,
-    pub y: u16
+    pub y: u16,
+    pub clear_rest_of_line: bool
 }
 
 pub struct FormRenderParameters<const N: usize> {
@@ -124,6 +131,8 @@ pub struct FormRenderParameters<const N: usize> {
 
 pub fn render<const N: usize>(currstate: &state::FormState<N>, render_params: FormRenderParameters<N>) -> io::Result<()> {
     let num_fields = currstate.fields.len();
+
+    let mut stdout = io::stdout();
 
     text::println(0, "(esc) back")?;
     text::println(1, "")?;
@@ -149,9 +158,18 @@ pub fn render<const N: usize>(currstate: &state::FormState<N>, render_params: Fo
             for y in render_params.clear_lines {
                 text::println(y, "")?;
             }
+            for decoration in render_params.decoration_strings {
+                queue!(
+                    stdout,
+                    cursor::MoveTo(decoration.x, decoration.y),
+                    style::Print(decoration.text)
+                )?;
+                if decoration.clear_rest_of_line {
+                    queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
+                }
+            }
 
             // TODO: allow a multi-line input?
-            // TODO: render decoration_strings
             text::println(render_params.hint_y, if currstate.form_pos == num_fields - 1 {
                 "(enter) Submit"
             } else {
