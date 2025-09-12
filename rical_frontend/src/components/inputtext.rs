@@ -19,10 +19,10 @@ pub enum InputMode {
     Password
 }
 
-/// Given the current state (value/contents and other associated input state) and the user's keypress,
-/// returns the new value and whether to submit.
+/// Given the current state and the user's keypress, returns the new state
 /// Handles semi-complex text input methods like moving the cursor
-pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> (state::TextInputState, bool) {
+/// Keybinds for submitting, switching between inputs, etc. should be handled by the caller
+pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::TextInputState {
     let contents = currstate.contents.clone();
     let mut chars: Vec<char> = contents.chars().collect();
     let cursor_pos = currstate.cursor_pos;
@@ -31,67 +31,63 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> (state:
         KeyModifiers::NONE => match key.code {
             KeyCode::Char(c) => {
                 chars.insert(cursor_pos, c);
-                (state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos + 1 }, false)
+                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos + 1 }
             },
             KeyCode::Backspace => {
                 if cursor_pos == 0 {
-                    return (currstate.clone(), false);
+                    return currstate.clone();
                 }
                 chars.remove(cursor_pos - 1);
-                (state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos - 1 }, false)
+                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos - 1 }
             },
             KeyCode::Delete => {
                 if cursor_pos < chars.len() {
                     chars.remove(cursor_pos);
                 }
-                (state::TextInputState { contents: chars.into_iter().collect(), cursor_pos }, false)
-            },
-            KeyCode::Enter => {
-                // Submit
-                (currstate.clone(), true)
+                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos }
             },
             KeyCode::Left => {
                 let new_cursor_pos = if cursor_pos == 0 { 0 } else { cursor_pos - 1 };
-                (state::TextInputState { cursor_pos: new_cursor_pos, ..currstate.clone() }, false)
+                state::TextInputState { cursor_pos: new_cursor_pos, ..currstate.clone() }
             },
             KeyCode::Right => {
                 let new_cursor_pos = if cursor_pos == contents.chars().count() { cursor_pos } else { cursor_pos + 1 };
-                (state::TextInputState { cursor_pos: new_cursor_pos, ..currstate.clone() }, false)
+                state::TextInputState { cursor_pos: new_cursor_pos, ..currstate.clone() }
             },
             KeyCode::End => {
-                (state::TextInputState { cursor_pos: contents.chars().count(), ..currstate.clone() }, false)
+                state::TextInputState { cursor_pos: contents.chars().count(), ..currstate.clone() }
             },
             KeyCode::Home => {
-                (state::TextInputState { cursor_pos: 0, ..currstate.clone() }, false)
+                state::TextInputState { cursor_pos: 0, ..currstate.clone() }
             },
             // TODO: allow "tab" to go forwards but not submit
-            _ => (currstate.clone(), false)
+            _ => currstate.clone()
         },
         KeyModifiers::SHIFT => match key.code {
             KeyCode::Char(c) => {
                 let capitalized: String = c.to_uppercase().collect();
                 // TODO: better capitalization logic?
                 chars.insert(cursor_pos, capitalized.chars().nth(0).unwrap_or(' '));
-                (state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos + 1 }, false)
+                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos + 1 }
             },
             KeyCode::Backspace => {
                 // Duplicated for the sake of simplicity
                 // TODO: reduce duplicate code?
                 if cursor_pos == 0 {
-                    return (currstate.clone(), false);
+                    return currstate.clone();
                 }
                 chars.remove(cursor_pos - 1);
-                (state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos - 1 }, false)
+                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos - 1 }
             },
             // TODO: allow "shift+tab" to go backwards
-            _ => (currstate.clone(), false)
+            _ => currstate.clone()
         },
         KeyModifiers::CONTROL => match key.code {
             KeyCode::Backspace | KeyCode::Char('w') => {
                 // Delete the last word
                 // Ex. 'abcd efg |' -> 'abcd |'
                 if cursor_pos == 0 {
-                    return (currstate.clone(), false);
+                    return currstate.clone();
                 }
                 // Delete everything before the cursor until we've both discovered a non-space character AND a space character
                 let mut reversed: Vec<char> = Vec::new();
@@ -119,11 +115,11 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> (state:
                 }
                 let res_string: String = reversed.into_iter().rev().collect();
                 let new_cursor_pos = cursor_pos.saturating_sub(contents.len() - res_string.chars().count());
-                (state::TextInputState { contents: res_string, cursor_pos: new_cursor_pos }, false)
+                state::TextInputState { contents: res_string, cursor_pos: new_cursor_pos }
             },
-            _ => (currstate.clone(), false)
+            _ => currstate.clone()
         }
-        _ => (currstate.clone(), false)
+        _ => currstate.clone()
     }
 }
 

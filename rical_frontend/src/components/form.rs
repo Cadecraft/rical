@@ -14,6 +14,8 @@ use crate::styles;
 use crate::components::text;
 use crate::components::inputtext;
 
+use std::collections::HashMap;
+
 // A reusable form with multiple inputs
 
 enum FormAction {
@@ -26,12 +28,16 @@ enum FormAction {
 
 pub enum FormResult {
     InProgress,
-    // TODO: put a hashmap of the result (name: key) in Submit? Requires passing field names array into handle_input
-    Submit,
+    /// Result label name: value (the content the user inputted)
+    Submit(HashMap<String, String>),
     CancelAll
 }
 
-pub fn handle_input<const N: usize>(currstate: &state::FormState<N>, key: &KeyInfo) -> (state::FormState<N>, FormResult) {
+pub fn handle_input<const N: usize>(
+    currstate: &state::FormState<N>,
+    key: &KeyInfo,
+    label_names: [&str; N]
+) -> (state::FormState<N>, FormResult) {
     if currstate.error_message.is_some() {
         if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
             return (currstate.clone(), FormResult::CancelAll);
@@ -74,7 +80,12 @@ pub fn handle_input<const N: usize>(currstate: &state::FormState<N>, key: &KeyIn
             return (currstate.clone(), FormResult::CancelAll);
         },
         FormAction::Submit => {
-            return (currstate.clone(), FormResult::Submit);
+            let mut results: HashMap<String, String> = HashMap::new();
+            for i in 0..N {
+                let this_value = currstate.fields[i].contents.clone();
+                results.insert(label_names[i].to_string(), this_value);
+            }
+            return (currstate.clone(), FormResult::Submit(results));
         },
         FormAction::NextField => {
             return (state::FormState {
@@ -92,10 +103,9 @@ pub fn handle_input<const N: usize>(currstate: &state::FormState<N>, key: &KeyIn
     };
 
     let selected = &currstate.fields[currstate.form_pos];
-    // TODO: remove the bool return tuple from inputtext since forms now manage navigation
-    let res_singular = inputtext::handle_input(selected, key);
+    let res_selected = inputtext::handle_input(selected, key);
     let mut res_all = currstate.fields.clone();
-    res_all[currstate.form_pos] = res_singular.0;
+    res_all[currstate.form_pos] = res_selected;
     (state::FormState {
         fields: res_all,
         ..currstate.clone()

@@ -11,7 +11,7 @@ use crate::components::form;
 // The login screen
 
 pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
-    let res = form::handle_input(currstate, key);
+    let res = form::handle_input(currstate, key, ["username", "password"]);
     match res.1 {
         form::FormResult::InProgress => {
             state::ScreenState::Menu(state::MenuState::Login(res.0))
@@ -19,10 +19,10 @@ pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler:
         form::FormResult::CancelAll => {
             state::ScreenState::Menu(state::MenuState::MainMenu)
         },
-        form::FormResult::Submit => {
+        form::FormResult::Submit(result) => {
             // TODO: show loading screen
-            let username = res.0.fields[0].contents.clone();
-            let password = res.0.fields[1].contents.clone();
+            let username = result["username"].clone();
+            let password = result["password"].clone();
             match api_handler.try_login(username, password) {
                 Ok(token) => {
                     state::ScreenState::Calendar(state::CalendarState::new())

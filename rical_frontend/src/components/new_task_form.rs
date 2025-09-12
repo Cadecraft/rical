@@ -15,7 +15,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
     let formstate = currstate.making_new_task.as_ref().expect("new_task_form should never be used if not making a new task");
 
     // TODO: pass some kind of validator to automatically format a valid time shorthand?
-    let res = form::handle_input(formstate, key);
+    let res = form::handle_input(formstate, key, ["start_shorthand", "end_shorthand", "title", "description"]);
     match res.1 {
         form::FormResult::InProgress => {
             state::ScreenState::Calendar(state::CalendarState {
@@ -29,10 +29,9 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 ..currstate.clone()
             })
         },
-        form::FormResult::Submit => {
-            // TODO: use named return value map (from a form refactor)
-            let start_min = time_shorthand_to_mins(&formstate.fields[0].contents);
-            let end_min = time_shorthand_to_mins(&formstate.fields[1].contents);
+        form::FormResult::Submit(result) => {
+            let start_min = time_shorthand_to_mins(&result["start_shorthand"]);
+            let end_min = time_shorthand_to_mins(&result["end_shorthand"]);
             // TODO: show loading screen
             // TODO: run with API handler
             let new_task = types::TaskData {
@@ -41,8 +40,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 day: currstate.day as i32,
                 start_min,
                 end_min,
-                title: formstate.fields[2].contents.clone(),
-                description: Some(formstate.fields[2].contents.clone()),
+                title: result["title"].clone(),
+                description: Some(result["description"].clone()),
                 complete: false
             };
             state::ScreenState::Calendar(state::CalendarState {
