@@ -8,13 +8,13 @@ use crate::styles;
 use crate::components::inputtext;
 use crate::components::form;
 
-// The login screen
+// The sign up screen
 
 pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     let res = form::handle_input(currstate, key, ["username", "password"], None);
     match res.1 {
         form::FormResult::InProgress => {
-            state::ScreenState::Menu(state::MenuState::Login(res.0))
+            state::ScreenState::Menu(state::MenuState::Signup(res.0))
         },
         form::FormResult::CancelAll => {
             state::ScreenState::Menu(state::MenuState::MainMenu)
@@ -23,15 +23,22 @@ pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler:
             // TODO: show loading screen
             let username = result["username"].clone();
             let password = result["password"].clone();
-            match api_handler.try_login(username, password) {
-                Ok(token) => {
-                    state::ScreenState::Calendar(state::CalendarState::new())
+            match api_handler.try_signup(username.clone(), password) {
+                Ok(_) => {
+                    state::ScreenState::Menu(state::MenuState::Signup(state::FormState {
+                        // TODO: rename `error_message` since this is not an error, just a message
+                        error_message: Some(vec![
+                            format!("You've successfully signed up as {}!", username),
+                            "Go back to the menu (esc) and log in to access your calendar".to_string()
+                        ]),
+                        ..res.0
+                    }))
                 }, _ => {
                     // TODO: better error message
-                    state::ScreenState::Menu(state::MenuState::Login(state::FormState {
+                    state::ScreenState::Menu(state::MenuState::Signup(state::FormState {
                         error_message: Some(vec![
-                            "Login failed. Make sure your username and password are correct.".to_string(),
-                            "If you don't have an account, sign up first!".to_string()
+                            "Signing up failed.".to_string(),
+                            "Make sure you entered a unique username, and that you're connected to the server.".to_string(),
                         ]),
                         ..res.0
                     }))
@@ -43,11 +50,11 @@ pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler:
 
 pub fn render(currstate: &state::FormState<2>) -> io::Result<()> {
     let render_params = form::FormRenderParameters {
-        title: "Login".to_string(),
+        title: "Sign up".to_string(),
         hint_y: 7,
         fields: [
             form::FormFieldParameters {
-                name: "Username".to_string(),
+                name: "New username".to_string(),
                 styles: styles::Styles {
                     margin_left: 0,
                     margin_top: 4,
@@ -57,7 +64,7 @@ pub fn render(currstate: &state::FormState<2>) -> io::Result<()> {
                 input_mode: inputtext::InputMode::Normal
             },
             form::FormFieldParameters {
-                name: "Password".to_string(),
+                name: "New password".to_string(),
                 styles: styles::Styles {
                     margin_left: 0,
                     margin_top: 5,

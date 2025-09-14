@@ -1,34 +1,19 @@
 use std::io;
 use crossterm::{
-    queue,
-    cursor,
     event::{KeyCode, KeyModifiers},
-    style::{self},
 };
 
 use crate::state;
 use crate::utils::{KeyInfo, key_pressed};
 use crate::api::ApiHandler;
 
-use crate::components::login;
+use crate::components::{login, signup, text};
 
 fn handle_input_mainmenu(key: &KeyInfo) -> state::MenuState {
     if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
-        state::MenuState::Login(
-            state::LoginState::EnteringInfo {
-                form_pos: 0,
-                username: String::new(),
-                password: String::new()
-            }
-        )
+        state::MenuState::Login(state::FormState::<2>::new())
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('s')) {
-        state::MenuState::Signup(
-            state::SignupState::EnteringInfo {
-                form_pos: 0,
-                username: String::new(),
-                password: String::new()
-            }
-        )
+        state::MenuState::Signup(state::FormState::<2>::new())
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('a')) {
         state::MenuState::About
     } else {
@@ -37,26 +22,30 @@ fn handle_input_mainmenu(key: &KeyInfo) -> state::MenuState {
 }
 
 fn render_mainmenu() -> io::Result<()> {
-    let mut stdout = io::stdout();
+    text::println(0, "Rical API")?;
+    text::println(1, "(l) Log in")?;
+    text::println(2, "(s) Sign up instantly")?;
+    text::println(3, "")?;
+    text::println(4, "Rical Local (no syncing)")?;
+    text::println(5, "(Local database support coming soon!)")?;
+    text::println(6, "")?;
+    text::println(7, "System")?;
+    text::println(8, "(a) About")?;
+    text::println(9, "(^C) Quit")?;
+    text::clear_to_end()?;
 
-    queue!(stdout,
-        cursor::MoveTo(0,0),
-        style::Print("Rical API"),
-        cursor::MoveTo(0,1),
-        style::Print("(l) Log in"),
-        cursor::MoveTo(0,2),
-        style::Print("(s) Sign up instantly"),
-        cursor::MoveTo(0,4),
-        style::Print("Rical Local (no syncing)"),
-        cursor::MoveTo(0,5),
-        style::Print("(Local database support coming soon!)"),
-        cursor::MoveTo(0,7),
-        style::Print("System"),
-        cursor::MoveTo(0,8),
-        style::Print("(a) About"),
-        cursor::MoveTo(0,9),
-        style::Print("(ctrl+q | ctrl+c) Quit"),
-    )?;
+    Ok(())
+}
+
+fn render_about() -> io::Result<()> {
+    text::println(0, "(esc) back")?;
+    text::println(1, "")?;
+    let version = env!("CARGO_PKG_VERSION");
+    text::println(2, &format!("Rical Frontend v{}", version))?;
+    text::println(3, "")?;
+    text::println(4, "By Cadecraft and any other Rical contributors (MIT license)")?;
+    text::clear_to_end()?;
+
     Ok(())
 }
 
@@ -75,42 +64,25 @@ pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo, api_handler: &m
         state::MenuState::Login(login_state) => {
             login::handle_input(login_state, key, api_handler)
         },
-        state::MenuState::Signup(_) => {
-            if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
-                state::ScreenState::Menu(state::MenuState::MainMenu)
-            } else {
-                state::ScreenState::Menu(currstate.clone())
-            }
+        state::MenuState::Signup(signup_state) => {
+            signup::handle_input(signup_state, key, api_handler)
         }
     }
 }
 
 pub fn render(currstate: &state::MenuState) -> io::Result<()> {
-    let mut stdout = io::stdout();
-
     match &currstate {
         state::MenuState::MainMenu => {
             render_mainmenu()?;
         },
         state::MenuState::About => {
-            queue!(stdout,
-                cursor::MoveTo(0,0),
-                style::Print("(esc) back"),
-                cursor::MoveTo(0,2),
-                // TODO: get and display version
-                style::Print("Rical Frontend"),
-                cursor::MoveTo(0,4),
-                style::Print("By Cadecraft and any other Rical contributors (MIT license)"),
-            )?;
+            render_about()?;
         },
         state::MenuState::Login(login_state) => {
             login::render(login_state)?;
         },
-        state::MenuState::Signup(_) => {
-            queue!(stdout,
-                cursor::MoveTo(0,0),
-                style::Print("Signup")
-            )?;
+        state::MenuState::Signup(signup_state) => {
+            signup::render(signup_state)?;
         },
     };
 

@@ -1,9 +1,10 @@
 [package]
 name = "rical_frontend"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 
 [dependencies]
+chrono = "0.4.41"
 crossterm = "0.29.0"
 dotenvy = "0.15.7"
 reqwest = { version = "0.12.23", features = ["json", "blocking"] }
