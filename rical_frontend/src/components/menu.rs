@@ -7,20 +7,13 @@ use crate::state;
 use crate::utils::{KeyInfo, key_pressed};
 use crate::api::ApiHandler;
 
-use crate::components::login;
-use crate::components::text;
+use crate::components::{login, signup, text};
 
 fn handle_input_mainmenu(key: &KeyInfo) -> state::MenuState {
     if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
         state::MenuState::Login(state::FormState::<2>::new())
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('s')) {
-        state::MenuState::Signup(
-            state::SignupState::EnteringInfo {
-                form_pos: 0,
-                username: state::TextInputState::new(),
-                password: state::TextInputState::new(),
-            }
-        )
+        state::MenuState::Signup(state::FormState::<2>::new())
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('a')) {
         state::MenuState::About
     } else {
@@ -44,6 +37,18 @@ fn render_mainmenu() -> io::Result<()> {
     Ok(())
 }
 
+fn render_about() -> io::Result<()> {
+    text::println(0, "(esc) back")?;
+    text::println(1, "")?;
+    let version = env!("CARGO_PKG_VERSION");
+    text::println(2, &format!("Rical Frontend v{}", version))?;
+    text::println(3, "")?;
+    text::println(4, "By Cadecraft and any other Rical contributors (MIT license)")?;
+    text::clear_to_end()?;
+
+    Ok(())
+}
+
 pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     match &currstate {
         state::MenuState::MainMenu => {
@@ -56,16 +61,11 @@ pub fn handle_input(currstate: &state::MenuState, key: &KeyInfo, api_handler: &m
                 state::ScreenState::Menu(currstate.clone())
             }
         }
-        state::MenuState::Login(login_form) => {
-            login::handle_input(login_form, key, api_handler)
+        state::MenuState::Login(login_state) => {
+            login::handle_input(login_state, key, api_handler)
         },
-        state::MenuState::Signup(_) => {
-            // TODO: impl signup
-            if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
-                state::ScreenState::Menu(state::MenuState::MainMenu)
-            } else {
-                state::ScreenState::Menu(currstate.clone())
-            }
+        state::MenuState::Signup(signup_state) => {
+            signup::handle_input(signup_state, key, api_handler)
         }
     }
 }
@@ -76,23 +76,13 @@ pub fn render(currstate: &state::MenuState) -> io::Result<()> {
             render_mainmenu()?;
         },
         state::MenuState::About => {
-            text::println(0, "(esc) back")?;
-            text::println(1, "")?;
-            // TODO: get and display version
-            text::println(2, "Rical Frontend")?;
-            text::println(3, "")?;
-            text::println(4, "By Cadecraft and any other Rical contributors (MIT license)")?;
-            text::clear_to_end()?;
+            render_about()?;
         },
         state::MenuState::Login(login_state) => {
             login::render(login_state)?;
         },
-        state::MenuState::Signup(_) => {
-            // TODO: impl signup
-            text::println(0, "(esc) back")?;
-            text::println(1, "")?;
-            text::println(2, "Signup")?;
-            text::clear_to_end()?;
+        state::MenuState::Signup(signup_state) => {
+            signup::render(signup_state)?;
         },
     };
 

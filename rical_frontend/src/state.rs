@@ -20,7 +20,7 @@ pub enum MenuState {
     MainMenu,
     About,
     Login(FormState<2>),
-    Signup(SignupState)
+    Signup(FormState<2>)
 }
 
 #[derive(Clone)]

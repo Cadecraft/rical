@@ -32,7 +32,6 @@ impl ApiHandler {
     /// Log in and store the auth token
     /// Return the auth token if successful
     pub fn try_login(&mut self, username: String, password: String) -> Result<String, reqwest::Error> {
-        // TODO: pass around a client instead
         let api_url = env::var("API_URL").expect("API_URL must be set");
         let res = self.blocking_client.post(format!("{api_url}/account/login"))
             .json(&Credentials {
@@ -45,6 +44,22 @@ impl ApiHandler {
         self.auth_token = Some(token.clone());
 
         return Ok(token);
+    }
+
+    /// Sign up a new account
+    /// Return the new username if successful
+    pub fn try_signup(&mut self, username: String, password: String) -> Result<(), reqwest::Error> {
+        let api_url = env::var("API_URL").expect("API_URL must be set");
+        let res = self.blocking_client.post(format!("{api_url}/account/signup"))
+            .json(&Credentials {
+                username,
+                password
+            })
+            .send()?;
+
+        res.error_for_status()?;
+
+        return Ok(());
     }
 
     pub fn fetch_tasks_at_date_cached(&mut self, date: &utils::RicalDate) -> Vec<types::TaskDataWithId> {
