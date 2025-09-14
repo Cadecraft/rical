@@ -8,7 +8,7 @@ use crossterm::{
 };
 
 use crate::state;
-use crate::utils::{self, KeyInfo, key_pressed, get_calendar_frame, mins_to_time_shorthand};
+use crate::utils::{self, KeyInfo, key_pressed, get_calendar_frame, fmt_mins, fmt_twodigit};
 use crate::api::ApiHandler;
 
 use crate::types;
@@ -30,6 +30,22 @@ enum CalAction {
 
 pub fn get_task_index_by_id(date_tasks: &Vec<types::TaskDataWithId>, task_id: i64) -> Option<usize> {
     date_tasks.iter().position(|task| task.task_id == task_id)
+}
+
+pub fn edit_task_state_from_task(task: &types::TaskDataWithId) -> state::EditTaskState {
+    state::EditTaskState {
+        task_id: task.task_id,
+        form: state::FormState::<8>::from_field_contents(5, [
+            task.year.to_string(),
+            task.month.to_string(),
+            task.day.to_string(),
+            fmt_mins(task.start_min),
+            fmt_mins(task.end_min),
+            task.title.clone(),
+            task.description.clone().unwrap_or(String::new()),
+            if task.complete { "Yes".to_string() } else { "No".to_string() }
+        ])
+    }
 }
 
 pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
@@ -121,36 +137,12 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
 
             match currstate.task_id {
-                Some(id) => {
-                    // Edit this task
-                    match get_task_index_by_id(&date_tasks, id) {
-                        Some(index) => {
-                            let selected = &date_tasks[index];
-                            state::CalendarState {
-                                editing_task: Some(state::EditTaskState {
-                                    task_id: id,
-                                    form: state::FormState::<8>::from_field_contents([
-                                        selected.year.to_string(),
-                                        selected.month.to_string(),
-                                        selected.day.to_string(),
-                                        match selected.start_min {
-                                            Some(start_min) => mins_to_time_shorthand(start_min),
-                                            _ => String::new()
-                                        },
-                                        match selected.end_min {
-                                            Some(end_min) => mins_to_time_shorthand(end_min),
-                                            _ => String::new()
-                                        },
-                                        selected.title.clone(),
-                                        selected.description.clone().unwrap_or(String::new()),
-                                        if selected.complete { "Yes".to_string() } else { "No".to_string() }
-                                    ])
-                                }),
-                                ..currstate.clone()
-                            }
-                        },
-                        None => currstate.clone()
-                    }
+                Some(id) => match get_task_index_by_id(&date_tasks, id) {
+                    Some(index) => state::CalendarState {
+                        editing_task: Some(edit_task_state_from_task(&date_tasks[index])),
+                        ..currstate.clone()
+                    },
+                    None => currstate.clone()
                 },
                 None => currstate.clone()
             }
@@ -160,21 +152,15 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
 
             // Select the task/day above the current one
             match currstate.task_id {
-                Some(id) => {
-                    match get_task_index_by_id(&date_tasks, id) {
-                        Some(0) | None => {
-                            // Reset to the parent date
-                            state::CalendarState {
-                                task_id: None,
-                                ..currstate.clone()
-                            }
-                        },
-                        Some(index) => {
-                            state::CalendarState {
-                                task_id: Some(date_tasks[index - 1].task_id),
-                                ..currstate.clone()
-                            }
-                        }
+                Some(id) => match get_task_index_by_id(&date_tasks, id) {
+                    Some(0) | None => state::CalendarState {
+                        // Reset to the parent date
+                        task_id: None,
+                        ..currstate.clone()
+                    },
+                    Some(index) => state::CalendarState {
+                        task_id: Some(date_tasks[index - 1].task_id),
+                        ..currstate.clone()
                     }
                 },
                 None => {
@@ -331,13 +317,7 @@ pub fn render_date_square(
     let mut stdout = io::stdout();
 
     let dayformat = match &date {
-        Some(d) => {
-            if d.day > 9 {
-                format!(" {} ", d.day.to_string())
-            } else {
-                format!(" 0{} ", d.day.to_string())
-            }
-        },
+        Some(d) => format!(" {} ", fmt_twodigit(d.day)),
         None => " -- ".to_string()
     };
 

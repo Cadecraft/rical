@@ -150,20 +150,13 @@ pub fn calendar_grid_navigation(current_date: &RicalDate, direction: GridDirecti
 
 /// Format a two-digit number with a leading zero
 pub fn fmt_twodigit<T: ToString>(number: T) -> String {
-    let s = number.to_string();
-    if s.len() < 2 {
-        let mut res = "0".to_string();
-        res.push_str(&s);
-        res
-    } else {
-        s
-    }
+    format!("{:0>2}", number.to_string())
 }
 
 /// Turn minutes into a 24-hour HR:MN format, or an empty string if None
-fn fmt_mins(mins_opt: Option<i32>) -> String {
+pub fn fmt_mins(mins_opt: Option<i32>) -> String {
     match mins_opt {
-        Some(mins) => format!("{}:{}", fmt_twodigit(mins as u32 / 60), fmt_twodigit(mins as u32 % 60)),
+        Some(mins) => format!("{}:{}", fmt_twodigit(mins / 60), fmt_twodigit(mins % 60)),
         None => String::new()
     }
 }
@@ -200,8 +193,8 @@ pub fn time_shorthand_to_mins(s: &str) -> Option<i32> {
     } else {
         PeriodType::TwentyFourHour
     };
-    let mut hours: i32 = 0;
-    let mut minutes: i32 = 0;
+    let mut hours = 0;
+    let mut minutes = 0;
     let mut processing_minutes = false;
     for c in formatted.chars() {
         if c.is_ascii_digit() {
@@ -238,10 +231,6 @@ pub fn time_shorthand_to_mins(s: &str) -> Option<i32> {
     } else {
         Some(total_minutes)
     }
-}
-
-pub fn mins_to_time_shorthand(mins: i32) -> String {
-    fmt_mins(Some(mins))
 }
 
 /// Get a 1-indexed month name
@@ -285,10 +274,11 @@ mod tests {
     }
 
     #[test]
-    fn test_mins_to_time_shorthand() {
-        assert_eq!(mins_to_time_shorthand(3 * 60), "03:00");
-        assert_eq!(mins_to_time_shorthand(22 * 60 + 12), "22:12");
-        assert_eq!(mins_to_time_shorthand(0 * 60 + 2), "00:02");
-        assert_eq!(mins_to_time_shorthand(23 * 60 + 59), "23:59");
+    fn test_fmt_mins() {
+        assert_eq!(fmt_mins(Some(3 * 60)), "03:00");
+        assert_eq!(fmt_mins(Some(22 * 60 + 12)), "22:12");
+        assert_eq!(fmt_mins(Some(0 * 60 + 2)), "00:02");
+        assert_eq!(fmt_mins(Some(23 * 60 + 59)), "23:59");
+        assert_eq!(fmt_mins(None), "");
     }
 }

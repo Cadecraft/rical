@@ -63,9 +63,9 @@ impl<const N: usize> FormState<N> {
         }
     }
 
-    pub fn from_field_contents(contents: [String; N]) -> FormState<N> {
+    pub fn from_field_contents(form_pos: usize, contents: [String; N]) -> FormState<N> {
         FormState {
-            form_pos: 0,
+            form_pos,
             fields: contents.map(|c| TextInputState::from_contents(c)),
             error_message: None
         }

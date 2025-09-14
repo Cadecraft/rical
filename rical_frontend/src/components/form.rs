@@ -70,7 +70,6 @@ pub fn handle_input<const N: usize>(
         } else {
             return (currstate.clone(), FormResult::InProgress);
         }
-
     }
 
     // Form navigation behavior is shared across all inputs
