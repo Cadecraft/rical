@@ -149,13 +149,14 @@ pub fn calendar_grid_navigation(current_date: &RicalDate, direction: GridDirecti
 }
 
 /// Format a two-digit number with a leading zero
-pub fn fmt_twodigit(number: u32) -> String {
-    if number < 10 {
-        let mut s = "0".to_string();
-        s.push_str(&number.to_string());
+pub fn fmt_twodigit<T: ToString>(number: T) -> String {
+    let s = number.to_string();
+    if s.len() < 2 {
+        let mut res = "0".to_string();
+        res.push_str(&s);
+        res
+    } else {
         s
-    }  else {
-        number.to_string()
     }
 }
 
@@ -239,6 +240,10 @@ pub fn time_shorthand_to_mins(s: &str) -> Option<i32> {
     }
 }
 
+pub fn mins_to_time_shorthand(mins: i32) -> String {
+    fmt_mins(Some(mins))
+}
+
 /// Get a 1-indexed month name
 pub fn get_month_name(month: u32) -> String {
     const MONTH_NAMES: [&str; 12] = [
@@ -268,7 +273,7 @@ mod tests {
         assert_eq!(time_shorthand_to_mins("3am"), Some(3 * 60));
         assert_eq!(time_shorthand_to_mins(" 3 PM  "), Some(15 * 60));
         assert_eq!(time_shorthand_to_mins(" 5: 22 PM  "), Some(17 * 60 + 22));
-        assert_eq!(time_shorthand_to_mins("3:30pm"), Some(15 * 60 + 30));
+        assert_eq!(time_shorthand_to_mins("03:30pm"), Some(15 * 60 + 30));
         assert_eq!(time_shorthand_to_mins("15"), Some(15 * 60));
         assert_eq!(time_shorthand_to_mins("15pm"), None);
         assert_eq!(time_shorthand_to_mins("0"), Some(0));
@@ -277,5 +282,13 @@ mod tests {
         assert_eq!(time_shorthand_to_mins("12pm"), Some(12 * 60));
         assert_eq!(time_shorthand_to_mins("12am"), Some(0));
         assert_eq!(time_shorthand_to_mins("24"), None);
+    }
+
+    #[test]
+    fn test_mins_to_time_shorthand() {
+        assert_eq!(mins_to_time_shorthand(3 * 60), "03:00");
+        assert_eq!(mins_to_time_shorthand(22 * 60 + 12), "22:12");
+        assert_eq!(mins_to_time_shorthand(0 * 60 + 2), "00:02");
+        assert_eq!(mins_to_time_shorthand(23 * 60 + 59), "23:59");
     }
 }

@@ -8,13 +8,12 @@ use crossterm::{
 };
 
 use crate::state;
-use crate::utils::{self, KeyInfo, key_pressed, get_calendar_frame};
+use crate::utils::{self, KeyInfo, key_pressed, get_calendar_frame, mins_to_time_shorthand};
 use crate::api::ApiHandler;
 
 use crate::types;
 
-use crate::components::text;
-use crate::components::new_task_form;
+use crate::components::{text, new_task_form, edit_task_form};
 
 // The main calendar screen
 
@@ -25,12 +24,20 @@ enum CalAction {
     SelectTaskUp,
     SelectTaskDown,
     StartNewTask,
+    EditSelectedTask,
     None
+}
+
+pub fn get_task_index_by_id(date_tasks: &Vec<types::TaskDataWithId>, task_id: i64) -> Option<usize> {
+    date_tasks.iter().position(|task| task.task_id == task_id)
 }
 
 pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     if currstate.making_new_task.is_some() {
         return new_task_form::handle_input(currstate, key, api_handler);
+    }
+    if currstate.editing_task.is_some() {
+        return edit_task_form::handle_input(currstate, key, api_handler);
     }
 
     if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('m')) {
@@ -69,6 +76,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::Move(utils::GridDirection::Right)
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('o')) {
                 CalAction::StartNewTask
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('e')) {
+                CalAction::EditSelectedTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
                 CalAction::SwitchToMonth
             } else {
@@ -107,15 +116,52 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 making_new_task: Some(state::FormState::<4>::new()),
                 ..currstate.clone()
             }
-        }
+        },
+        CalAction::EditSelectedTask => {
+            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
+
+            match currstate.task_id {
+                Some(id) => {
+                    // Edit this task
+                    match get_task_index_by_id(&date_tasks, id) {
+                        Some(index) => {
+                            let selected = &date_tasks[index];
+                            state::CalendarState {
+                                editing_task: Some(state::EditTaskState {
+                                    task_id: id,
+                                    form: state::FormState::<8>::from_field_contents([
+                                        selected.year.to_string(),
+                                        selected.month.to_string(),
+                                        selected.day.to_string(),
+                                        match selected.start_min {
+                                            Some(start_min) => mins_to_time_shorthand(start_min),
+                                            _ => String::new()
+                                        },
+                                        match selected.end_min {
+                                            Some(end_min) => mins_to_time_shorthand(end_min),
+                                            _ => String::new()
+                                        },
+                                        selected.title.clone(),
+                                        selected.description.clone().unwrap_or(String::new()),
+                                        if selected.complete { "Yes".to_string() } else { "No".to_string() }
+                                    ])
+                                }),
+                                ..currstate.clone()
+                            }
+                        },
+                        None => currstate.clone()
+                    }
+                },
+                None => currstate.clone()
+            }
+        },
         CalAction::SelectTaskUp => {
             let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
 
             // Select the task/day above the current one
             match currstate.task_id {
                 Some(id) => {
-                    let curr_task_index = date_tasks.iter().position(|task| task.task_id == id);
-                    match curr_task_index {
+                    match get_task_index_by_id(&date_tasks, id) {
                         Some(0) | None => {
                             // Reset to the parent date
                             state::CalendarState {
@@ -448,6 +494,9 @@ pub fn render_tasks_date(
 pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) -> io::Result<()> {
     if currstate.making_new_task.is_some() {
         return new_task_form::render(currstate);
+    }
+    if currstate.editing_task.is_some() {
+        return edit_task_form::render(currstate);
     }
 
     let mut stdout = io::stdout();
