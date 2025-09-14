@@ -11,7 +11,7 @@ use crate::components::form;
 // The login screen
 
 pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
-    let res = form::handle_input(currstate, key, ["username", "password"]);
+    let res = form::handle_input(currstate, key, ["username", "password"], None);
     match res.1 {
         form::FormResult::InProgress => {
             state::ScreenState::Menu(state::MenuState::Login(res.0))

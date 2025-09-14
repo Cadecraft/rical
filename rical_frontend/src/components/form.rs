@@ -33,10 +33,36 @@ pub enum FormResult {
     CancelAll
 }
 
+/// Validates the user's inputted string.
+/// If okay, returns Ok; if not okay, returns a valid "default" value as the error
+pub type FieldValidator = fn(&str) -> Result<(), String>;
+
+pub fn validate_selected<const N: usize>(currstate: &state::FormState<N>, validators: Option<[FieldValidator; N]>) -> [state::TextInputState; N] {
+    let selected = &currstate.fields[currstate.form_pos];
+
+    if validators.is_none() {
+        return currstate.fields.clone();
+    }
+
+    let valid_contents = match validators.unwrap()[currstate.form_pos](&selected.contents) {
+        Ok(_) => selected.contents.clone(),
+        Err(changed_contents) => changed_contents
+    };
+    let valid_input = state::TextInputState {
+        cursor_pos: valid_contents.chars().count(),
+        contents: valid_contents
+    };
+
+    let mut res_all = currstate.fields.clone();
+    res_all[currstate.form_pos] = valid_input;
+    res_all
+}
+
 pub fn handle_input<const N: usize>(
     currstate: &state::FormState<N>,
     key: &KeyInfo,
-    label_names: [&str; N]
+    label_names: [&str; N],
+    validators: Option<[FieldValidator; N]>
 ) -> (state::FormState<N>, FormResult) {
     if currstate.error_message.is_some() {
         if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
@@ -81,8 +107,9 @@ pub fn handle_input<const N: usize>(
         },
         FormAction::Submit => {
             let mut results: HashMap<String, String> = HashMap::new();
+            let final_validated_fields = validate_selected(currstate, validators);
             for i in 0..N {
-                let this_value = currstate.fields[i].contents.clone();
+                let this_value = final_validated_fields[i].contents.clone();
                 results.insert(label_names[i].to_string(), this_value);
             }
             return (currstate.clone(), FormResult::Submit(results));
@@ -90,18 +117,21 @@ pub fn handle_input<const N: usize>(
         FormAction::NextField => {
             return (state::FormState {
                 form_pos: currstate.form_pos + 1,
+                fields: validate_selected(currstate, validators),
                 ..currstate.clone()
             }, FormResult::InProgress)
         },
         FormAction::PrevField => {
             return (state::FormState {
                 form_pos: currstate.form_pos - 1,
+                fields: validate_selected(currstate, validators),
                 ..currstate.clone()
             }, FormResult::InProgress)
         },
         FormAction::NormalTyping => ()
     };
 
+    // Handle input for the selected field (because the user hasn't performed a navigation action)
     let selected = &currstate.fields[currstate.form_pos];
     let res_selected = inputtext::handle_input(selected, key);
     let mut res_all = currstate.fields.clone();

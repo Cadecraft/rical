@@ -14,8 +14,23 @@ use crate::components::form;
 pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     let formstate = currstate.making_new_task.as_ref().expect("new_task_form should never be used if not making a new task");
 
-    // TODO: pass some kind of validator to automatically format a valid time shorthand?
-    let res = form::handle_input(formstate, key, ["start_shorthand", "end_shorthand", "title", "description"]);
+    let res = form::handle_input(formstate, key, [
+        "start_shorthand",
+        "end_shorthand",
+        "title",
+        "description"
+    ], Some([
+        |input| match time_shorthand_to_mins(input) {
+            Some(_) => Ok(()),
+            None => Err("00:00".to_string())
+        },
+        |input| match time_shorthand_to_mins(input) {
+            Some(_) => Ok(()),
+            None => Err("00:00".to_string())
+        },
+        |_| Ok(()),
+        |_| Ok(()),
+    ]));
     match res.1 {
         form::FormResult::InProgress => {
             state::ScreenState::Calendar(state::CalendarState {

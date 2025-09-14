@@ -14,7 +14,6 @@ use crate::components::form;
 pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
     let formstate = currstate.editing_task.as_ref().expect("edit_task_form should never be used if not editing a task");
 
-    // TODO: pass some kind of validator to automatically format a valid time shorthand?
     let res = form::handle_input(&formstate.form, key, [
         "year",
         "month",
@@ -24,7 +23,37 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         "title",
         "description",
         "complete"
-    ]);
+    ], Some([
+        |input| match input.parse::<i32>() {
+            Ok(_) => Ok(()),
+            _ => Err("2000".to_string())
+        },
+        |input| match input.parse::<i32>() {
+            Ok(y) if y > 0 && y <= 12 => Ok(()),
+            _ => Err("1".to_string())
+        },
+        |input| match input.parse::<i32>() {
+            Ok(y) if y > 0 && y <= 31 => Ok(()),
+            _ => Err("1".to_string())
+        },
+        |input| match time_shorthand_to_mins(input) {
+            Some(_) => Ok(()),
+            None => Err("00:00".to_string())
+        },
+        |input| match time_shorthand_to_mins(input) {
+            Some(_) => Ok(()),
+            None => Err("00:00".to_string())
+        },
+        |_| Ok(()),
+        |_| Ok(()),
+        |input| {
+            if input == "Yes" || input == "No" {
+                Ok(())
+            } else {
+                Err("No".to_string())
+            }
+        },
+    ]));
     match res.1 {
         form::FormResult::InProgress => {
             state::ScreenState::Calendar(state::CalendarState {
@@ -45,19 +74,10 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             let start_min = time_shorthand_to_mins(&result["start_shorthand"]);
             let end_min = time_shorthand_to_mins(&result["end_shorthand"]);
             // TODO: show loading screen
-            // TODO: validation for these params
-            let year = match result["year"].parse::<i32>() {
-                Ok(y) => y,
-                _ => currstate.year
-            };
-            let month = match result["month"].parse::<i32>() {
-                Ok(m) => m,
-                _ => currstate.month as i32
-            };
-            let day = match result["day"].parse::<i32>() {
-                Ok(d) => d,
-                _ => currstate.day as i32
-            };
+            // Because of validators (above), we can assume this processing will be valid
+            let year = result["year"].parse::<i32>().unwrap();
+            let month = result["month"].parse::<i32>().unwrap();
+            let day = result["day"].parse::<i32>().unwrap();
             let complete = result["complete"] == "Yes";
             // TODO: run with API handler
             let edited_task = types::TaskDataWithId {
