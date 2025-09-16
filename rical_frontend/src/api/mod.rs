@@ -1,6 +1,7 @@
 use reqwest;
 use std::env;
 use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
 
 use crate::utils;
 use crate::types;
@@ -16,24 +17,16 @@ struct LoginResult {
     token: String
 }
 
+pub enum CacheType {
+    PreferCache,
+    RefreshOne,
+    RefreshEntireCache,
+}
+
 pub struct ApiHandler {
     blocking_client: reqwest::blocking::Client,
     auth_token: Option<String>,
-    cached_calendar_tasks: Option<types::CalendarTasks>,
-}
-
-pub enum CacheType {
-    PreferCache,
-    Refresh
-}
-
-impl CacheType {
-    pub fn prefer_cache(&self) -> bool {
-        match self {
-            CacheType::PreferCache => true,
-            CacheType::Refresh => false
-        }
-    }
+    cached_calendar_tasks: HashMap<(i32, u32), types::CalendarTasks>,
 }
 
 impl ApiHandler {
@@ -41,7 +34,7 @@ impl ApiHandler {
         ApiHandler {
             blocking_client: reqwest::blocking::Client::new(),
             auth_token: None,
-            cached_calendar_tasks: None,
+            cached_calendar_tasks: HashMap::new(),
         }
     }
 
@@ -91,9 +84,18 @@ impl ApiHandler {
     /// Fetch a calendar from the API. If this year/month calendar was already fetched, just return that one
     /// Only calling this method with `CacheType::PreferCache` could lead to data being out of sync
     pub fn fetch_calendar_tasks(&mut self, year: i32, month: u32, cache_type: CacheType) -> types::CalendarTasks {
-        // TODO: cache based on year and month, rather than just based on whether this was called
-        if cache_type.prefer_cache() && self.cached_calendar_tasks.is_some() {
-            return self.cached_calendar_tasks.clone().unwrap();
+        let identifier = (year, month);
+        match cache_type {
+            CacheType::PreferCache => {
+                match self.cached_calendar_tasks.get(&identifier) {
+                    Some(cached) => { return cached.clone(); },
+                    None => ()
+                }
+            },
+            CacheType::RefreshEntireCache => {
+                self.cached_calendar_tasks.clear();
+            },
+            CacheType::RefreshOne => ()
         }
 
         let res = self.blocking_client.get(format!("{}/calendar/{}/{}", Self::api_url(), year, month))
@@ -101,96 +103,8 @@ impl ApiHandler {
             .send().unwrap();
 
         let calendar_tasks = res.json::<types::CalendarTasks>().unwrap();
-        self.cached_calendar_tasks = Some(calendar_tasks.clone());
+        self.cached_calendar_tasks.insert(identifier, calendar_tasks.clone());
 
         calendar_tasks
-
-        // TODO: this is just dummy data; actually call the api
-        // TODO: caching
-        /*let dummy_task = types::TaskDataWithId {
-            year: 2025,
-            month: 8,
-            day: 7,
-            start_min: None,
-            end_min: None,
-            title: "Test".to_string(),
-            description: None,
-            complete: false,
-            task_id: 3
-        };
-        let dummy_task_2 = types::TaskDataWithId {
-            year: 2025,
-            month: 8,
-            day: 7,
-            start_min: Some(360),
-            end_min: Some(450),
-            title: "Test 2".to_string(),
-            description: None,
-            complete: false,
-            task_id: 4
-        };
-        let dummy_task_3 = types::TaskDataWithId {
-            year: 2025,
-            month: 8,
-            day: 7,
-            start_min: Some(480),
-            end_min: None,
-            title: "Test 3".to_string(),
-            description: None,
-            complete: true,
-            task_id: 5
-        };
-        let dummy_task_4 = types::TaskDataWithId {
-            year: 2025,
-            month: 8,
-            day: 7,
-            start_min: Some(480),
-            end_min: Some(497),
-            title: "Test 4".to_string(),
-            description: None,
-            complete: true,
-            task_id: 6
-        };
-        types::CalendarTasks {
-            days: vec![
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-                vec![
-                    dummy_task_2.clone(),
-                    dummy_task_3.clone(),
-                    dummy_task.clone(),
-                ],
-                vec![
-                    dummy_task_2.clone(),
-                    dummy_task.clone(),
-                ],
-                vec![],
-                vec![
-                    dummy_task_3.clone(),
-                    dummy_task.clone(),
-                ],
-                vec![],
-                vec![
-                    dummy_task.clone(),
-                ],
-                vec![],
-                vec![],
-                vec![],
-                vec![
-                    dummy_task.clone(),
-                    dummy_task_2.clone(),
-                    dummy_task_3.clone(),
-                    dummy_task_4.clone(),
-                ],
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-            ]
-        }*/
     }
 }
