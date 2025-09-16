@@ -49,9 +49,9 @@ impl TextInputState {
 pub struct FormState<const N: usize> {
     pub form_pos: usize,
     pub fields: [TextInputState; N],
-    /// If some, then an error has occured
+    /// If some, then the form has been submitted and is now displaying a message
     /// This can be multiple lines (multiple elements in the Vec)
-    pub error_message: Option<Vec<String>>
+    pub result_message: Option<Vec<String>>
 }
 
 impl<const N: usize> FormState<N> {
@@ -59,7 +59,7 @@ impl<const N: usize> FormState<N> {
         FormState {
             form_pos: 0,
             fields: core::array::from_fn::<TextInputState, N, _>(|_| TextInputState::new()),
-            error_message: None
+            result_message: None
         }
     }
 
@@ -67,14 +67,14 @@ impl<const N: usize> FormState<N> {
         FormState {
             form_pos,
             fields: contents.map(|c| TextInputState::from_contents(c)),
-            error_message: None
+            result_message: None
         }
     }
 
     /// Displays only an error message
-    pub fn from_error_message(msg: Vec<String>) -> FormState<N> {
+    pub fn from_result_message(msg: Vec<String>) -> FormState<N> {
         FormState {
-            error_message: Some(msg),
+            result_message: Some(msg),
             ..FormState::new()
         }
     }

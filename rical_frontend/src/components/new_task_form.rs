@@ -64,7 +64,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 }),
                 Err(_) => state::ScreenState::Calendar(state::CalendarState {
                     // TODO: better error message
-                    making_new_task: Some(state::FormState::from_error_message(vec![
+                    making_new_task: Some(state::FormState::from_result_message(vec![
                         "Could not create task. Check that you entered valid times".to_string()
                     ])),
                     ..currstate.clone()

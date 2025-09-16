@@ -64,7 +64,7 @@ pub fn handle_input<const N: usize>(
     label_names: [&str; N],
     validators: Option<[FieldValidator; N]>
 ) -> (state::FormState<N>, FormResult) {
-    if currstate.error_message.is_some() {
+    if currstate.result_message.is_some() {
         if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
             return (currstate.clone(), FormResult::CancelAll);
         } else {
@@ -178,10 +178,10 @@ pub fn render<const N: usize>(currstate: &state::FormState<N>, render_params: Fo
     text::println(2, &render_params.title)?;
     text::println(3, "")?;
 
-    match &currstate.error_message {
-        Some(error) => {
-            for (i, error_line) in error.iter().enumerate() {
-                text::println(4 + i as u16, &error_line)?;
+    match &currstate.result_message {
+        Some(lines) => {
+            for (i, line) in lines.iter().enumerate() {
+                text::println(4 + i as u16, &line)?;
             }
             text::clear_to_end()?;
         },
