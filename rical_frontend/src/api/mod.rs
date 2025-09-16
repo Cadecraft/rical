@@ -18,9 +18,12 @@ struct LoginResult {
 }
 
 pub enum CacheType {
+    /// If the matching parameters are found in the cache, use that instead of calling the API
     PreferCache,
+    /// Call the API with these parameters and update the cache with the new results
     RefreshOne,
-    RefreshEntireCache,
+    /// Clear the whole cache (not just the stored result with these parameters) before calling the API
+    ClearEntireCache,
 }
 
 pub struct ApiHandler {
@@ -92,7 +95,7 @@ impl ApiHandler {
                     None => ()
                 }
             },
-            CacheType::RefreshEntireCache => {
+            CacheType::ClearEntireCache => {
                 self.cached_calendar_tasks.clear();
             },
             CacheType::RefreshOne => ()
@@ -106,5 +109,17 @@ impl ApiHandler {
         self.cached_calendar_tasks.insert(identifier, calendar_tasks.clone());
 
         calendar_tasks
+    }
+
+    /// Post a task and refresh the calendar data from the API accordingly
+    pub fn post_new_task(&mut self, task: types::TaskData) -> Result<(), reqwest::Error> {
+        let res = self.blocking_client.post(format!("{}/task", Self::api_url()))
+            .bearer_auth(self.expect_auth_token())
+            .json(&task).send()?;
+        res.error_for_status()?;
+
+        self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+
+        Ok(())
     }
 }

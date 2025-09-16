@@ -70,6 +70,14 @@ impl<const N: usize> FormState<N> {
             error_message: None
         }
     }
+
+    /// Displays only an error message
+    pub fn from_error_message(msg: Vec<String>) -> FormState<N> {
+        FormState {
+            error_message: Some(msg),
+            ..FormState::new()
+        }
+    }
 }
 
 #[derive(Clone)]
