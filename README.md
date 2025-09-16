@@ -64,6 +64,10 @@ docker run --name rical-db -e POSTGRES_PASSWORD=passwordhere -e POSTGRES_DB=rica
 docker exec -it rical-db sh
 psql rical_db userhere
 ```
+- To start it if you've already ran it before:
+```
+docker container start rical-db
+```
 - If it was already running:
 ```
 docker container stop rical-db

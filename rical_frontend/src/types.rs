@@ -38,7 +38,7 @@ impl TaskDataWithId {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct CalendarTasks {
     pub days: Vec<Vec<TaskDataWithId>>
 }

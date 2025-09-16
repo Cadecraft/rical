@@ -24,12 +24,12 @@ fn main() -> io::Result<()> {
 
     // State and data setup
     // TODO: default to main page, not calendar
-    /*let mut state = state::RicalState {
+    let mut state = state::RicalState {
         screen_state: state::ScreenState::Menu(
             state::MenuState::MainMenu
         )
-    };*/
-    let mut state = state::RicalState {
+    };
+    /*let mut state = state::RicalState {
         screen_state: state::ScreenState::Calendar(state::CalendarState {
             year: 2025,
             month: 8,
@@ -39,7 +39,7 @@ fn main() -> io::Result<()> {
             making_new_task: None,
             editing_task: None,
         })
-    };
+    };*/
     let mut api_handler = api::ApiHandler::new();
 
     // Initial rendering setup only

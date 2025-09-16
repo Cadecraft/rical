@@ -9,7 +9,7 @@ use crossterm::{
 
 use crate::state;
 use crate::utils::{self, KeyInfo, key_pressed, get_calendar_frame, fmt_mins, fmt_twodigit};
-use crate::api::ApiHandler;
+use crate::api::{ApiHandler, CacheType};
 
 use crate::types;
 
@@ -134,7 +134,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         },
         CalAction::EditSelectedTask => {
-            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
+            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 
             match currstate.task_id {
                 Some(id) => match get_task_index_by_id(&date_tasks, id) {
@@ -148,7 +148,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         },
         CalAction::SelectTaskUp => {
-            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
+            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 
             // Select the task/day above the current one
             match currstate.task_id {
@@ -166,7 +166,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 None => {
                     // Previous date's last task
                     let res = selected_date.sub_days(1);
-                    let date_tasks_prev = api_handler.fetch_tasks_at_date_cached(&res);
+                    let date_tasks_prev = api_handler.fetch_tasks_at_date(&res, CacheType::PreferCache);
                     if date_tasks_prev.len() > 0 {
                         state::CalendarState {
                             year: res.year,
@@ -188,7 +188,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         }
         CalAction::SelectTaskDown => {
-            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
+            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 
             // Select the task/day after the current one
             match currstate.task_id {
@@ -485,7 +485,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
 
     // Fetch data
-    let calendar_tasks = api_handler.fetch_calendar_tasks_cached(selected_date.year, selected_date.month);
+    let calendar_tasks = api_handler.fetch_calendar_tasks(selected_date.year, selected_date.month, CacheType::PreferCache);
 
     // Responsive layout
     let viewport_width = get_viewport_width()?;
