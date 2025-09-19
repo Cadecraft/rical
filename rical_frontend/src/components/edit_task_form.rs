@@ -38,11 +38,11 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         },
         |input| match time_shorthand_to_mins(input) {
             Some(_) => Ok(()),
-            None => Err("00:00".to_string())
+            None => Err(String::new())
         },
         |input| match time_shorthand_to_mins(input) {
             Some(_) => Ok(()),
-            None => Err("00:00".to_string())
+            None => Err(String::new())
         },
         |_| Ok(()),
         |_| Ok(()),
