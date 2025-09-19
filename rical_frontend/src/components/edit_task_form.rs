@@ -80,7 +80,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             let day = result["day"].parse::<i32>().unwrap();
             let complete = result["complete"] == "Yes";
             // TODO: run with API handler
-            let edited_task = types::TaskDataWithId {
+            match api_handler.update_task(types::TaskDataWithId {
                 year,
                 month,
                 day,
@@ -90,11 +90,23 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 description: Some(result["description"].clone()),
                 complete,
                 task_id: formstate.task_id
-            };
-            state::ScreenState::Calendar(state::CalendarState {
-                editing_task: None,
-                ..currstate.clone()
-            })
+            }) {
+                Ok(date_changed) => state::ScreenState::Calendar(state::CalendarState {
+                    // Prevent referencing a task that's been moved to a different day
+                    task_id: if date_changed { None } else { currstate.task_id },
+                    editing_task: None,
+                    ..currstate.clone()
+                }),
+                Err(_) => state::ScreenState::Calendar(state::CalendarState {
+                    editing_task: Some(state::EditTaskState {
+                        task_id: formstate.task_id,
+                        form: state::FormState::from_result_message(vec![
+                            "This task could not be edited. Make sure you entered valid times".to_string()
+                        ])
+                    }),
+                    ..currstate.clone()
+                })
+            }
         }
     }
 }

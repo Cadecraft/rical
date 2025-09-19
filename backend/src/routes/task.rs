@@ -76,6 +76,7 @@ async fn post_task(
     (StatusCode::CREATED, Json(Some(task_id)))
 }
 
+/// Update a task and return the original
 async fn put_task(
     TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
@@ -89,11 +90,13 @@ async fn put_task(
         }
     };
     let res = match sqlx::query_as!(TaskData, r#"
-        UPDATE task
+        UPDATE task x
         SET year = $1, month = $2, day = $3, start_min = $4, end_min = $5, title = $6,
             description = $7, complete = $8
-        WHERE task_id = $9 AND account_id = $10
-        RETURNING year, month, day, start_min, end_min, title, description, complete;
+        FROM task y
+        WHERE x.task_id = y.task_id AND x.account_id = y.account_id
+        AND x.task_id = $9 AND x.account_id = $10
+        RETURNING y.year, y.month, y.day, y.start_min, y.end_min, y.title, y.description, y.complete;
     "#, payload.year, payload.month, payload.day, payload.start_min, payload.end_min, payload.title, payload.description, payload.complete, task_id, account_id).fetch_one(&state.db_pool).await {
         Ok(result) => result,
         Err(_) => {

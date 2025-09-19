@@ -22,8 +22,6 @@ pub enum CacheType {
     PreferCache,
     /// Call the API with these parameters and update the cache with the new results
     RefreshOne,
-    /// Clear the whole cache (not just the stored result with these parameters) before calling the API
-    ClearEntireCache,
 }
 
 pub struct ApiHandler {
@@ -95,9 +93,6 @@ impl ApiHandler {
                     None => ()
                 }
             },
-            CacheType::ClearEntireCache => {
-                self.cached_calendar_tasks.clear();
-            },
             CacheType::RefreshOne => ()
         }
 
@@ -123,15 +118,22 @@ impl ApiHandler {
         Ok(())
     }
 
-    /// Update an existing task and refresh the calendar data from the API accordingly
-    pub fn update_task(&mut self, task: types::TaskDataWithId) -> Result<(), reqwest::Error> {
+    /// Update an existing task and refresh the calendar data from the API accordingly; return whether the date changed
+    pub fn update_task(&mut self, task: types::TaskDataWithId) -> Result<bool, reqwest::Error> {
         let res = self.blocking_client.put(format!("{}/task/{}", Self::api_url(), task.task_id))
             .bearer_auth(self.expect_auth_token())
             .json(&task.without_id()).send()?;
-        res.error_for_status()?;
+        let res = res.error_for_status()?;
+        let original = res.json::<types::TaskData>().unwrap();
 
-        self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+        // Must update the previously designated month AND the newly designated month if both have changed
+        self.fetch_calendar_tasks(original.year, original.month as u32, CacheType::RefreshOne);
+        let calendar_frame_changed = original.year != task.year || original.month != task.month;
+        if calendar_frame_changed {
+            self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+        }
+        let date_changed = calendar_frame_changed || original.day != task.day;
 
-        Ok(())
+        Ok(date_changed)
     }
 }
