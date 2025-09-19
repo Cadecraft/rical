@@ -1,12 +1,11 @@
 use axum::{
     extract::{State, Path},
-    routing::{get, post, patch, delete},
+    routing::{get, post, put, delete},
     http::StatusCode,
     Json,
     Router,
 };
 use axum_extra::{headers::{Authorization, authorization::Bearer}, TypedHeader};
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use sqlx;
 
@@ -18,7 +17,7 @@ pub fn get_routes(state: &Arc<AppState>) -> Router {
     Router::new()
         .route("/{id}", get(get_task))
         .route("/", post(post_task))
-        .route("/{id}", patch(patch_task))
+        .route("/{id}", put(put_task))
         .route("/{id}", delete(delete_task))
         .with_state(state.clone())
 }
@@ -77,7 +76,7 @@ async fn post_task(
     (StatusCode::CREATED, Json(Some(task_id)))
 }
 
-async fn patch_task(
+async fn put_task(
     TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
     Path(task_id): Path<i64>,
@@ -107,10 +106,8 @@ async fn patch_task(
 async fn delete_task(
     TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
-    Path(task_id): Path<i64>,
-    Json(payload): Json<TaskId>
+    Path(task_id): Path<i64>
 ) -> StatusCode {
-    // TODO: remove unnecessary payload without causing errors
     let account_id = match utils::verify_jwt(bearer.token()) {
         Some(id) => id,
         None => {

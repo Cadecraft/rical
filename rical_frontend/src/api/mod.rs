@@ -122,4 +122,16 @@ impl ApiHandler {
 
         Ok(())
     }
+
+    /// Update an existing task and refresh the calendar data from the API accordingly
+    pub fn update_task(&mut self, task: types::TaskDataWithId) -> Result<(), reqwest::Error> {
+        let res = self.blocking_client.put(format!("{}/task/{}", Self::api_url(), task.task_id))
+            .bearer_auth(self.expect_auth_token())
+            .json(&task.without_id()).send()?;
+        res.error_for_status()?;
+
+        self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+
+        Ok(())
+    }
 }

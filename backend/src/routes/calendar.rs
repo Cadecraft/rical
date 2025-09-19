@@ -1,16 +1,14 @@
 use axum::{
     extract::{State, Path},
-    routing::{get, post, patch, delete},
+    routing::get,
     http::StatusCode,
     Json,
     Router,
 };
 use axum_extra::{headers::{Authorization, authorization::Bearer}, TypedHeader};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::sync::Arc;
 use sqlx;
-
-use std::iter;
 
 use crate::AppState;
 use crate::utils;

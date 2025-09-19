@@ -36,6 +36,19 @@ impl TaskDataWithId {
             None
         }
     }
+
+    pub fn without_id(&self) -> TaskData {
+        TaskData {
+            year: self.year,
+            month: self.month,
+            day: self.day,
+            start_min: self.start_min,
+            end_min: self.end_min,
+            title: self.title.clone(),
+            description: self.description.clone(),
+            complete: self.complete
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone)]
