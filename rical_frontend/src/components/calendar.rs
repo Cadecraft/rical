@@ -33,6 +33,17 @@ pub fn get_task_index_by_id(date_tasks: &Vec<types::TaskDataWithId>, task_id: i6
     date_tasks.iter().position(|task| task.task_id == task_id)
 }
 
+pub fn get_selected_task(
+    api_handler: &mut ApiHandler, selected_date: &utils::RicalDate, task_id: Option<i64>
+) -> Option<types::TaskDataWithId> {
+    let date_tasks = api_handler.fetch_tasks_at_date(selected_date, CacheType::PreferCache);
+
+    match task_id {
+        Some(id) => date_tasks.iter().find(|e| e.task_id == id).cloned(),
+        None => None
+    }
+}
+
 pub fn edit_task_state_from_task(task: &types::TaskDataWithId) -> state::EditTaskState {
     state::EditTaskState {
         task_id: task.task_id,
@@ -137,35 +148,24 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         },
         CalAction::EditSelectedTask => {
-            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
-
-            match currstate.task_id {
-                Some(id) => match get_task_index_by_id(&date_tasks, id) {
-                    Some(index) => state::CalendarState {
-                        editing_task: Some(edit_task_state_from_task(&date_tasks[index])),
-                        ..currstate.clone()
-                    },
-                    None => currstate.clone()
+            match get_selected_task(api_handler, &selected_date, currstate.task_id) {
+                Some(task) => state::CalendarState {
+                    editing_task: Some(edit_task_state_from_task(&task)),
+                    ..currstate.clone()
                 },
                 None => currstate.clone()
             }
         },
         CalAction::ToggleCompleted => {
-            // TODO: refactor this logic
-            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
-
-            match currstate.task_id {
-                Some(id) => match get_task_index_by_id(&date_tasks, id) {
-                    Some(index) => {
-                        match api_handler.toggle_completed(&date_tasks[index]) {
-                            Ok(_) => (),
-                            Err(_) => ()
-                        };
-                    },
-                    None => ()
+            match get_selected_task(api_handler, &selected_date, currstate.task_id) {
+                Some(task) => {
+                    match api_handler.toggle_completed(&task) {
+                        Ok(_) => (),
+                        Err(_) => ()
+                    };
                 },
                 None => ()
-            };
+            }
 
             currstate.clone()
         },
