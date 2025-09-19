@@ -136,4 +136,13 @@ impl ApiHandler {
 
         Ok(date_changed)
     }
+
+    pub fn toggle_completed(&mut self, task: &types::TaskDataWithId) -> Result<(), reqwest::Error> {
+        let mut updated = task.clone();
+        updated.complete = !updated.complete;
+        self.update_task(updated)?;
+        self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+
+        Ok(())
+    }
 }

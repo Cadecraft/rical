@@ -25,6 +25,7 @@ enum CalAction {
     SelectTaskDown,
     StartNewTask,
     EditSelectedTask,
+    ToggleCompleted,
     None
 }
 
@@ -94,6 +95,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::StartNewTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('e')) {
                 CalAction::EditSelectedTask
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('x')) {
+                CalAction::ToggleCompleted
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
                 CalAction::SwitchToMonth
             } else {
@@ -146,6 +149,25 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 },
                 None => currstate.clone()
             }
+        },
+        CalAction::ToggleCompleted => {
+            // TODO: refactor this logic
+            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
+
+            match currstate.task_id {
+                Some(id) => match get_task_index_by_id(&date_tasks, id) {
+                    Some(index) => {
+                        match api_handler.toggle_completed(&date_tasks[index]) {
+                            Ok(_) => (),
+                            Err(_) => ()
+                        };
+                    },
+                    None => ()
+                },
+                None => ()
+            };
+
+            currstate.clone()
         },
         CalAction::SelectTaskUp => {
             let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
