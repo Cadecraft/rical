@@ -26,6 +26,7 @@ enum CalAction {
     StartNewTask,
     EditSelectedTask,
     ToggleCompleted,
+    DeleteSelectedTask,
     None
 }
 
@@ -108,6 +109,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::EditSelectedTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('x')) {
                 CalAction::ToggleCompleted
+            } else if key_pressed(key, KeyModifiers::SHIFT, KeyCode::Char('D')) {
+                CalAction::DeleteSelectedTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
                 CalAction::SwitchToMonth
             } else {
@@ -159,7 +162,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         CalAction::ToggleCompleted => {
             match get_selected_task(api_handler, &selected_date, currstate.task_id) {
                 Some(task) => {
-                    match api_handler.toggle_completed(&task) {
+                    match api_handler.toggle_completed(task) {
                         Ok(_) => (),
                         Err(_) => ()
                     };
@@ -169,6 +172,21 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
 
             currstate.clone()
         },
+        CalAction::DeleteSelectedTask => {
+            match get_selected_task(api_handler, &selected_date, currstate.task_id) {
+                Some(task) => {
+                    // TODO: put the task into the clipboard so that it can be "pasted" (moved to a different date) or the delete can be undone
+                    match api_handler.delete_task(task) {
+                        Ok(_) => state::CalendarState {
+                            task_id: None,
+                            ..currstate.clone()
+                        },
+                        Err(_) => currstate.clone()
+                    }
+                },
+                None => currstate.clone()
+            }
+        }
         CalAction::SelectTaskUp => {
             let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 

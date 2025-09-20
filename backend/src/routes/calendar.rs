@@ -40,7 +40,7 @@ async fn get_calendar(
         SELECT year, month, day,
         start_min, end_min, title, description, complete, task_id
         FROM task WHERE year=$1 AND month=$2 AND account_id=$3
-        ORDER BY day, start_min, end_min DESC;
+        ORDER BY day, start_min, end_min DESC, title;
     "#, year, month, &account_id
     ).fetch_all(&state.db_pool).await {
         Ok(rows) => rows,

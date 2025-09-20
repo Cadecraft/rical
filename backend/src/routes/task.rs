@@ -120,7 +120,7 @@ async fn delete_task(
     match sqlx::query_as!(TaskData, r#"
         DELETE FROM task
         WHERE task_id = $1 AND account_id = $2;
-    "#, task_id, account_id).fetch_one(&state.db_pool).await {
+    "#, task_id, account_id).execute(&state.db_pool).await {
         Ok(_) => StatusCode::OK,
         Err(_) => StatusCode::BAD_REQUEST
     }

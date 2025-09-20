@@ -118,7 +118,7 @@ impl ApiHandler {
         Ok(())
     }
 
-    /// Update an existing task and refresh the calendar data from the API accordingly; return whether the date changed
+    /// Update an existing task and refresh the calendar accordingly; return whether the date changed
     pub fn update_task(&mut self, task: types::TaskDataWithId) -> Result<bool, reqwest::Error> {
         let res = self.blocking_client.put(format!("{}/task/{}", Self::api_url(), task.task_id))
             .bearer_auth(self.expect_auth_token())
@@ -137,10 +137,22 @@ impl ApiHandler {
         Ok(date_changed)
     }
 
-    pub fn toggle_completed(&mut self, task: &types::TaskDataWithId) -> Result<(), reqwest::Error> {
+    /// Toggle whether a task is completed and refresh the calendar accordingly
+    pub fn toggle_completed(&mut self, task: types::TaskDataWithId) -> Result<(), reqwest::Error> {
         let mut updated = task.clone();
         updated.complete = !updated.complete;
         self.update_task(updated)?;
+        self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+
+        Ok(())
+    }
+
+    /// Delete a task and refresh the calendar accordingly
+    pub fn delete_task(&mut self, task: types::TaskDataWithId) -> Result<(), reqwest::Error> {
+        let res = self.blocking_client.delete(format!("{}/task/{}", Self::api_url(), task.task_id))
+            .bearer_auth(self.expect_auth_token()).send()?;
+        res.error_for_status()?;
+
         self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
 
         Ok(())
