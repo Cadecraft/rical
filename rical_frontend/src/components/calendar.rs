@@ -525,7 +525,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
 
     // Fetch data
-    let calendar_tasks = api_handler.fetch_calendar_tasks(selected_date.year, selected_date.month, CacheType::PreferCache);
+    let calendar_tasks = api_handler.fetch_calendar_tasks(selected_date.year, selected_date.month as i32, CacheType::PreferCache);
 
     // Responsive layout
     let viewport_width = get_viewport_width()?;

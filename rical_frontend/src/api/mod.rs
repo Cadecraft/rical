@@ -27,7 +27,7 @@ pub enum CacheType {
 pub struct ApiHandler {
     blocking_client: reqwest::blocking::Client,
     auth_token: Option<String>,
-    cached_calendar_tasks: HashMap<(i32, u32), types::CalendarTasks>,
+    cached_calendar_tasks: HashMap<(i32, i32), types::CalendarTasks>,
 }
 
 impl ApiHandler {
@@ -77,14 +77,14 @@ impl ApiHandler {
     }
 
     pub fn fetch_tasks_at_date(&mut self, date: &utils::RicalDate, cache_type: CacheType) -> Vec<types::TaskDataWithId> {
-        let calendar_tasks = self.fetch_calendar_tasks(date.year, date.month, cache_type);
+        let calendar_tasks = self.fetch_calendar_tasks(date.year, date.month as i32, cache_type);
         let empty_res: Vec<types::TaskDataWithId> = vec![];
         calendar_tasks.days.get(date.day as usize - 1).unwrap_or(&empty_res).clone()
     }
 
     /// Fetch a calendar from the API. If this year/month calendar was already fetched, just return that one
     /// Only calling this method with `CacheType::PreferCache` could lead to data being out of sync
-    pub fn fetch_calendar_tasks(&mut self, year: i32, month: u32, cache_type: CacheType) -> types::CalendarTasks {
+    pub fn fetch_calendar_tasks(&mut self, year: i32, month: i32, cache_type: CacheType) -> types::CalendarTasks {
         let identifier = (year, month);
         match cache_type {
             CacheType::PreferCache => {
@@ -113,7 +113,7 @@ impl ApiHandler {
             .json(&task).send()?;
         res.error_for_status()?;
 
-        self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+        self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
 
         Ok(())
     }
@@ -127,10 +127,10 @@ impl ApiHandler {
         let original = res.json::<types::TaskData>().unwrap();
 
         // Must update the previously designated month AND the newly designated month if both have changed
-        self.fetch_calendar_tasks(original.year, original.month as u32, CacheType::RefreshOne);
+        self.fetch_calendar_tasks(original.year, original.month, CacheType::RefreshOne);
         let calendar_frame_changed = original.year != task.year || original.month != task.month;
         if calendar_frame_changed {
-            self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+            self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
         }
         let date_changed = calendar_frame_changed || original.day != task.day;
 
@@ -142,7 +142,7 @@ impl ApiHandler {
         let mut updated = task.clone();
         updated.complete = !updated.complete;
         self.update_task(updated)?;
-        self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+        self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
 
         Ok(())
     }
@@ -153,7 +153,7 @@ impl ApiHandler {
             .bearer_auth(self.expect_auth_token()).send()?;
         res.error_for_status()?;
 
-        self.fetch_calendar_tasks(task.year, task.month as u32, CacheType::RefreshOne);
+        self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
 
         Ok(())
     }
