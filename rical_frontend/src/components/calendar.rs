@@ -451,7 +451,8 @@ pub fn render_tasks_date(
     selected_task_id: Option<i64>,
     is_today: bool,
     tasks: &Vec<types::TaskDataWithId>,
-    pane: &state::CalendarPane
+    pane: &state::CalendarPane,
+    clipboard: &Option<types::TaskData>
 ) -> io::Result<u16> {
     let mut stdout = io::stdout();
 
@@ -480,7 +481,14 @@ pub fn render_tasks_date(
             }
         ),
     )?;
-    text::pad_characters(tasks_pane_width, date_title_len as u16, " ")?;
+    if is_selected && clipboard.is_some() {
+        // Display clipboard if possible
+        let clipboard_help = "(p) paste ";
+        text::pad_characters(tasks_pane_width, (date_title_len + clipboard_help.len()) as u16, " ")?;
+        queue!(stdout, style::Print(clipboard_help))?;
+    } else {
+        text::pad_characters(tasks_pane_width, date_title_len as u16, " ")?;
+    }
     queue!(stdout, style::Print("│"))?;
     queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
     cursory += 1;
@@ -652,7 +660,18 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         let is_today = date == utils::RicalDate::today();
         let empty_tasks = vec![];
         let tasks = calendar_tasks.days.get((date.day - 1) as usize).unwrap_or(&empty_tasks);
-        cursory = render_tasks_date(date, cursorx, cursory, tasks_pane_width, is_selected, currstate.task_id, is_today, tasks, &currstate.pane)?;
+        cursory = render_tasks_date(
+            date,
+            cursorx,
+            cursory,
+            tasks_pane_width,
+            is_selected,
+            currstate.task_id,
+            is_today,
+            tasks,
+            &currstate.pane,
+            &currstate.task_clipboard
+        )?;
         // Divider between selected date and upcoming dates
         if date_offset == 0 {
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
