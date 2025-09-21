@@ -27,6 +27,7 @@ enum CalAction {
     EditSelectedTask,
     ToggleCompleted,
     DeleteSelectedTask,
+    PasteTask,
     None
 }
 
@@ -86,6 +87,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::Move(utils::GridDirection::Right)
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('o')) {
                 CalAction::StartNewTask
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('p')) {
+                CalAction::PasteTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Enter) {
                 CalAction::SwitchToTasks
             } else {
@@ -105,6 +108,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::Move(utils::GridDirection::Right)
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('o')) {
                 CalAction::StartNewTask
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('p')) {
+                CalAction::PasteTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('e')) {
                 CalAction::EditSelectedTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('x')) {
@@ -162,7 +167,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         CalAction::ToggleCompleted => {
             match get_selected_task(api_handler, &selected_date, currstate.task_id) {
                 Some(task) => {
-                    match api_handler.toggle_completed(task) {
+                    match api_handler.toggle_completed(&task) {
                         Ok(_) => (),
                         Err(_) => ()
                     };
@@ -176,9 +181,10 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             match get_selected_task(api_handler, &selected_date, currstate.task_id) {
                 Some(task) => {
                     // TODO: put the task into the clipboard so that it can be "pasted" (moved to a different date) or the delete can be undone
-                    match api_handler.delete_task(task) {
+                    match api_handler.delete_task(&task) {
                         Ok(_) => state::CalendarState {
                             task_id: None,
+                            task_clipboard: Some(task.without_id()),
                             ..currstate.clone()
                         },
                         Err(_) => currstate.clone()
@@ -186,7 +192,28 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 },
                 None => currstate.clone()
             }
-        }
+        },
+        CalAction::PasteTask => {
+            match &currstate.task_clipboard {
+                Some(task) => {
+                    let new_task = types::TaskData {
+                        year: currstate.year,
+                        month: currstate.month as i32,
+                        day: currstate.day as i32,
+                        start_min: task.start_min,
+                        end_min: task.end_min,
+                        title: task.title.clone(),
+                        description: task.description.clone(),
+                        complete: task.complete
+                    };
+                    match api_handler.post_new_task(&new_task) {
+                        Ok(_) => currstate.clone(),
+                        Err(_) => currstate.clone()
+                    }
+                },
+                None => currstate.clone()
+            }
+        },
         CalAction::SelectTaskUp => {
             let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 

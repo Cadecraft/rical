@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 // NOTE: some of these types are copied from the backend
 // NOTE: May want to look into a better long-term type sharing solution
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct TaskData {
     pub year: i32,
     pub month: i32,

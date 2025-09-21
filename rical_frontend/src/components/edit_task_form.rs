@@ -79,8 +79,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             let month = result["month"].parse::<i32>().unwrap();
             let day = result["day"].parse::<i32>().unwrap();
             let complete = result["complete"] == "Yes";
-            // TODO: run with API handler
-            match api_handler.update_task(types::TaskDataWithId {
+            let new_task = types::TaskDataWithId {
                 year,
                 month,
                 day,
@@ -90,7 +89,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 description: Some(result["description"].clone()),
                 complete,
                 task_id: formstate.task_id
-            }) {
+            };
+            match api_handler.update_task(&new_task) {
                 Ok(date_changed) => state::ScreenState::Calendar(state::CalendarState {
                     // Prevent referencing a task that's been moved to a different day
                     task_id: if date_changed { None } else { currstate.task_id },

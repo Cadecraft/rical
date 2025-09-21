@@ -1,3 +1,5 @@
+use crate::types;
+
 /// Stores the entire hierarchy of state in the app
 /// `screen_state` deals with the state of the UI
 /// Other fields can be added to represent important global state
@@ -89,19 +91,20 @@ pub struct CalendarState {
     pub pane: CalendarPane,
     pub making_new_task: Option<FormState<4>>,
     pub editing_task: Option<EditTaskState>,
+    pub task_clipboard: Option<types::TaskData>
 }
 
 impl CalendarState {
-    pub fn new() -> CalendarState {
-        // TODO: get current year/day, or ask for those as parameters
+    pub fn new(year: i32, month: u32, day: u32) -> CalendarState {
         CalendarState {
-            year: 2025,
-            month: 8,
-            day: 5,
+            year,
+            month,
+            day,
             task_id: None,
             pane: CalendarPane::Month,
             making_new_task: None,
             editing_task: None,
+            task_clipboard: None,
         }
     }
 }

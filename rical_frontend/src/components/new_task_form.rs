@@ -48,7 +48,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             let start_min = time_shorthand_to_mins(&result["start_shorthand"]);
             let end_min = time_shorthand_to_mins(&result["end_shorthand"]);
             // TODO: show loading screen
-            match api_handler.post_new_task(types::TaskData {
+            let new_task = types::TaskData {
                 year: currstate.year,
                 month: currstate.month as i32,
                 day: currstate.day as i32,
@@ -57,7 +57,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 title: result["title"].clone(),
                 description: Some(result["description"].clone()),
                 complete: false
-            }) {
+            };
+            match api_handler.post_new_task(&new_task) {
                 Ok(_) => state::ScreenState::Calendar(state::CalendarState {
                     making_new_task: None,
                     ..currstate.clone()

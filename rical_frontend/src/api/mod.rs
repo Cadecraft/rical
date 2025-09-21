@@ -107,7 +107,7 @@ impl ApiHandler {
     }
 
     /// Post a task and refresh the calendar data from the API accordingly
-    pub fn post_new_task(&mut self, task: types::TaskData) -> Result<(), reqwest::Error> {
+    pub fn post_new_task(&mut self, task: &types::TaskData) -> Result<(), reqwest::Error> {
         let res = self.blocking_client.post(format!("{}/task", Self::api_url()))
             .bearer_auth(self.expect_auth_token())
             .json(&task).send()?;
@@ -119,7 +119,7 @@ impl ApiHandler {
     }
 
     /// Update an existing task and refresh the calendar accordingly; return whether the date changed
-    pub fn update_task(&mut self, task: types::TaskDataWithId) -> Result<bool, reqwest::Error> {
+    pub fn update_task(&mut self, task: &types::TaskDataWithId) -> Result<bool, reqwest::Error> {
         let res = self.blocking_client.put(format!("{}/task/{}", Self::api_url(), task.task_id))
             .bearer_auth(self.expect_auth_token())
             .json(&task.without_id()).send()?;
@@ -138,17 +138,17 @@ impl ApiHandler {
     }
 
     /// Toggle whether a task is completed and refresh the calendar accordingly
-    pub fn toggle_completed(&mut self, task: types::TaskDataWithId) -> Result<(), reqwest::Error> {
+    pub fn toggle_completed(&mut self, task: &types::TaskDataWithId) -> Result<(), reqwest::Error> {
         let mut updated = task.clone();
         updated.complete = !updated.complete;
-        self.update_task(updated)?;
+        self.update_task(&updated)?;
         self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
 
         Ok(())
     }
 
     /// Delete a task and refresh the calendar accordingly
-    pub fn delete_task(&mut self, task: types::TaskDataWithId) -> Result<(), reqwest::Error> {
+    pub fn delete_task(&mut self, task: &types::TaskDataWithId) -> Result<(), reqwest::Error> {
         let res = self.blocking_client.delete(format!("{}/task/{}", Self::api_url(), task.task_id))
             .bearer_auth(self.expect_auth_token()).send()?;
         res.error_for_status()?;
