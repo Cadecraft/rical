@@ -25,23 +25,16 @@ pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler:
             let password = result["password"].clone();
             match api_handler.try_signup(username.clone(), password) {
                 Ok(_) => {
-                    state::ScreenState::Menu(state::MenuState::Signup(state::FormState {
-                        // TODO: rename `error_message` since this is not an error, just a message
-                        error_message: Some(vec![
-                            format!("You've successfully signed up as {}!", username),
-                            "Go back to the menu (esc) and log in to access your calendar".to_string()
-                        ]),
-                        ..res.0
-                    }))
+                    state::ScreenState::Menu(state::MenuState::Signup(state::FormState::from_result_message(vec![
+                        format!("You've successfully signed up as {}!", username),
+                        "Go back to the menu (esc) and log in to access your calendar".to_string()
+                    ])))
                 }, _ => {
                     // TODO: better error message
-                    state::ScreenState::Menu(state::MenuState::Signup(state::FormState {
-                        error_message: Some(vec![
-                            "Signing up failed.".to_string(),
-                            "Make sure you entered a unique username, and that you're connected to the server.".to_string(),
-                        ]),
-                        ..res.0
-                    }))
+                    state::ScreenState::Menu(state::MenuState::Signup(state::FormState::from_result_message(vec![
+                        "Signing up failed.".to_string(),
+                        "Make sure you entered a unique username, and that you're connected to the server.".to_string(),
+                    ])))
                 }
             }
         }

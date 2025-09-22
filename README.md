@@ -34,6 +34,41 @@ This app is far from complete! Check back soon, mark your calendars...
 - Deploy the backend
 - Possibly make a simple frontend website for easy mobile access across devices
 
+## Using the Rical Frontend
+### Starting out
+Run the frontend (see development below) and make sure you're connected to the server.
+
+To create an account, follow the instructions in the main menu.
+
+To exit the app at any time, press `Ctrl+C`.
+
+### Controls (calendar: month pane)
+- `h/j/k/l`: navigate between dates
+- `o`: "Open" a new task
+- `Enter`: "Enter" into the tasks pane from the month pane
+- `Ctrl+M`: log out to the "Menu"
+
+### Controls (calendar: tasks pane)
+- `Esc`: "Escape" out of the tasks pane into the month pane
+- `j/k`: navigate down/up between dates and tasks
+- `o`: "Open" a new task
+- `e`: "Edit" a currently selected task
+- `D` (`Shift`+`d`): "Delete" a task (cut it to your Rical clipboard)
+- `p`: "Paste" a task from your rical clipboard into the currently selected date
+- `x`: mark a task as done or not done (toggle)
+- `Ctrl+M`: log out to the "Menu"
+
+### Controls (input boxes/forms)
+These should be what you're familiar with:
+- `Backspace`: delete last character
+- `Ctrl+Backspace`: delete last word
+- `Left`: go to previous character
+- `Home`: go to start of input
+- `End`: go to end of input
+- `Up`: go to previous input box
+- `Down` or `Tab`: go to next input box
+- `Enter`: submit a form
+
 ## Technologies
 **Backend**
 - Rust 🦀
@@ -52,7 +87,7 @@ This app is far from complete! Check back soon, mark your calendars...
 **Starting the backend**
 - Note: make sure to update the `.env` file and use the correct password/other info in these commands
 - Run Postgres
-```
+```sh
 cd backend/src
 
 docker pull postgres:17.6
@@ -64,12 +99,32 @@ docker run --name rical-db -e POSTGRES_PASSWORD=passwordhere -e POSTGRES_DB=rica
 docker exec -it rical-db sh
 psql rical_db userhere
 ```
-- If it was already running:
+- To start it if you've already ran it before:
+```sh
+docker container start rical-db
 ```
+- If it was already running:
+```sh
 docker container stop rical-db
 docker container rm rical-db
 ```
 - Start the backend with `cargo run`. Assuming your `DATABASE_URL` is correct, schemas should be loaded into the database automatically via the build script.
+
+**Starting the frontend**
+1. Clone the repository
+2. Copy `rical_frontend/.env.example` into `rical_frontend/.env` and set the `API_URL` variable properly.
+    - If you're planning on using the officially hosted backend, set it to that URL (coming soon)
+    - If you're self-hosting, put the URL that you're running the backend on
+3. Run or install by running these commands:
+```sh
+cd rical_frontend
+
+# To just run the program once
+cargo run
+
+# OR, to install to your computer
+cargo install --path .
+```
 
 ## Deployment
 - Using Railway, Postgres should be straightforward

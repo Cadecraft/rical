@@ -9,7 +9,7 @@ use crossterm::{
 
 use crate::state;
 use crate::utils::{self, KeyInfo, key_pressed, get_calendar_frame, fmt_mins, fmt_twodigit};
-use crate::api::ApiHandler;
+use crate::api::{ApiHandler, CacheType};
 
 use crate::types;
 
@@ -25,11 +25,25 @@ enum CalAction {
     SelectTaskDown,
     StartNewTask,
     EditSelectedTask,
+    ToggleCompleted,
+    DeleteSelectedTask,
+    PasteTask,
     None
 }
 
 pub fn get_task_index_by_id(date_tasks: &Vec<types::TaskDataWithId>, task_id: i64) -> Option<usize> {
     date_tasks.iter().position(|task| task.task_id == task_id)
+}
+
+pub fn get_selected_task(
+    api_handler: &mut ApiHandler, selected_date: &utils::RicalDate, task_id: Option<i64>
+) -> Option<types::TaskDataWithId> {
+    let date_tasks = api_handler.fetch_tasks_at_date(selected_date, CacheType::PreferCache);
+
+    match task_id {
+        Some(id) => date_tasks.iter().find(|e| e.task_id == id).cloned(),
+        None => None
+    }
 }
 
 pub fn edit_task_state_from_task(task: &types::TaskDataWithId) -> state::EditTaskState {
@@ -73,6 +87,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::Move(utils::GridDirection::Right)
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('o')) {
                 CalAction::StartNewTask
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('p')) {
+                CalAction::PasteTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Enter) {
                 CalAction::SwitchToTasks
             } else {
@@ -92,8 +108,14 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 CalAction::Move(utils::GridDirection::Right)
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('o')) {
                 CalAction::StartNewTask
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('p')) {
+                CalAction::PasteTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('e')) {
                 CalAction::EditSelectedTask
+            } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('x')) {
+                CalAction::ToggleCompleted
+            } else if key_pressed(key, KeyModifiers::SHIFT, KeyCode::Char('D')) {
+                CalAction::DeleteSelectedTask
             } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
                 CalAction::SwitchToMonth
             } else {
@@ -134,21 +156,66 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         },
         CalAction::EditSelectedTask => {
-            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
+            match get_selected_task(api_handler, &selected_date, currstate.task_id) {
+                Some(task) => state::CalendarState {
+                    editing_task: Some(edit_task_state_from_task(&task)),
+                    ..currstate.clone()
+                },
+                None => currstate.clone()
+            }
+        },
+        CalAction::ToggleCompleted => {
+            match get_selected_task(api_handler, &selected_date, currstate.task_id) {
+                Some(task) => {
+                    match api_handler.toggle_completed(&task) {
+                        Ok(_) => (),
+                        Err(_) => ()
+                    };
+                },
+                None => ()
+            }
 
-            match currstate.task_id {
-                Some(id) => match get_task_index_by_id(&date_tasks, id) {
-                    Some(index) => state::CalendarState {
-                        editing_task: Some(edit_task_state_from_task(&date_tasks[index])),
-                        ..currstate.clone()
-                    },
-                    None => currstate.clone()
+            currstate.clone()
+        },
+        CalAction::DeleteSelectedTask => {
+            match get_selected_task(api_handler, &selected_date, currstate.task_id) {
+                Some(task) => {
+                    // TODO: put the task into the clipboard so that it can be "pasted" (moved to a different date) or the delete can be undone
+                    match api_handler.delete_task(&task) {
+                        Ok(_) => state::CalendarState {
+                            task_id: None,
+                            task_clipboard: Some(task.without_id()),
+                            ..currstate.clone()
+                        },
+                        Err(_) => currstate.clone()
+                    }
+                },
+                None => currstate.clone()
+            }
+        },
+        CalAction::PasteTask => {
+            match &currstate.task_clipboard {
+                Some(task) => {
+                    let new_task = types::TaskData {
+                        year: currstate.year,
+                        month: currstate.month as i32,
+                        day: currstate.day as i32,
+                        start_min: task.start_min,
+                        end_min: task.end_min,
+                        title: task.title.clone(),
+                        description: task.description.clone(),
+                        complete: task.complete
+                    };
+                    match api_handler.post_new_task(&new_task) {
+                        Ok(_) => currstate.clone(),
+                        Err(_) => currstate.clone()
+                    }
                 },
                 None => currstate.clone()
             }
         },
         CalAction::SelectTaskUp => {
-            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
+            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 
             // Select the task/day above the current one
             match currstate.task_id {
@@ -166,7 +233,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 None => {
                     // Previous date's last task
                     let res = selected_date.sub_days(1);
-                    let date_tasks_prev = api_handler.fetch_tasks_at_date_cached(&res);
+                    let date_tasks_prev = api_handler.fetch_tasks_at_date(&res, CacheType::PreferCache);
                     if date_tasks_prev.len() > 0 {
                         state::CalendarState {
                             year: res.year,
@@ -188,7 +255,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         }
         CalAction::SelectTaskDown => {
-            let date_tasks = api_handler.fetch_tasks_at_date_cached(&selected_date);
+            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 
             // Select the task/day after the current one
             match currstate.task_id {
@@ -384,7 +451,8 @@ pub fn render_tasks_date(
     selected_task_id: Option<i64>,
     is_today: bool,
     tasks: &Vec<types::TaskDataWithId>,
-    pane: &state::CalendarPane
+    pane: &state::CalendarPane,
+    clipboard: &Option<types::TaskData>
 ) -> io::Result<u16> {
     let mut stdout = io::stdout();
 
@@ -413,7 +481,14 @@ pub fn render_tasks_date(
             }
         ),
     )?;
-    text::pad_characters(tasks_pane_width, date_title_len as u16, " ")?;
+    if is_selected && clipboard.is_some() {
+        // Display clipboard if possible
+        let clipboard_help = "(p) paste ";
+        text::pad_characters(tasks_pane_width, (date_title_len + clipboard_help.len()) as u16, " ")?;
+        queue!(stdout, style::Print(clipboard_help))?;
+    } else {
+        text::pad_characters(tasks_pane_width, date_title_len as u16, " ")?;
+    }
     queue!(stdout, style::Print("│"))?;
     queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
     cursory += 1;
@@ -485,7 +560,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
 
     // Fetch data
-    let calendar_tasks = api_handler.fetch_calendar_tasks_cached(selected_date.year, selected_date.month);
+    let calendar_tasks = api_handler.fetch_calendar_tasks(selected_date.year, selected_date.month as i32, CacheType::PreferCache);
 
     // Responsive layout
     let viewport_width = get_viewport_width()?;
@@ -493,7 +568,8 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     let date_height: u16 = if is_mini_mode()? { 3 } else { 4 };
 
     // Main layout
-    let top_right_str = "(^M) menu/log out | (^S) settings | (^C) quit";
+    // Previously included '| (^S) settings'
+    let top_right_str = "(^M) menu/log out | (^C) quit";
     queue!(stdout, cursor::MoveTo(0, 0))?;
     text::padded_text("[username]'s Calendar ([private])", viewport_width - top_right_str.chars().count() as u16, " ")?;
     queue!(stdout, style::Print(top_right_str))?;
@@ -585,7 +661,18 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         let is_today = date == utils::RicalDate::today();
         let empty_tasks = vec![];
         let tasks = calendar_tasks.days.get((date.day - 1) as usize).unwrap_or(&empty_tasks);
-        cursory = render_tasks_date(date, cursorx, cursory, tasks_pane_width, is_selected, currstate.task_id, is_today, tasks, &currstate.pane)?;
+        cursory = render_tasks_date(
+            date,
+            cursorx,
+            cursory,
+            tasks_pane_width,
+            is_selected,
+            currstate.task_id,
+            is_today,
+            tasks,
+            &currstate.pane,
+            &currstate.task_clipboard
+        )?;
         // Divider between selected date and upcoming dates
         if date_offset == 0 {
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;

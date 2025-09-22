@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::state;
-use crate::utils::{KeyInfo};
+use crate::utils::{KeyInfo, RicalDate};
 use crate::api::ApiHandler;
 use crate::styles;
 
@@ -24,17 +24,15 @@ pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler:
             let username = result["username"].clone();
             let password = result["password"].clone();
             match api_handler.try_login(username, password) {
-                Ok(token) => {
-                    state::ScreenState::Calendar(state::CalendarState::new())
+                Ok(_) => {
+                    let today = RicalDate::today();
+                    state::ScreenState::Calendar(state::CalendarState::new(today.year, today.month, today.day))
                 }, _ => {
                     // TODO: better error message
-                    state::ScreenState::Menu(state::MenuState::Login(state::FormState {
-                        error_message: Some(vec![
-                            "Login failed. Make sure your username and password are correct.".to_string(),
-                            "If you don't have an account, sign up first!".to_string()
-                        ]),
-                        ..res.0
-                    }))
+                    state::ScreenState::Menu(state::MenuState::Login(state::FormState::from_result_message(vec![
+                        "Login failed. Make sure your username and password are correct.".to_string(),
+                        "If you don't have an account, sign up first!".to_string()
+                    ])))
                 }
             }
         }

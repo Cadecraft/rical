@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 // NOTE: some of these types are copied from the backend
 // NOTE: May want to look into a better long-term type sharing solution
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct TaskData {
     pub year: i32,
     pub month: i32,
@@ -36,9 +36,22 @@ impl TaskDataWithId {
             None
         }
     }
+
+    pub fn without_id(&self) -> TaskData {
+        TaskData {
+            year: self.year,
+            month: self.month,
+            day: self.day,
+            start_min: self.start_min,
+            end_min: self.end_min,
+            title: self.title.clone(),
+            description: self.description.clone(),
+            complete: self.complete
+        }
+    }
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct CalendarTasks {
     pub days: Vec<Vec<TaskDataWithId>>
 }

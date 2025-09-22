@@ -1,6 +1,7 @@
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
 
 use chrono::{NaiveDate, Datelike};
+use regex::Regex;
 
 pub struct KeyInfo {
     pub modifiers: KeyModifiers,
@@ -185,7 +186,13 @@ enum PeriodType {
 pub fn time_shorthand_to_mins(s: &str) -> Option<i32> {
     let no_whitespace: String = s.chars().filter(|c| !c.is_whitespace()).collect();
     let formatted = no_whitespace.to_lowercase();
-    // Valid structure: (<number 0..24>)(:<number 0..60> (?))(<pm | am> (?))
+
+    // Check for valid structure (see tests below for examples)
+    let valid_shorthand = Regex::new(r"^\s*[0-9][0-9]?\s*(:\s*[0-9][0-9]?)?\s*((?i)pm|(?i)am)?\s*$").unwrap();
+    if !valid_shorthand.is_match(s) {
+        return None;
+    }
+
     let period = if formatted.ends_with("am") {
         PeriodType::AM
     } else if formatted.ends_with("pm") {
@@ -208,6 +215,9 @@ pub fn time_shorthand_to_mins(s: &str) -> Option<i32> {
         } else if c == ':' {
             processing_minutes = true;
         }
+    }
+    if minutes >= 60 {
+        return None;
     }
     // Special case: 12pm -> 12, but 12am -> 0
     match period {
@@ -262,15 +272,22 @@ mod tests {
         assert_eq!(time_shorthand_to_mins("3am"), Some(3 * 60));
         assert_eq!(time_shorthand_to_mins(" 3 PM  "), Some(15 * 60));
         assert_eq!(time_shorthand_to_mins(" 5: 22 PM  "), Some(17 * 60 + 22));
+        assert_eq!(time_shorthand_to_mins(" 5    : 22  pM  "), Some(17 * 60 + 22));
         assert_eq!(time_shorthand_to_mins("03:30pm"), Some(15 * 60 + 30));
         assert_eq!(time_shorthand_to_mins("15"), Some(15 * 60));
         assert_eq!(time_shorthand_to_mins("15pm"), None);
         assert_eq!(time_shorthand_to_mins("0"), Some(0));
         assert_eq!(time_shorthand_to_mins("23:59"), Some(23 * 60 + 59));
         assert_eq!(time_shorthand_to_mins("11pm"), Some(23 * 60));
-        assert_eq!(time_shorthand_to_mins("12pm"), Some(12 * 60));
+        assert_eq!(time_shorthand_to_mins("12 pm"), Some(12 * 60));
         assert_eq!(time_shorthand_to_mins("12am"), Some(0));
+        assert_eq!(time_shorthand_to_mins("1:62"), None);
         assert_eq!(time_shorthand_to_mins("24"), None);
+        assert_eq!(time_shorthand_to_mins("abcd"), None);
+        assert_eq!(time_shorthand_to_mins("123:456"), None);
+        assert_eq!(time_shorthand_to_mins("123"), None);
+        assert_eq!(time_shorthand_to_mins("&(*#%"), None);
+        assert_eq!(time_shorthand_to_mins("5bm"), None);
     }
 
     #[test]

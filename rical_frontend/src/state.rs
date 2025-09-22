@@ -1,3 +1,5 @@
+use crate::types;
+
 /// Stores the entire hierarchy of state in the app
 /// `screen_state` deals with the state of the UI
 /// Other fields can be added to represent important global state
@@ -49,9 +51,9 @@ impl TextInputState {
 pub struct FormState<const N: usize> {
     pub form_pos: usize,
     pub fields: [TextInputState; N],
-    /// If some, then an error has occured
+    /// If some, then the form has been submitted and is now displaying a message
     /// This can be multiple lines (multiple elements in the Vec)
-    pub error_message: Option<Vec<String>>
+    pub result_message: Option<Vec<String>>
 }
 
 impl<const N: usize> FormState<N> {
@@ -59,7 +61,7 @@ impl<const N: usize> FormState<N> {
         FormState {
             form_pos: 0,
             fields: core::array::from_fn::<TextInputState, N, _>(|_| TextInputState::new()),
-            error_message: None
+            result_message: None
         }
     }
 
@@ -67,7 +69,15 @@ impl<const N: usize> FormState<N> {
         FormState {
             form_pos,
             fields: contents.map(|c| TextInputState::from_contents(c)),
-            error_message: None
+            result_message: None
+        }
+    }
+
+    /// Displays only an error message
+    pub fn from_result_message(msg: Vec<String>) -> FormState<N> {
+        FormState {
+            result_message: Some(msg),
+            ..FormState::new()
         }
     }
 }
@@ -81,19 +91,20 @@ pub struct CalendarState {
     pub pane: CalendarPane,
     pub making_new_task: Option<FormState<4>>,
     pub editing_task: Option<EditTaskState>,
+    pub task_clipboard: Option<types::TaskData>
 }
 
 impl CalendarState {
-    pub fn new() -> CalendarState {
-        // TODO: get current year/day, or ask for those as parameters
+    pub fn new(year: i32, month: u32, day: u32) -> CalendarState {
         CalendarState {
-            year: 2025,
-            month: 8,
-            day: 5,
+            year,
+            month,
+            day,
             task_id: None,
             pane: CalendarPane::Month,
             making_new_task: None,
             editing_task: None,
+            task_clipboard: None,
         }
     }
 }

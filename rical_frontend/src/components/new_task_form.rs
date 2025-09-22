@@ -22,11 +22,11 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
     ], Some([
         |input| match time_shorthand_to_mins(input) {
             Some(_) => Ok(()),
-            None => Err("00:00".to_string())
+            None => Err(String::new())
         },
         |input| match time_shorthand_to_mins(input) {
             Some(_) => Ok(()),
-            None => Err("00:00".to_string())
+            None => Err(String::new())
         },
         |_| Ok(()),
         |_| Ok(()),
@@ -48,7 +48,6 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             let start_min = time_shorthand_to_mins(&result["start_shorthand"]);
             let end_min = time_shorthand_to_mins(&result["end_shorthand"]);
             // TODO: show loading screen
-            // TODO: run with API handler
             let new_task = types::TaskData {
                 year: currstate.year,
                 month: currstate.month as i32,
@@ -59,10 +58,19 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 description: Some(result["description"].clone()),
                 complete: false
             };
-            state::ScreenState::Calendar(state::CalendarState {
-                making_new_task: None,
-                ..currstate.clone()
-            })
+            match api_handler.post_new_task(&new_task) {
+                Ok(_) => state::ScreenState::Calendar(state::CalendarState {
+                    making_new_task: None,
+                    ..currstate.clone()
+                }),
+                Err(_) => state::ScreenState::Calendar(state::CalendarState {
+                    // TODO: better error message
+                    making_new_task: Some(state::FormState::from_result_message(vec![
+                        "Could not create task. Check that you entered valid times".to_string()
+                    ])),
+                    ..currstate.clone()
+                })
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 use reqwest;
 use std::env;
 use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
 
 use crate::utils;
 use crate::types;
@@ -16,24 +17,40 @@ struct LoginResult {
     token: String
 }
 
+pub enum CacheType {
+    /// If the matching parameters are found in the cache, use that instead of calling the API
+    PreferCache,
+    /// Call the API with these parameters and update the cache with the new results
+    RefreshOne,
+}
+
 pub struct ApiHandler {
     blocking_client: reqwest::blocking::Client,
-    auth_token: Option<String>
+    auth_token: Option<String>,
+    cached_calendar_tasks: HashMap<(i32, i32), types::CalendarTasks>,
 }
 
 impl ApiHandler {
     pub fn new() -> ApiHandler {
         ApiHandler {
             blocking_client: reqwest::blocking::Client::new(),
-            auth_token: None
+            auth_token: None,
+            cached_calendar_tasks: HashMap::new(),
         }
     }
 
+    fn api_url() -> String {
+        // TODO: get a different way, such as via a config file?
+        env::var("API_URL").expect("API_URL must be set")
+    }
+
+    fn expect_auth_token(&self) -> String {
+        self.auth_token.clone().expect("Must be logged in to perform this action")
+    }
+
     /// Log in and store the auth token
-    /// Return the auth token if successful
-    pub fn try_login(&mut self, username: String, password: String) -> Result<String, reqwest::Error> {
-        let api_url = env::var("API_URL").expect("API_URL must be set");
-        let res = self.blocking_client.post(format!("{api_url}/account/login"))
+    pub fn try_login(&mut self, username: String, password: String) -> Result<(), reqwest::Error> {
+        let res = self.blocking_client.post(format!("{}/account/login", Self::api_url()))
             .json(&Credentials {
                 username,
                 password
@@ -43,120 +60,101 @@ impl ApiHandler {
 
         self.auth_token = Some(token.clone());
 
-        return Ok(token);
+        Ok(())
     }
 
     /// Sign up a new account
-    /// Return the new username if successful
     pub fn try_signup(&mut self, username: String, password: String) -> Result<(), reqwest::Error> {
-        let api_url = env::var("API_URL").expect("API_URL must be set");
-        let res = self.blocking_client.post(format!("{api_url}/account/signup"))
+        let res = self.blocking_client.post(format!("{}/account/signup", Self::api_url()))
             .json(&Credentials {
                 username,
                 password
             })
             .send()?;
-
         res.error_for_status()?;
 
-        return Ok(());
+        Ok(())
     }
 
-    pub fn fetch_tasks_at_date_cached(&mut self, date: &utils::RicalDate) -> Vec<types::TaskDataWithId> {
-        let calendar_tasks = self.fetch_calendar_tasks_cached(date.year, date.month);
+    pub fn fetch_tasks_at_date(&mut self, date: &utils::RicalDate, cache_type: CacheType) -> Vec<types::TaskDataWithId> {
+        let calendar_tasks = self.fetch_calendar_tasks(date.year, date.month as i32, cache_type);
         let empty_res: Vec<types::TaskDataWithId> = vec![];
         calendar_tasks.days.get(date.day as usize - 1).unwrap_or(&empty_res).clone()
     }
 
     /// Fetch a calendar from the API. If this year/month calendar was already fetched, just return that one
-    /// Only using this method could lead to data being out of sync
-    pub fn fetch_calendar_tasks_cached(&mut self, year: i32, month: u32) -> types::CalendarTasks {
-        // TODO: this is just dummy data; actually call the api
-        // TODO: caching
-        let dummy_task = types::TaskDataWithId {
-            year: 2025,
-            month: 8,
-            day: 7,
-            start_min: None,
-            end_min: None,
-            title: "Test".to_string(),
-            description: None,
-            complete: false,
-            task_id: 3
-        };
-        let dummy_task_2 = types::TaskDataWithId {
-            year: 2025,
-            month: 8,
-            day: 7,
-            start_min: Some(360),
-            end_min: Some(450),
-            title: "Test 2".to_string(),
-            description: None,
-            complete: false,
-            task_id: 4
-        };
-        let dummy_task_3 = types::TaskDataWithId {
-            year: 2025,
-            month: 8,
-            day: 7,
-            start_min: Some(480),
-            end_min: None,
-            title: "Test 3".to_string(),
-            description: None,
-            complete: true,
-            task_id: 5
-        };
-        let dummy_task_4 = types::TaskDataWithId {
-            year: 2025,
-            month: 8,
-            day: 7,
-            start_min: Some(480),
-            end_min: Some(497),
-            title: "Test 4".to_string(),
-            description: None,
-            complete: true,
-            task_id: 6
-        };
-        types::CalendarTasks {
-            days: vec![
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-                vec![
-                    dummy_task_2.clone(),
-                    dummy_task_3.clone(),
-                    dummy_task.clone(),
-                ],
-                vec![
-                    dummy_task_2.clone(),
-                    dummy_task.clone(),
-                ],
-                vec![],
-                vec![
-                    dummy_task_3.clone(),
-                    dummy_task.clone(),
-                ],
-                vec![],
-                vec![
-                    dummy_task.clone(),
-                ],
-                vec![],
-                vec![],
-                vec![],
-                vec![
-                    dummy_task.clone(),
-                    dummy_task_2.clone(),
-                    dummy_task_3.clone(),
-                    dummy_task_4.clone(),
-                ],
-                vec![],
-                vec![],
-                vec![],
-                vec![],
-            ]
+    /// Only calling this method with `CacheType::PreferCache` could lead to data being out of sync
+    pub fn fetch_calendar_tasks(&mut self, year: i32, month: i32, cache_type: CacheType) -> types::CalendarTasks {
+        let identifier = (year, month);
+        match cache_type {
+            CacheType::PreferCache => {
+                match self.cached_calendar_tasks.get(&identifier) {
+                    Some(cached) => { return cached.clone(); },
+                    None => ()
+                }
+            },
+            CacheType::RefreshOne => ()
         }
+
+        let res = self.blocking_client.get(format!("{}/calendar/{}/{}", Self::api_url(), year, month))
+            .bearer_auth(self.expect_auth_token())
+            .send().unwrap();
+
+        let calendar_tasks = res.json::<types::CalendarTasks>().unwrap();
+        self.cached_calendar_tasks.insert(identifier, calendar_tasks.clone());
+
+        calendar_tasks
+    }
+
+    /// Post a task and refresh the calendar data from the API accordingly
+    pub fn post_new_task(&mut self, task: &types::TaskData) -> Result<(), reqwest::Error> {
+        let res = self.blocking_client.post(format!("{}/task", Self::api_url()))
+            .bearer_auth(self.expect_auth_token())
+            .json(&task).send()?;
+        res.error_for_status()?;
+
+        self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
+
+        Ok(())
+    }
+
+    /// Update an existing task and refresh the calendar accordingly; return whether the date changed
+    pub fn update_task(&mut self, task: &types::TaskDataWithId) -> Result<bool, reqwest::Error> {
+        let res = self.blocking_client.put(format!("{}/task/{}", Self::api_url(), task.task_id))
+            .bearer_auth(self.expect_auth_token())
+            .json(&task.without_id()).send()?;
+        let res = res.error_for_status()?;
+        let original = res.json::<types::TaskData>().unwrap();
+
+        // Must update the previously designated month AND the newly designated month if both have changed
+        self.fetch_calendar_tasks(original.year, original.month, CacheType::RefreshOne);
+        let calendar_frame_changed = original.year != task.year || original.month != task.month;
+        if calendar_frame_changed {
+            self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
+        }
+        let date_changed = calendar_frame_changed || original.day != task.day;
+
+        Ok(date_changed)
+    }
+
+    /// Toggle whether a task is completed and refresh the calendar accordingly
+    pub fn toggle_completed(&mut self, task: &types::TaskDataWithId) -> Result<(), reqwest::Error> {
+        let mut updated = task.clone();
+        updated.complete = !updated.complete;
+        self.update_task(&updated)?;
+        self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
+
+        Ok(())
+    }
+
+    /// Delete a task and refresh the calendar accordingly
+    pub fn delete_task(&mut self, task: &types::TaskDataWithId) -> Result<(), reqwest::Error> {
+        let res = self.blocking_client.delete(format!("{}/task/{}", Self::api_url(), task.task_id))
+            .bearer_auth(self.expect_auth_token()).send()?;
+        res.error_for_status()?;
+
+        self.fetch_calendar_tasks(task.year, task.month, CacheType::RefreshOne);
+
+        Ok(())
     }
 }
