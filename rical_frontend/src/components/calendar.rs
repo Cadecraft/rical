@@ -568,7 +568,8 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     let date_height: u16 = if is_mini_mode()? { 3 } else { 4 };
 
     // Main layout
-    let top_right_str = "(^M) menu/log out | (^S) settings | (^C) quit";
+    // Previously included '| (^S) settings'
+    let top_right_str = "(^M) menu/log out | (^C) quit";
     queue!(stdout, cursor::MoveTo(0, 0))?;
     text::padded_text("[username]'s Calendar ([private])", viewport_width - top_right_str.chars().count() as u16, " ")?;
     queue!(stdout, style::Print(top_right_str))?;
