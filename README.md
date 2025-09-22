@@ -109,6 +109,10 @@ docker container stop rical-db
 docker container rm rical-db
 ```
 - Start the backend with `cargo run`. Assuming your `DATABASE_URL` is correct, schemas should be loaded into the database automatically via the build script.
+- If you want to use the dockerfile, include the args
+```sh
+docker build . --tag 'rical_backend_test' --build-arg DATABASE_URL=yoururlhere --build-arg JWT_SECRET=yoursecrethere --build-arg PORT=3001
+```
 
 **Starting the frontend**
 1. Clone the repository
