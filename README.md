@@ -85,7 +85,7 @@ These should be what you're familiar with:
 
 ## Development
 **Starting the backend**
-- Note: make sure to update the `.env` file and use the correct password/other info in these commands
+- Note: make sure to update the `.env` file and use the correct DB password/other info in these commands
 - Run Postgres
 ```sh
 cd backend/src

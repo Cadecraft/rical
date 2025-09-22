@@ -10,8 +10,6 @@ mod utils;
 mod config;
 mod types;
 
-const PORT: &str = "3001";
-
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: sqlx::PgPool
@@ -23,6 +21,7 @@ async fn main() {
     dotenvy::dotenv().ok();
 
     let db_url = &config::get_config()["DATABASE_URL"];
+    let port = &config::get_config()["PORT"];
 
     println!("Connecting to db...");
     let pool = PgPoolOptions::new()
@@ -42,7 +41,7 @@ async fn main() {
         .nest("/task", routes::task::get_routes(&state))
         .nest("/calendar", routes::calendar::get_routes(&state));
 
-    let addr = format!("0.0.0.0:{}", PORT);
+    let addr = format!("0.0.0.0:{}", port);
     println!("Rical backend v{} is listening on {}", option_env!("CARGO_PKG_VERSION").unwrap_or("?"), addr);
     
     // Run with hyper
