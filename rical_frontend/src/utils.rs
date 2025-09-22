@@ -3,6 +3,8 @@ use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
 use chrono::{NaiveDate, Datelike};
 use regex::Regex;
 
+use reqwest;
+
 pub struct KeyInfo {
     pub modifiers: KeyModifiers,
     pub code: KeyCode
@@ -260,6 +262,22 @@ pub fn get_month_name(month: u32) -> String {
         "December"
     ];
     MONTH_NAMES[month as usize - 1].to_string()
+}
+
+pub fn display_error(err: reqwest::Error) -> String {
+    if err.is_timeout() {
+        "Request timed out".to_string()
+    } else if err.is_connect() {
+        "Could not connect to the server".to_string()
+    } else if err.is_request() {
+        "Invalid request".to_string()
+    } else if err.is_body() {
+        "Invalid request body".to_string()
+    } else if err.is_status() {
+        format!("{}", err.status().unwrap())
+    } else {
+        "Unknown error".to_string()
+    }
 }
 
 #[cfg(test)]

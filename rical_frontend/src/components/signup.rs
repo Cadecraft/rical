@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::state;
-use crate::utils::{KeyInfo};
+use crate::utils::{KeyInfo, display_error};
 use crate::api::ApiHandler;
 use crate::styles;
 
@@ -29,11 +29,13 @@ pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler:
                         format!("You've successfully signed up as {}!", username),
                         "Go back to the menu (esc) and log in to access your calendar".to_string()
                     ])))
-                }, _ => {
-                    // TODO: better error message
+                },
+                Err(err) => {
                     state::ScreenState::Menu(state::MenuState::Signup(state::FormState::from_result_message(vec![
-                        "Signing up failed.".to_string(),
-                        "Make sure you entered a unique username, and that you're connected to the server.".to_string(),
+                        "Signing up failed:".to_string(),
+                        format!("  - {}", display_error(err)),
+                        "Make sure you entered a unique username, and that you're connected to the server".to_string(),
+                        "as specified in 'rical_frontend/.env'".to_string(),
                     ])))
                 }
             }

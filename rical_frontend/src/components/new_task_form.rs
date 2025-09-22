@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::state;
-use crate::utils::{self, KeyInfo, time_shorthand_to_mins};
+use crate::utils::{self, KeyInfo, time_shorthand_to_mins, display_error};
 use crate::api::ApiHandler;
 use crate::styles;
 use crate::types;
@@ -63,10 +63,11 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                     making_new_task: None,
                     ..currstate.clone()
                 }),
-                Err(_) => state::ScreenState::Calendar(state::CalendarState {
-                    // TODO: better error message
+                Err(err) => state::ScreenState::Calendar(state::CalendarState {
                     making_new_task: Some(state::FormState::from_result_message(vec![
-                        "Could not create task. Check that you entered valid times".to_string()
+                        "Could not create task:".to_string(),
+                        format!("  - {}", display_error(err)),
+                        "Check that you entered valid times".to_string()
                     ])),
                     ..currstate.clone()
                 })
