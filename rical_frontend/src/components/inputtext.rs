@@ -60,7 +60,6 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::
             KeyCode::Home => {
                 state::TextInputState { cursor_pos: 0, ..currstate.clone() }
             },
-            // TODO: allow "tab" to go forwards but not submit
             _ => currstate.clone()
         },
         KeyModifiers::SHIFT => match key.code {

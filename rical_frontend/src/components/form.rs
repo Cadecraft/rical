@@ -82,8 +82,8 @@ pub fn handle_input<const N: usize>(
         } else {
             FormAction::NextField
         }
-    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Up) {
-        // Used up arrow because Shift+Tab may not be accessible in terminals
+    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Up)
+        || key_pressed(&key, KeyModifiers::SHIFT, KeyCode::BackTab) {
         if currstate.form_pos > 0 {
             FormAction::PrevField
         } else {
