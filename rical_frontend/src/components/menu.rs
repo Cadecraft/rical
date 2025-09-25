@@ -13,7 +13,7 @@ fn handle_input_mainmenu(key: &KeyInfo) -> state::MenuState {
     if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
         state::MenuState::Login(state::FormState::<2>::new())
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('s')) {
-        state::MenuState::Signup(state::FormState::<2>::new())
+        state::MenuState::Signup(state::FormState::<3>::new())
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('a')) {
         state::MenuState::About
     } else {

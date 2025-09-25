@@ -20,7 +20,7 @@ pub enum MenuState {
     MainMenu,
     About,
     Login(FormState<2>),
-    Signup(FormState<2>)
+    Signup(FormState<3>)
 }
 
 /// The state for any text input
