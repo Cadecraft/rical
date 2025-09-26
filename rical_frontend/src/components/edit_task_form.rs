@@ -122,6 +122,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 styles: styles::Styles {
                     margin_top: 4,
                     width: Some(14),
+                    gap: Some(2),
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal
@@ -131,6 +132,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 styles: styles::Styles {
                     margin_top: 5,
                     width: Some(14),
+                    gap: Some(1),
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal
@@ -140,6 +142,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 styles: styles::Styles {
                     margin_top: 6,
                     width: Some(14),
+                    gap: Some(3),
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal
@@ -167,12 +170,13 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 name: "Title".to_string(),
                 styles: styles::Styles {
                     margin_top: 10,
+                    width: Some(40),
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal
             },
             form::FormFieldParameters {
-                name: "Description".to_string(),
+                name: "Descr".to_string(),
                 styles: styles::Styles {
                     margin_top: 11,
                     width: Some(40),
@@ -184,6 +188,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 name: "Complete".to_string(),
                 styles: styles::Styles {
                     margin_top: 13,
+                    width: Some(7),
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal

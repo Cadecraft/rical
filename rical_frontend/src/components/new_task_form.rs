@@ -117,7 +117,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 input_mode: inputtext::InputMode::Normal
             },
             form::FormFieldParameters {
-                name: "Description".to_string(),
+                name: "Descr".to_string(),
                 styles: styles::Styles {
                     margin_top: 8,
                     width: Some(40),

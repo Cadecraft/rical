@@ -125,12 +125,18 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::
 pub fn render(label: &str, currstate: &state::TextInputState, styles: &Styles, mode: &InputMode) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    let label_width = (label.chars().count() + 2) as u16;
+    let gap = match styles.gap {
+        Some(g) => g,
+        _ => 1
+    };
+    let label_width = label.chars().count() as u16 + 1 + gap;
     let total_width = styles.width.unwrap_or(30);
 
     queue!(stdout,
         cursor::MoveTo(styles.margin_left, styles.margin_top),
-        style::Print(format!("{}: ", label))
+        style::Print(label),
+        style::Print(":"),
+        style::Print((0..gap).map(|_| " ").collect::<String>()),
     )?;
     let mut count = label_width;
     for c in currstate.contents.chars() {
