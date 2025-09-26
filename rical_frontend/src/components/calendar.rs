@@ -452,7 +452,7 @@ pub fn render_tasks_date(
     is_today: bool,
     tasks: &Vec<types::TaskDataWithId>,
     pane: &state::CalendarPane,
-    clipboard: &Option<types::TaskData>
+    key_help: &str,
 ) -> io::Result<u16> {
     let mut stdout = io::stdout();
 
@@ -481,11 +481,9 @@ pub fn render_tasks_date(
             }
         ),
     )?;
-    if is_selected && clipboard.is_some() {
-        // Display clipboard if possible
-        let clipboard_help = "(p) paste ";
-        text::pad_characters(tasks_pane_width, (date_title_len + clipboard_help.len()) as u16, " ")?;
-        queue!(stdout, style::Print(clipboard_help))?;
+    if is_selected {
+        text::pad_characters(tasks_pane_width, (date_title_len + key_help.len()) as u16, " ")?;
+        queue!(stdout, style::Print(key_help))?;
     } else {
         text::pad_characters(tasks_pane_width, date_title_len as u16, " ")?;
     }
@@ -651,6 +649,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     const DAYS_DISPLAYED: u64 = 7;
     cursory = CALENDAR_MARGIN_TOP + 1;
     let cursorx = CALENDAR_WIDTH;
+    let key_help = if currstate.task_clipboard.is_some() { "(p) paste" } else { "" };
     for date_offset in 0..DAYS_DISPLAYED {
         let date = selected_date.add_days(date_offset);
         if date.month != currstate.month {
@@ -671,7 +670,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             is_today,
             tasks,
             &currstate.pane,
-            &currstate.task_clipboard
+            key_help
         )?;
         // Divider between selected date and upcoming dates
         if date_offset == 0 {
