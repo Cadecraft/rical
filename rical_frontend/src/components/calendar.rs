@@ -509,7 +509,6 @@ pub fn render_tasks_date(
             let checkbox = "[x]";
             style::PrintStyledContent(if is_task_selected {
                 match pane {
-                    // TODO: dark grey or black?
                     state::CalendarPane::Month => checkbox.green().on_dark_grey(),
                     state::CalendarPane::Tasks => checkbox.black().on_dark_green(),
                 }

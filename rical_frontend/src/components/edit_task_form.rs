@@ -6,7 +6,6 @@ use crate::api::ApiHandler;
 use crate::styles;
 use crate::types;
 
-use crate::components::inputtext;
 use crate::components::form;
 
 // The form for editing an existing task
@@ -125,7 +124,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     gap: Some(2),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Month".to_string(),
@@ -135,7 +134,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     gap: Some(1),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Day".to_string(),
@@ -145,7 +144,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     gap: Some(3),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Start".to_string(),
@@ -154,7 +153,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     width: Some(14),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "End".to_string(),
@@ -164,7 +163,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     width: Some(12),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Title".to_string(),
@@ -173,7 +172,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     width: Some(40),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Descr".to_string(),
@@ -182,7 +181,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     width: Some(40),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Complete".to_string(),
@@ -191,7 +190,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     width: Some(7),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
         ],
         decoration_strings: vec![

@@ -147,6 +147,16 @@ pub struct FormFieldParameters {
     pub input_mode: inputtext::InputMode
 }
 
+impl Default for FormFieldParameters {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            styles: styles::Styles::new(),
+            input_mode: inputtext::InputMode::Normal,
+        }
+    }
+}
+
 pub struct FormDecorationParameters {
     pub text: String,
     pub x: u16,

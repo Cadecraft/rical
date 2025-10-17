@@ -6,7 +6,9 @@ pub struct Styles {
     pub active: bool,
     /// Whether this item is the last in its row, and thus should safely clear everything to the right
     pub last_in_row: Option<bool>,
-    pub gap: Option<u16>
+    pub gap: Option<u16>,
+    pub wrap_text: bool,
+    pub height: Option<u16>,
 }
 
 impl Styles {
@@ -27,7 +29,9 @@ impl Styles {
             width: None,
             active: false,
             last_in_row: None,
-            gap: None
+            gap: None,
+            wrap_text: false,
+            height: None,
         }
     }
 }
