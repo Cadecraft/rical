@@ -111,12 +111,12 @@ docker build . --tag 'rical_backend_test' --build-arg DATABASE_URL=yoururlhere -
 
 **Starting the terminal client**
 1. Clone the repository
-2. Copy `rical_frontend/.env.example` into `rical_frontend/.env` and set the `API_URL` variable properly.
+2. Copy `rical_terminal/.env.example` into `rical_terminal/.env` and set the `API_URL` variable properly.
     - If you're planning on using the officially hosted backend, set it to that URL (coming soon)
     - If you're self-hosting, put the URL that you're running the backend on
 3. Run or install with `cargo` by running these commands:
 ```sh
-cd rical_frontend
+cd rical_terminal
 
 # To just run the program once
 cargo run
