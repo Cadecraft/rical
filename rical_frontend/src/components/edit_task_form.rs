@@ -6,7 +6,6 @@ use crate::api::ApiHandler;
 use crate::styles;
 use crate::types;
 
-use crate::components::inputtext;
 use crate::components::form;
 
 // The form for editing an existing task
@@ -122,27 +121,30 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 styles: styles::Styles {
                     margin_top: 4,
                     width: Some(14),
+                    gap: Some(2),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Month".to_string(),
                 styles: styles::Styles {
                     margin_top: 5,
                     width: Some(14),
+                    gap: Some(1),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Day".to_string(),
                 styles: styles::Styles {
                     margin_top: 6,
                     width: Some(14),
+                    gap: Some(3),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Start".to_string(),
@@ -151,7 +153,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     width: Some(14),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "End".to_string(),
@@ -161,32 +163,36 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                     width: Some(12),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Title".to_string(),
                 styles: styles::Styles {
                     margin_top: 10,
-                    ..styles::Styles::new()
-                },
-                input_mode: inputtext::InputMode::Normal
-            },
-            form::FormFieldParameters {
-                name: "Description".to_string(),
-                styles: styles::Styles {
-                    margin_top: 11,
                     width: Some(40),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
+            },
+            form::FormFieldParameters {
+                name: "Descr".to_string(),
+                styles: styles::Styles {
+                    margin_top: 11,
+                    width: Some(40),
+                    height: Some(3),
+                    wrap_text: true,
+                    ..styles::Styles::new()
+                },
+                ..form::FormFieldParameters::default()
             },
             form::FormFieldParameters {
                 name: "Complete".to_string(),
                 styles: styles::Styles {
-                    margin_top: 13,
+                    margin_top: 15,
+                    width: Some(7),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                ..form::FormFieldParameters::default()
             },
         ],
         decoration_strings: vec![
@@ -197,8 +203,8 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 clear_rest_of_line: false
             }
         ],
-        clear_lines: vec![7, 9, 12, 14],
-        hint_y: 15,
+        clear_lines: vec![7, 9, 14, 16],
+        hint_y: 17,
     };
     form::render(&formdata.form, render_params)?;
     Ok(())

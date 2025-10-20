@@ -82,8 +82,8 @@ pub fn handle_input<const N: usize>(
         } else {
             FormAction::NextField
         }
-    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Up) {
-        // Used up arrow because Shift+Tab may not be accessible in terminals
+    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Up)
+        || key_pressed(&key, KeyModifiers::SHIFT, KeyCode::BackTab) {
         if currstate.form_pos > 0 {
             FormAction::PrevField
         } else {
@@ -145,6 +145,16 @@ pub struct FormFieldParameters {
     pub name: String,
     pub styles: styles::Styles,
     pub input_mode: inputtext::InputMode
+}
+
+impl Default for FormFieldParameters {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            styles: styles::Styles::new(),
+            input_mode: inputtext::InputMode::Normal,
+        }
+    }
 }
 
 pub struct FormDecorationParameters {

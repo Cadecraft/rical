@@ -65,7 +65,7 @@ These should be what you're familiar with:
 - `Left`: go to previous character
 - `Home`: go to start of input
 - `End`: go to end of input
-- `Up`: go to previous input box
+- `Up` or `Shift`+`Tab`: go to previous input box
 - `Down` or `Tab`: go to next input box
 - `Enter`: submit a form
 

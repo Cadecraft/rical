@@ -60,7 +60,6 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::
             KeyCode::Home => {
                 state::TextInputState { cursor_pos: 0, ..currstate.clone() }
             },
-            // TODO: allow "tab" to go forwards but not submit
             _ => currstate.clone()
         },
         KeyModifiers::SHIFT => match key.code {
@@ -126,12 +125,19 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::
 pub fn render(label: &str, currstate: &state::TextInputState, styles: &Styles, mode: &InputMode) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    let label_width = (label.chars().count() + 2) as u16;
+    if styles.wrap_text {
+        return render_multiline(label, currstate, styles, mode);
+    }
+
+    let gap = styles.gap.unwrap_or(1);
+    let label_width = label.chars().count() as u16 + 1 + gap;
     let total_width = styles.width.unwrap_or(30);
 
     queue!(stdout,
         cursor::MoveTo(styles.margin_left, styles.margin_top),
-        style::Print(format!("{}: ", label))
+        style::Print(label),
+        style::Print(":"),
+        style::Print((0..gap).map(|_| " ").collect::<String>()),
     )?;
     let mut count = label_width;
     for c in currstate.contents.chars() {
@@ -158,6 +164,68 @@ pub fn render(label: &str, currstate: &state::TextInputState, styles: &Styles, m
             cursor::MoveTo(styles.margin_left + label_width + currstate.cursor_pos as u16, styles.margin_top),
             style::PrintStyledContent(char_under_cursor.black().on_white())
         )?;
+    }
+
+    Ok(())
+}
+
+fn render_multiline(label: &str, currstate: &state::TextInputState, styles: &Styles, mode: &InputMode) -> io::Result<()> {
+    let mut stdout = io::stdout();
+
+    let gap = styles.gap.unwrap_or(1);
+    let label_width = label.chars().count() as u16 + 1 + gap;
+    let total_width = styles.width.unwrap_or(30);
+    let region_width = total_width - label_width;
+    let region_height = styles.height.unwrap_or(2);
+    let y_start = styles.margin_top;
+    let x_start = styles.margin_left + label_width;
+
+    // Label
+    queue!(stdout,
+        cursor::MoveTo(styles.margin_left, styles.margin_top),
+        style::Print(label),
+        style::Print(":"),
+        style::Print((0..gap).map(|_| " ").collect::<String>()),
+    )?;
+    // Blank space below label
+    for local_y in 1..(region_height) {
+        queue!(stdout,
+            cursor::MoveTo(styles.margin_left, styles.margin_top + local_y),
+            style::Print((0..label_width).map(|_| " ").collect::<String>()),
+        )?;
+    }
+
+    let mut char_stack = currstate.contents.chars().rev();
+    for local_y in 0..(region_height) {
+        for local_x in 0..(region_width) {
+            let current_char_index = local_x + local_y * region_width;
+            let char_to_render = match char_stack.next_back() {
+                Some(c) => match mode {
+                    InputMode::Normal => c,
+                    InputMode::Password => '*'
+                },
+                None => if local_y == 0 { '_' } else { ' ' }
+            };
+            let render_cursor = current_char_index == currstate.cursor_pos as u16
+                && styles.active;
+            queue!(
+                stdout,
+                cursor::MoveTo(x_start + local_x, y_start + local_y),
+                if render_cursor {
+                    style::PrintStyledContent(char_to_render.black().on_white())
+                } else {
+                    style::PrintStyledContent(char_to_render.reset().white())
+                }
+            )?;
+        }
+        match styles.last_in_row {
+            Some(is_last) => if is_last {
+                text::clear_rest_of_line()?;
+            },
+            _ => {
+                text::clear_rest_of_line()?;
+            }
+        };
     }
 
     Ok(())

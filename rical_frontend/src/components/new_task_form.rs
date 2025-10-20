@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::state;
-use crate::utils::{self, KeyInfo, time_shorthand_to_mins};
+use crate::utils::{self, KeyInfo, time_shorthand_to_mins, display_error};
 use crate::api::ApiHandler;
 use crate::styles;
 use crate::types;
@@ -63,10 +63,11 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                     making_new_task: None,
                     ..currstate.clone()
                 }),
-                Err(_) => state::ScreenState::Calendar(state::CalendarState {
-                    // TODO: better error message
+                Err(err) => state::ScreenState::Calendar(state::CalendarState {
                     making_new_task: Some(state::FormState::from_result_message(vec![
-                        "Could not create task. Check that you entered valid times".to_string()
+                        "Could not create task:".to_string(),
+                        format!("  - {}", display_error(err)),
+                        "Check that you entered valid times".to_string()
                     ])),
                     ..currstate.clone()
                 })
@@ -86,7 +87,6 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
 
     let render_params = form::FormRenderParameters {
         title: "New Task".to_string(),
-        hint_y: 10,
         fields: [
             form::FormFieldParameters {
                 name: "Start".to_string(),
@@ -111,15 +111,18 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 name: "Title".to_string(),
                 styles: styles::Styles {
                     margin_top: 7,
+                    width: Some(40),
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal
             },
             form::FormFieldParameters {
-                name: "Description".to_string(),
+                name: "Descr".to_string(),
                 styles: styles::Styles {
                     margin_top: 8,
                     width: Some(40),
+                    height: Some(3),
+                    wrap_text: true,
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal
@@ -139,7 +142,8 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 clear_rest_of_line: false
             }
         ],
-        clear_lines: vec![6, 9]
+        clear_lines: vec![6, 11],
+        hint_y: 12,
     };
     form::render(formdata, render_params)?;
     Ok(())
