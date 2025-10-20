@@ -179,6 +179,8 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 styles: styles::Styles {
                     margin_top: 11,
                     width: Some(40),
+                    height: Some(3),
+                    wrap_text: true,
                     ..styles::Styles::new()
                 },
                 ..form::FormFieldParameters::default()
@@ -186,7 +188,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
             form::FormFieldParameters {
                 name: "Complete".to_string(),
                 styles: styles::Styles {
-                    margin_top: 13,
+                    margin_top: 15,
                     width: Some(7),
                     ..styles::Styles::new()
                 },
@@ -201,8 +203,8 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 clear_rest_of_line: false
             }
         ],
-        clear_lines: vec![7, 9, 12, 14],
-        hint_y: 15,
+        clear_lines: vec![7, 9, 14, 16],
+        hint_y: 17,
     };
     form::render(&formdata.form, render_params)?;
     Ok(())

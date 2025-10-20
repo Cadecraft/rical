@@ -87,7 +87,6 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
 
     let render_params = form::FormRenderParameters {
         title: "New Task".to_string(),
-        hint_y: 10,
         fields: [
             form::FormFieldParameters {
                 name: "Start".to_string(),
@@ -112,6 +111,7 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 name: "Title".to_string(),
                 styles: styles::Styles {
                     margin_top: 7,
+                    width: Some(40),
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal
@@ -121,6 +121,8 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 styles: styles::Styles {
                     margin_top: 8,
                     width: Some(40),
+                    height: Some(3),
+                    wrap_text: true,
                     ..styles::Styles::new()
                 },
                 input_mode: inputtext::InputMode::Normal
@@ -140,7 +142,8 @@ pub fn render(currstate: &state::CalendarState) -> io::Result<()> {
                 clear_rest_of_line: false
             }
         ],
-        clear_lines: vec![6, 9]
+        clear_lines: vec![6, 11],
+        hint_y: 12,
     };
     form::render(formdata, render_params)?;
     Ok(())

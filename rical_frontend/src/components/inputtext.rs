@@ -175,7 +175,7 @@ fn render_multiline(label: &str, currstate: &state::TextInputState, styles: &Sty
     let gap = styles.gap.unwrap_or(1);
     let label_width = label.chars().count() as u16 + 1 + gap;
     let total_width = styles.width.unwrap_or(30);
-    let region_width = total_width - label_width - 1;
+    let region_width = total_width - label_width;
     let region_height = styles.height.unwrap_or(2);
     let y_start = styles.margin_top;
     let x_start = styles.margin_left + label_width;
@@ -204,7 +204,7 @@ fn render_multiline(label: &str, currstate: &state::TextInputState, styles: &Sty
                     InputMode::Normal => c,
                     InputMode::Password => '*'
                 },
-                None => '_'
+                None => if local_y == 0 { '_' } else { ' ' }
             };
             let render_cursor = current_char_index == currstate.cursor_pos as u16
                 && styles.active;
