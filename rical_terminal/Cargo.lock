@@ -1008,7 +1008,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rical_frontend"
+name = "rical_terminal"
 version = "0.2.0"
 dependencies = [
  "chrono",
