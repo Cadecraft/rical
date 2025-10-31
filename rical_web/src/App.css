@@ -72,7 +72,7 @@
   justify-content: center;
   align-items: center;
 
-  &:focus-visible {
+  &:focus-visible, &.pressed {
     outline: solid 4px var(--blue-outline);
   }
 
@@ -81,7 +81,7 @@
     background-color: var(--rical-red-light);
   }
 
-  &:active {
+  &:active, &.pressed {
     background-color: var(--rical-red-dark);
 
     .hotkey {

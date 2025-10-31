@@ -2,6 +2,7 @@ import './App.css'
 import RicalIcon from './assets/RicalIcon.svg';
 import RicalTerminal from './assets/RicalTerminal.png';
 import type { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 
 function Button(props: {
   children: ReactNode,
@@ -9,8 +10,39 @@ function Button(props: {
   onClick: () => void,
 }) {
   const { children, hotkey, onClick } = props;
+
+  const [hotkeyDown, setHotkeyDown] = useState(false);
+
+  useEffect(() => {
+    if (!hotkey) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key == hotkey) {
+        setHotkeyDown(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key == hotkey) {
+        setHotkeyDown(false);
+        // Releasing the key after it was down represents clicking the item
+        if (hotkeyDown) {
+          onClick();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    }
+  }, [hotkey, hotkeyDown, onClick, setHotkeyDown]);
+
   return (
-    <button className="rical-button" onClick={onClick}>
+    <button className={`rical-button ${hotkeyDown ? 'pressed' : ''}`} onClick={onClick}>
       {children}
       {hotkey && (
         <div className="hotkey" title={`The hotkey for this button is ${hotkey}`}>
