@@ -1,6 +1,14 @@
 :root {
   font-family: "Momo Trust Sans", Helvetica, Arial, sans-serif;
   font-weight: 400;
+
+  --text: rgb(40, 50, 70);
+  --text-secondary: rgb(90, 100, 110);
+  --white: #fff;
+  --surface: rgb(240, 242, 249);
+
+  background-color: var(--white);
+  color: var(--text);
 }
 
 * {
@@ -19,6 +27,17 @@ body {
   margin: 0px;
 }
 
-h1 {
+h1, h2, h3 {
   margin: 0px;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
 }
