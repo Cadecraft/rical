@@ -12,7 +12,11 @@ function Button(props: {
   return (
     <button className="rical-button" onClick={onClick}>
       {children}
-      {hotkey && <div className="hotkey">{hotkey}</div>}
+      {hotkey && (
+        <div className="hotkey" title={`The hotkey for this button is ${hotkey}`}>
+          {hotkey}
+        </div>
+      )}
     </button>
   );
 }
@@ -36,7 +40,7 @@ function App() {
           </span>
         </div>
         <div className="section">
-          <h2>Learn rical terminal</h2>
+          <h2>Learn Rical terminal</h2>
           <div className="secondary">
             Manage your calendar without ever leaving your terminal
           </div>
@@ -47,8 +51,21 @@ function App() {
           <img className="terminal-ss" src={RicalTerminal}>
           </img>
         </div>
+        <div className="section">
+          <h2>Why Rical?</h2>
+          <br />
+          Modern calendar apps are too slow! If you want these, Rical might be for you:
+          <br />
+          <ul>
+            <li>Fast keyboard shortcuts</li>
+            <li>Lightweight cross-device frontend(s*)</li>
+            <li>A full-scale database that allows multiple accounts, syncing, and availability sharing*</li>
+            <li>System notifications for events*</li>
+          </ul>
+          * <i>Rical is far from complete yet. Check back soon for more features, mark your calendars...</i>
+        </div>
         <div className="section footer">
-          © 2025 rical contributors
+          © 2025 Rical contributors
           <br />
           <a href="https://github.com/Cadecraft/rical">GitHub</a>
         </div>
