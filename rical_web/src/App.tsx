@@ -1,5 +1,21 @@
 import './App.css'
 import RicalIcon from './assets/RicalIcon.svg';
+import RicalTerminal from './assets/RicalTerminal.png';
+import type { ReactNode } from 'react';
+
+function Button(props: {
+  children: ReactNode,
+  hotkey?: string,
+  onClick: () => void,
+}) {
+  const { children, hotkey, onClick } = props;
+  return (
+    <button className="rical-button" onClick={onClick}>
+      {children}
+      {hotkey && <div className="hotkey">{hotkey}</div>}
+    </button>
+  );
+}
 
 function App() {
   return (
@@ -18,6 +34,18 @@ function App() {
             Rical Web is coming soon! For now, you'll have to use the{" "}
             <a href="https://github.com/Cadecraft/rical">terminal UI</a>.
           </span>
+        </div>
+        <div className="section">
+          <h2>Learn rical terminal</h2>
+          <div className="secondary">
+            Manage your calendar without ever leaving your terminal
+          </div>
+          <br />
+          <Button onClick={() => location.href="https://github.com/Cadecraft/rical"} hotkey="i">
+            Install
+          </Button>
+          <img className="terminal-ss" src={RicalTerminal}>
+          </img>
         </div>
         <div className="section footer">
           © 2025 rical contributors

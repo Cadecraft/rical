@@ -49,3 +49,63 @@
 .footer {
   background-color: var(--surface);
 }
+
+.terminal-ss {
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.rical-button {
+  background-color: var(--rical-red);
+  border-radius: 4px;
+  border: none;
+  color: white;
+  padding: 4px 18px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  position: relative;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+
+  &:focus-visible {
+    outline: solid 4px var(--blue-outline);
+  }
+
+  &:hover {
+    cursor: pointer;
+    background-color: var(--rical-red-light);
+  }
+
+  &:active {
+    background-color: var(--rical-red-dark);
+
+    .hotkey {
+      border-bottom: none;
+      height: 16px;
+      top: -2px;
+    }
+  }
+}
+
+.hotkey {
+  position: absolute;
+  right: -8px;
+  top: -4px;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  font-weight: 400;
+  background-color: var(--gray);
+  color: var(--text);
+  border-radius: 2px;
+  border-bottom: solid 4px var(--gray-dark);
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
