@@ -6,6 +6,8 @@
   --text-secondary: rgb(90, 100, 110);
   --white: #fff;
   --surface: rgb(240, 242, 249);
+  --blue: rgb(80, 130, 215);
+  --blue-light: rgb(120, 180, 240);
 
   background-color: var(--white);
   color: var(--text);
@@ -16,11 +18,11 @@
 }
 
 a {
-  color: blue;
+  color: var(--blue);
   text-decoration: inherit;
 }
 a:hover {
-  color: red;
+  color: var(--blue-light);
 }
 
 body {

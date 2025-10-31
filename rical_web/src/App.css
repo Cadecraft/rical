@@ -24,12 +24,17 @@
   background-color: rgba(255, 255, 255, 0.3);
   background-blend-mode:lighten;
 
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-
   color: white;
   padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  .banner-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
 }
 
 .section {
