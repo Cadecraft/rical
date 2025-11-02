@@ -5,7 +5,7 @@ The latest calendar app for minimalists.
 ![A screenshot of Rical's terminal UI](images/rical_terminal_screenshot.png)
 
 ## Core Objectives
-Google Calendar is too slow! If you want these, Rical might be for you:
+Modern calendar apps are too slow! If you want these, Rical might be for you:
 - Fast keyboard shortcuts
 - Lightweight cross-device frontend(s\*)
 - A full-scale database that allows multiple accounts, syncing, and availability sharing\*
