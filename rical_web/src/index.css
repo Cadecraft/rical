@@ -1,0 +1,52 @@
+:root {
+  font-family: "Momo Trust Sans", Helvetica, Arial, sans-serif;
+  font-weight: 400;
+
+  --text: rgb(40, 50, 70);
+  --text-secondary: rgb(90, 100, 110);
+  --white: #fff;
+  --surface: rgb(240, 242, 249);
+  --blue: rgb(80, 130, 215);
+  --blue-light: rgb(120, 180, 240);
+  --blue-outline: rgba(120, 180, 240, 0.7);
+  --rical-red: #b92f1a;
+  --rical-red-dark: #9b1b12;
+  --rical-red-light: #da693f;
+  --rical-accent: #ffab58;
+  --gray: #c5c9d3;
+  --gray-dark: #a9adb9;
+
+  background-color: var(--white);
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--blue);
+  text-decoration: inherit;
+}
+a:hover {
+  color: var(--blue-light);
+}
+
+body {
+  margin: 0px;
+}
+
+h1, h2, h3 {
+  margin: 0px;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+}

@@ -2,41 +2,39 @@
 
 The latest calendar app for minimalists.
 
-("screenshot" coming soon, it'll just be copy pasted from the terminal)
-
-This app is far from complete! Check back soon, mark your calendars...
+![A screenshot of Rical's terminal UI](images/rical_terminal_screenshot.png)
 
 ## Core Objectives
-- Organize events or tasks at certain dates/times
-- Offer (ideally cross-platform) system notifications for the events of each day
-- Store calendars in a full-scale database and allow multiple accounts, for scalability and cross-device usage
-- Offer a lightweight, intuitive TUI frontend with efficient keybinds
+Modern calendar apps are too slow! If you want these, Rical might be for you:
+- Fast keyboard shortcuts
+- Lightweight cross-device frontend(s\*)
+- A full-scale database that allows multiple accounts, syncing, and availability sharing\*
+- System notifications for events\*
 
-## Architecture requirements
+\* *Rical is far from complete yet. Check back soon for more features, mark your calendars...*
+
+## Repo Structure
 **Rical Backend**
-- Basic authentication (log in with username and password to get JWT)
-- Store users and their private calendars
-- Access and write calendars via a friendly and simple API
+- A friendly and simple API to access and write calendars
+- Includes an authentication system for multiple accounts and syncing
 
-**Rical Frontend UI**
-- Display an intuitive calendar TUI, much like existing calendar GUI apps
-- Each day should show tasks and users can complete them, view details, navigate across the calendar, etc.
-- Allow the user to configure the backend URL and authenticate with the backend, storing their auth tokens persistently to avoid constant signouts
-- Allow the user to complete tasks and add tasks
+**Rical Terminal Client**
+- A keyboard-oriented calendar TUI frontend for Rical
+- Login, signup, calendar month view and task list, task completion/editing, fast keyboard navigation
 
-**Drical (the Daemon for Rical)**
+**Rical Web Client** *(coming soon!)*
+- An intuitive calendar web frontend for Rical, much like existing calendar GUI apps
+- Offers the same full functionality as the terminal client (above)
+- Useful for managing your calendar from mobile or on devices where you don't want to install the TUI
+
+**Drical (the Daemon for Rical)** *(coming soon!)*
 - Offer system notifications once a day for the calendar tasks that will appear that day
 - Work cross-platform; constantly run in the background, but be very lightweight
 - If the user has not opened their computer/ran Drical for multiple days, show all the tasks that have accumulated over the unviewed days
 
-**Deployment**
-- Create docs for self-hosting (make it easy to self-host, possibly even just running an instance completely locally)
-- Deploy the backend
-- Possibly make a simple frontend website for easy mobile access across devices
-
-## Using the Rical Frontend
+## Using the Rical Terminal Client
 ### Starting out
-Run the frontend (see development below) and make sure you're connected to the server.
+Run the terminal client (see development below) and make sure you're connected to the server.
 
 To create an account, follow the instructions in the main menu.
 
@@ -75,18 +73,21 @@ These should be what you're familiar with:
 - PostgreSQL
 - Axum
 
-**Frontend**
+**Rical Terminal Client**
 - Rust 🦀
-- Crossterm TUI library (Ratatui is too high-level for this project; we require very specific details)
+- Crossterm TUI library
 
-**Drical**
+**Rical Web Client**
+- Coming soon! Libraries and technologies to be determined
+
+**Drical**: coming soon!
 - Rust 🦀
-- Libraries and technologies to be determined
+- Coming soon! Libraries and technologies to be determined
 
 ## Development
 **Starting the backend**
 - Note: make sure to update the `.env` file and use the correct DB password/other info in these commands
-- Run Postgres
+- Run a Postgres database. Do this anywhere, such as in Docker:
 ```sh
 cd backend/src
 
@@ -98,15 +99,9 @@ docker run --name rical-db -e POSTGRES_PASSWORD=passwordhere -e POSTGRES_DB=rica
 # To go into the db using psql:
 docker exec -it rical-db sh
 psql rical_db userhere
-```
-- To start it if you've already ran it before:
-```sh
+
+# To start the container if you've already ran it before:
 docker container start rical-db
-```
-- If it was already running:
-```sh
-docker container stop rical-db
-docker container rm rical-db
 ```
 - Start the backend with `cargo run`. Assuming your `DATABASE_URL` is correct, schemas should be loaded into the database automatically via the build script.
 - If you want to use the dockerfile, include the args
@@ -114,14 +109,14 @@ docker container rm rical-db
 docker build . --tag 'rical_backend_test' --build-arg DATABASE_URL=yoururlhere --build-arg JWT_SECRET=yoursecrethere --build-arg PORT=3001
 ```
 
-**Starting the frontend**
+**Starting the terminal client**
 1. Clone the repository
-2. Copy `rical_frontend/.env.example` into `rical_frontend/.env` and set the `API_URL` variable properly.
+2. Copy `rical_terminal/.env.example` into `rical_terminal/.env` and set the `API_URL` variable properly.
     - If you're planning on using the officially hosted backend, set it to that URL (coming soon)
     - If you're self-hosting, put the URL that you're running the backend on
-3. Run or install by running these commands:
+3. Run or install with `cargo` by running these commands:
 ```sh
-cd rical_frontend
+cd rical_terminal
 
 # To just run the program once
 cargo run
@@ -131,8 +126,11 @@ cargo install --path .
 ```
 
 ## Deployment
-- Using Railway, Postgres should be straightforward
-    - <https://docs.railway.com/guides/postgresql>
+Self-hosting the backend is encouraged!
+- Using Railway, getting a Postgres database is straightforward: <https://docs.railway.com/guides/postgresql>
+- See backend-related steps above
+    - You'll need the database running before building the backend
+    - Ensure all environment variables are set properly
 
 ## Etymology?
 The acronym RICAL stands for:
@@ -140,4 +138,4 @@ The acronym RICAL stands for:
 - ***I***sn't a
 - ***Cal***endar
 
-Yes, it is in fact a date-based event/task management system, not a calendar.
+It's up to you whether you agree.
