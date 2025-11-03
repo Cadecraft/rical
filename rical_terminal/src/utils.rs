@@ -3,7 +3,6 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use chrono::{Datelike, NaiveDate};
 use regex::Regex;
 
-use reqwest;
 
 pub struct KeyInfo {
     pub modifiers: KeyModifiers,
@@ -138,12 +137,12 @@ pub fn get_calendar_frame(year: i32, month: u32) -> CalendarFrame {
     const DAYS_PER_WEEK: usize = 7;
 
     for date in 1..=days_in_month {
-        let naive = NaiveDate::from_ymd_opt(year, month as u32, date)
+        let naive = NaiveDate::from_ymd_opt(year, month, date)
             .expect("Could not generate a chrono::NaiveDate");
         // If naive is a Sunday, weekday will be 0
         let weekday = naive.weekday().number_from_sunday() - 1;
         // If start of a new week, add that new week to the result
-        if res.len() == 0 || weekday == 0 {
+        if res.is_empty() || weekday == 0 {
             res.push(vec![-1; DAYS_PER_WEEK]);
         }
         // Insert in the correct position

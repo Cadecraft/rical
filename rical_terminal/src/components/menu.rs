@@ -8,11 +8,11 @@ use crate::utils::{KeyInfo, key_pressed};
 use crate::components::{login, signup, text};
 
 fn handle_input_mainmenu(key: &KeyInfo) -> state::MenuState {
-    if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('l')) {
+    if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('l')) {
         state::MenuState::Login(state::FormState::<2>::new())
-    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('s')) {
+    } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('s')) {
         state::MenuState::Signup(state::FormState::<3>::new())
-    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Char('a')) {
+    } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('a')) {
         state::MenuState::About
     } else {
         state::MenuState::MainMenu
@@ -58,7 +58,7 @@ pub fn handle_input(
     match &currstate {
         state::MenuState::MainMenu => state::ScreenState::Menu(handle_input_mainmenu(key)),
         state::MenuState::About => {
-            if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
+            if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
                 state::ScreenState::Menu(state::MenuState::MainMenu)
             } else {
                 state::ScreenState::Menu(currstate.clone())

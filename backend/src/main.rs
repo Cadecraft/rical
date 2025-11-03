@@ -1,7 +1,5 @@
 use axum::Router;
-use dotenvy;
 use std::sync::Arc;
-use tokio;
 
 use sqlx::postgres::PgPoolOptions;
 

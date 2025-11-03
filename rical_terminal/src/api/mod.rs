@@ -1,4 +1,3 @@
-use reqwest;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -100,11 +99,8 @@ impl ApiHandler {
     ) -> types::CalendarTasks {
         let identifier = (year, month);
         match cache_type {
-            CacheType::PreferCache => match self.cached_calendar_tasks.get(&identifier) {
-                Some(cached) => {
-                    return cached.clone();
-                }
-                None => (),
+            CacheType::PreferCache => if let Some(cached) = self.cached_calendar_tasks.get(&identifier) {
+                return cached.clone();
             },
             CacheType::RefreshOne => (),
         }

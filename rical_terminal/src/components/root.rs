@@ -16,7 +16,7 @@ pub fn handle_input(
     api_handler: &mut ApiHandler,
 ) -> RicalState {
     // Handle GLOBAL inputs (as this is the top level component)
-    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('c')) {
+    if key_pressed(key, KeyModifiers::CONTROL, KeyCode::Char('c')) {
         return state::RicalState {
             screen_state: state::ScreenState::ShouldQuit,
         };

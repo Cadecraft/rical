@@ -32,7 +32,7 @@ enum CalAction {
 }
 
 pub fn get_task_index_by_id(
-    date_tasks: &Vec<types::TaskDataWithId>,
+    date_tasks: &[types::TaskDataWithId],
     task_id: i64,
 ) -> Option<usize> {
     date_tasks.iter().position(|task| task.task_id == task_id)
@@ -63,7 +63,7 @@ pub fn edit_task_state_from_task(task: &types::TaskDataWithId) -> state::EditTas
                 fmt_mins(task.start_min),
                 fmt_mins(task.end_min),
                 task.title.clone(),
-                task.description.clone().unwrap_or(String::new()),
+                task.description.clone().unwrap_or_default(),
                 if task.complete {
                     "Yes".to_string()
                 } else {
@@ -86,7 +86,7 @@ pub fn handle_input(
         return edit_task_form::handle_input(currstate, key, api_handler);
     }
 
-    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('m')) {
+    if key_pressed(key, KeyModifiers::CONTROL, KeyCode::Char('m')) {
         return state::ScreenState::Menu(state::MenuState::MainMenu);
     }
 
@@ -175,15 +175,8 @@ pub fn handle_input(
             }
         }
         CalAction::ToggleCompleted => {
-            match get_selected_task(api_handler, &selected_date, currstate.task_id) {
-                Some(task) => {
-                    match api_handler.toggle_completed(&task) {
-                        Ok(_) => (),
-                        Err(_) => (),
-                    };
-                }
-                None => (),
-            }
+            if let Some(task) = get_selected_task(api_handler, &selected_date, currstate.task_id)
+                && api_handler.toggle_completed(&task).is_ok() {  };
 
             currstate.clone()
         }
@@ -244,7 +237,7 @@ pub fn handle_input(
                     let res = selected_date.sub_days(1);
                     let date_tasks_prev =
                         api_handler.fetch_tasks_at_date(&res, CacheType::PreferCache);
-                    if date_tasks_prev.len() > 0 {
+                    if !date_tasks_prev.is_empty() {
                         state::CalendarState {
                             year: res.year,
                             month: res.month,
@@ -304,7 +297,7 @@ pub fn handle_input(
                 }
                 None => {
                     // First task or next date
-                    if date_tasks.len() > 0 {
+                    if !date_tasks.is_empty() {
                         state::CalendarState {
                             task_id: Some(date_tasks[0].task_id),
                             ..currstate.clone()
@@ -402,7 +395,7 @@ pub fn render_date_square(
     x: u16,
     y: u16,
     is_selected: bool,
-    tasks: &Vec<types::TaskDataWithId>,
+    tasks: &[types::TaskDataWithId],
     pane: &state::CalendarPane,
 ) -> io::Result<()> {
     let mut stdout = io::stdout();
@@ -450,7 +443,7 @@ pub fn render_date_square(
         let task_y = y + 1 + i / 2;
         match tasks.get(i as usize) {
             Some(task) => {
-                render_task_candy(task_x, task_y, &task, is_overdue)?;
+                render_task_candy(task_x, task_y, task, is_overdue)?;
             }
             None => {
                 queue!(stdout, cursor::MoveTo(task_x, task_y), style::Print(" "))?;
@@ -483,7 +476,7 @@ pub fn render_tasks_date(
     is_selected: bool,
     selected_task_id: Option<i64>,
     is_today: bool,
-    tasks: &Vec<types::TaskDataWithId>,
+    tasks: &[types::TaskDataWithId],
     pane: &state::CalendarPane,
     key_help: &str,
 ) -> io::Result<u16> {
@@ -622,10 +615,7 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
 
     // Responsive layout
     let viewport_width = get_viewport_width()?;
-    let tasks_pane_width = std::cmp::min(
-        TASKS_PANE_WIDTH_MAX,
-        std::cmp::max(TASKS_PANE_WIDTH_MIN, viewport_width - CALENDAR_WIDTH - 1),
-    );
+    let tasks_pane_width = (viewport_width - CALENDAR_WIDTH - 1).clamp(TASKS_PANE_WIDTH_MIN, TASKS_PANE_WIDTH_MAX);
     let date_height: u16 = if is_mini_mode()? { 3 } else { 4 };
 
     // Main layout

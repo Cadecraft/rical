@@ -87,7 +87,7 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::
             KeyCode::Char(c) => {
                 let capitalized: String = c.to_uppercase().collect();
                 // TODO: better capitalization logic?
-                chars.insert(cursor_pos, capitalized.chars().nth(0).unwrap_or(' '));
+                chars.insert(cursor_pos, capitalized.chars().next().unwrap_or(' '));
                 state::TextInputState {
                     contents: chars.into_iter().collect(),
                     cursor_pos: cursor_pos + 1,

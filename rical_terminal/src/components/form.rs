@@ -66,7 +66,7 @@ pub fn handle_input<const N: usize>(
     validators: Option<[FieldValidator; N]>,
 ) -> (state::FormState<N>, FormResult) {
     if currstate.result_message.is_some() {
-        if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
+        if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
             return (currstate.clone(), FormResult::CancelAll);
         } else {
             return (currstate.clone(), FormResult::InProgress);
@@ -75,24 +75,24 @@ pub fn handle_input<const N: usize>(
 
     // Form navigation behavior is shared across all inputs
     let num_fields = currstate.fields.len();
-    let action = if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
+    let action = if key_pressed(key, KeyModifiers::NONE, KeyCode::Esc) {
         FormAction::CancelAll
-    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Enter) {
+    } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Enter) {
         if currstate.form_pos == num_fields - 1 {
             FormAction::Submit
         } else {
             FormAction::NextField
         }
-    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Up)
-        || key_pressed(&key, KeyModifiers::SHIFT, KeyCode::BackTab)
+    } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Up)
+        || key_pressed(key, KeyModifiers::SHIFT, KeyCode::BackTab)
     {
         if currstate.form_pos > 0 {
             FormAction::PrevField
         } else {
             FormAction::NormalTyping
         }
-    } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Tab)
-        || key_pressed(&key, KeyModifiers::NONE, KeyCode::Down)
+    } else if key_pressed(key, KeyModifiers::NONE, KeyCode::Tab)
+        || key_pressed(key, KeyModifiers::NONE, KeyCode::Down)
     {
         if currstate.form_pos != num_fields - 1 {
             FormAction::NextField
@@ -206,7 +206,7 @@ pub fn render<const N: usize>(
     match &currstate.result_message {
         Some(lines) => {
             for (i, line) in lines.iter().enumerate() {
-                text::println(4 + i as u16, &line)?;
+                text::println(4 + i as u16, line)?;
             }
             text::clear_to_end()?;
         }
@@ -219,7 +219,7 @@ pub fn render<const N: usize>(
                 };
                 inputtext::render(
                     &field_params.name,
-                    &field,
+                    field,
                     &field_styles,
                     &field_params.input_mode,
                 )?;

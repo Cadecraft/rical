@@ -2,7 +2,6 @@ use std::io::{self, Write, stdout};
 
 use crossterm::{cursor, event::read, execute, terminal};
 
-use dotenvy;
 
 mod api;
 mod components;

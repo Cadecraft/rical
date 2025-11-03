@@ -3,9 +3,7 @@ use sqlx::{
     postgres::{PgPoolOptions, Postgres},
 };
 
-use dotenvy;
 use std::env;
-use tokio;
 
 pub async fn setup_schemas(pool: &Pool<Postgres>) {
     let mut transaction = pool.begin().await.unwrap();
