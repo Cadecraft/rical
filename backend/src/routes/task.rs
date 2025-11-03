@@ -1,17 +1,19 @@
 use axum::{
-    extract::{State, Path},
-    routing::{get, post, put, delete},
+    Json, Router,
+    extract::{Path, State},
     http::StatusCode,
-    Json,
-    Router,
+    routing::{delete, get, post, put},
 };
-use axum_extra::{headers::{Authorization, authorization::Bearer}, TypedHeader};
-use std::sync::Arc;
+use axum_extra::{
+    TypedHeader,
+    headers::{Authorization, authorization::Bearer},
+};
 use sqlx;
+use std::sync::Arc;
 
 use crate::AppState;
-use crate::utils;
 use crate::types::{TaskData, TaskId};
+use crate::utils;
 
 pub fn get_routes(state: &Arc<AppState>) -> Router {
     Router::new()
@@ -25,7 +27,7 @@ pub fn get_routes(state: &Arc<AppState>) -> Router {
 async fn get_task(
     TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
-    Path(task_id): Path<i64>
+    Path(task_id): Path<i64>,
 ) -> (StatusCode, Json<Option<TaskData>>) {
     // TODO: refactor into middleware?
     let account_id = match utils::verify_jwt(bearer.token()) {
@@ -34,12 +36,19 @@ async fn get_task(
             return (StatusCode::UNAUTHORIZED, Json(None));
         }
     };
-    let res = match sqlx::query_as!(TaskData, r#"
+    let res = match sqlx::query_as!(
+        TaskData,
+        r#"
         SELECT year, month, day,
         start_min, end_min, title, description, complete
         FROM task WHERE task_id=$1 AND account_id=$2;
-    "#, &task_id, &account_id
-    ).fetch_one(&state.db_pool).await {
+    "#,
+        &task_id,
+        &account_id
+    )
+    .fetch_one(&state.db_pool)
+    .await
+    {
         Ok(row) => row,
         Err(_) => {
             return (StatusCode::NOT_FOUND, Json(None));
@@ -61,13 +70,28 @@ async fn post_task(
             return (StatusCode::UNAUTHORIZED, Json(None));
         }
     };
-    let task_id = match sqlx::query_as!(TaskId, r#"
+    let task_id = match sqlx::query_as!(
+        TaskId,
+        r#"
         INSERT INTO task
         (account_id, year, month, day, start_min, end_min, title, description, complete)
         VALUES
         ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING task_id
-    "#, account_id, payload.year, payload.month, payload.day, payload.start_min, payload.end_min, payload.title, payload.description, payload.complete).fetch_one(&state.db_pool).await {
+    "#,
+        account_id,
+        payload.year,
+        payload.month,
+        payload.day,
+        payload.start_min,
+        payload.end_min,
+        payload.title,
+        payload.description,
+        payload.complete
+    )
+    .fetch_one(&state.db_pool)
+    .await
+    {
         Ok(result) => result,
         Err(_) => {
             return (StatusCode::BAD_REQUEST, Json(None));
@@ -81,7 +105,7 @@ async fn put_task(
     TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
     Path(task_id): Path<i64>,
-    Json(payload): Json<TaskData>
+    Json(payload): Json<TaskData>,
 ) -> (StatusCode, Json<Option<TaskData>>) {
     let account_id = match utils::verify_jwt(bearer.token()) {
         Some(id) => id,
@@ -109,7 +133,7 @@ async fn put_task(
 async fn delete_task(
     TypedHeader(Authorization(bearer)): TypedHeader<Authorization<Bearer>>,
     State(state): State<Arc<AppState>>,
-    Path(task_id): Path<i64>
+    Path(task_id): Path<i64>,
 ) -> StatusCode {
     let account_id = match utils::verify_jwt(bearer.token()) {
         Some(id) => id,
@@ -117,11 +141,19 @@ async fn delete_task(
             return StatusCode::UNAUTHORIZED;
         }
     };
-    match sqlx::query_as!(TaskData, r#"
+    match sqlx::query_as!(
+        TaskData,
+        r#"
         DELETE FROM task
         WHERE task_id = $1 AND account_id = $2;
-    "#, task_id, account_id).execute(&state.db_pool).await {
+    "#,
+        task_id,
+        account_id
+    )
+    .execute(&state.db_pool)
+    .await
+    {
         Ok(_) => StatusCode::OK,
-        Err(_) => StatusCode::BAD_REQUEST
+        Err(_) => StatusCode::BAD_REQUEST,
     }
 }

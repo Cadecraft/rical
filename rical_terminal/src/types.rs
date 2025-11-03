@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 // NOTE: some of these types are copied from the backend
 // NOTE: May want to look into a better long-term type sharing solution
@@ -12,7 +12,7 @@ pub struct TaskData {
     pub end_min: Option<i32>,
     pub title: String,
     pub description: Option<String>,
-    pub complete: bool
+    pub complete: bool,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -25,7 +25,7 @@ pub struct TaskDataWithId {
     pub title: String,
     pub description: Option<String>,
     pub complete: bool,
-    pub task_id: i64
+    pub task_id: i64,
 }
 
 impl TaskDataWithId {
@@ -46,12 +46,12 @@ impl TaskDataWithId {
             end_min: self.end_min,
             title: self.title.clone(),
             description: self.description.clone(),
-            complete: self.complete
+            complete: self.complete,
         }
     }
 }
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct CalendarTasks {
-    pub days: Vec<Vec<TaskDataWithId>>
+    pub days: Vec<Vec<TaskDataWithId>>,
 }

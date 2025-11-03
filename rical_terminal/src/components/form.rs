@@ -1,18 +1,16 @@
-use std::io;
 use crossterm::{
-    queue,
     cursor,
-    terminal,
     event::{KeyCode, KeyModifiers},
-    style
+    queue, style, terminal,
 };
+use std::io;
 
 use crate::state;
-use crate::utils::{KeyInfo, key_pressed};
 use crate::styles;
+use crate::utils::{KeyInfo, key_pressed};
 
-use crate::components::text;
 use crate::components::inputtext;
+use crate::components::text;
 
 use std::collections::HashMap;
 
@@ -23,21 +21,24 @@ enum FormAction {
     NextField,
     PrevField,
     Submit,
-    NormalTyping
+    NormalTyping,
 }
 
 pub enum FormResult {
     InProgress,
     /// Result label name: value (the content the user inputted)
     Submit(HashMap<String, String>),
-    CancelAll
+    CancelAll,
 }
 
 /// Validates the user's inputted string.
 /// If okay, returns Ok; if not okay, returns a valid "default" value as the error
 pub type FieldValidator = fn(&str) -> Result<(), String>;
 
-pub fn validate_selected<const N: usize>(currstate: &state::FormState<N>, validators: Option<[FieldValidator; N]>) -> [state::TextInputState; N] {
+pub fn validate_selected<const N: usize>(
+    currstate: &state::FormState<N>,
+    validators: Option<[FieldValidator; N]>,
+) -> [state::TextInputState; N] {
     let selected = &currstate.fields[currstate.form_pos];
 
     if validators.is_none() {
@@ -46,11 +47,11 @@ pub fn validate_selected<const N: usize>(currstate: &state::FormState<N>, valida
 
     let valid_contents = match validators.unwrap()[currstate.form_pos](&selected.contents) {
         Ok(_) => selected.contents.clone(),
-        Err(changed_contents) => changed_contents
+        Err(changed_contents) => changed_contents,
     };
     let valid_input = state::TextInputState {
         cursor_pos: valid_contents.chars().count(),
-        contents: valid_contents
+        contents: valid_contents,
     };
 
     let mut res_all = currstate.fields.clone();
@@ -62,7 +63,7 @@ pub fn handle_input<const N: usize>(
     currstate: &state::FormState<N>,
     key: &KeyInfo,
     label_names: [&str; N],
-    validators: Option<[FieldValidator; N]>
+    validators: Option<[FieldValidator; N]>,
 ) -> (state::FormState<N>, FormResult) {
     if currstate.result_message.is_some() {
         if key_pressed(&key, KeyModifiers::NONE, KeyCode::Esc) {
@@ -83,14 +84,16 @@ pub fn handle_input<const N: usize>(
             FormAction::NextField
         }
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Up)
-        || key_pressed(&key, KeyModifiers::SHIFT, KeyCode::BackTab) {
+        || key_pressed(&key, KeyModifiers::SHIFT, KeyCode::BackTab)
+    {
         if currstate.form_pos > 0 {
             FormAction::PrevField
         } else {
             FormAction::NormalTyping
         }
     } else if key_pressed(&key, KeyModifiers::NONE, KeyCode::Tab)
-        || key_pressed(&key, KeyModifiers::NONE, KeyCode::Down) {
+        || key_pressed(&key, KeyModifiers::NONE, KeyCode::Down)
+    {
         if currstate.form_pos != num_fields - 1 {
             FormAction::NextField
         } else {
@@ -103,7 +106,7 @@ pub fn handle_input<const N: usize>(
     match action {
         FormAction::CancelAll => {
             return (currstate.clone(), FormResult::CancelAll);
-        },
+        }
         FormAction::Submit => {
             let mut results: HashMap<String, String> = HashMap::new();
             let final_validated_fields = validate_selected(currstate, validators);
@@ -112,22 +115,28 @@ pub fn handle_input<const N: usize>(
                 results.insert(label_names[i].to_string(), this_value);
             }
             return (currstate.clone(), FormResult::Submit(results));
-        },
+        }
         FormAction::NextField => {
-            return (state::FormState {
-                form_pos: currstate.form_pos + 1,
-                fields: validate_selected(currstate, validators),
-                ..currstate.clone()
-            }, FormResult::InProgress)
-        },
+            return (
+                state::FormState {
+                    form_pos: currstate.form_pos + 1,
+                    fields: validate_selected(currstate, validators),
+                    ..currstate.clone()
+                },
+                FormResult::InProgress,
+            );
+        }
         FormAction::PrevField => {
-            return (state::FormState {
-                form_pos: currstate.form_pos - 1,
-                fields: validate_selected(currstate, validators),
-                ..currstate.clone()
-            }, FormResult::InProgress)
-        },
-        FormAction::NormalTyping => ()
+            return (
+                state::FormState {
+                    form_pos: currstate.form_pos - 1,
+                    fields: validate_selected(currstate, validators),
+                    ..currstate.clone()
+                },
+                FormResult::InProgress,
+            );
+        }
+        FormAction::NormalTyping => (),
     };
 
     // Handle input for the selected field (because the user hasn't performed a navigation action)
@@ -135,16 +144,19 @@ pub fn handle_input<const N: usize>(
     let res_selected = inputtext::handle_input(selected, key);
     let mut res_all = currstate.fields.clone();
     res_all[currstate.form_pos] = res_selected;
-    (state::FormState {
-        fields: res_all,
-        ..currstate.clone()
-    }, FormResult::InProgress)
+    (
+        state::FormState {
+            fields: res_all,
+            ..currstate.clone()
+        },
+        FormResult::InProgress,
+    )
 }
 
 pub struct FormFieldParameters {
     pub name: String,
     pub styles: styles::Styles,
-    pub input_mode: inputtext::InputMode
+    pub input_mode: inputtext::InputMode,
 }
 
 impl Default for FormFieldParameters {
@@ -161,7 +173,7 @@ pub struct FormDecorationParameters {
     pub text: String,
     pub x: u16,
     pub y: u16,
-    pub clear_rest_of_line: bool
+    pub clear_rest_of_line: bool,
 }
 
 pub struct FormRenderParameters<const N: usize> {
@@ -175,10 +187,13 @@ pub struct FormRenderParameters<const N: usize> {
     /// Additional strings to render on certain lines (e.g. to pad between two input fields on one line)
     pub decoration_strings: Vec<FormDecorationParameters>,
     /// The line numbers to make blank, no less than line 4 as lines 0..=3 are prehandled
-    pub clear_lines: Vec<u16>
+    pub clear_lines: Vec<u16>,
 }
 
-pub fn render<const N: usize>(currstate: &state::FormState<N>, render_params: FormRenderParameters<N>) -> io::Result<()> {
+pub fn render<const N: usize>(
+    currstate: &state::FormState<N>,
+    render_params: FormRenderParameters<N>,
+) -> io::Result<()> {
     let num_fields = currstate.fields.len();
 
     let mut stdout = io::stdout();
@@ -194,7 +209,7 @@ pub fn render<const N: usize>(currstate: &state::FormState<N>, render_params: Fo
                 text::println(4 + i as u16, &line)?;
             }
             text::clear_to_end()?;
-        },
+        }
         None => {
             for (i, field) in currstate.fields.iter().enumerate() {
                 let field_params = &render_params.fields[i];
@@ -202,7 +217,12 @@ pub fn render<const N: usize>(currstate: &state::FormState<N>, render_params: Fo
                     active: i == currstate.form_pos,
                     ..field_params.styles.clone()
                 };
-                inputtext::render(&field_params.name, &field, &field_styles, &field_params.input_mode)?;
+                inputtext::render(
+                    &field_params.name,
+                    &field,
+                    &field_styles,
+                    &field_params.input_mode,
+                )?;
             }
             for y in render_params.clear_lines {
                 text::println(y, "")?;
@@ -219,11 +239,14 @@ pub fn render<const N: usize>(currstate: &state::FormState<N>, render_params: Fo
             }
 
             // TODO: allow a multi-line input?
-            text::println(render_params.hint_y, if currstate.form_pos == num_fields - 1 {
-                "(enter) Submit"
-            } else {
-                "(enter) Next field"
-            })?;
+            text::println(
+                render_params.hint_y,
+                if currstate.form_pos == num_fields - 1 {
+                    "(enter) Submit"
+                } else {
+                    "(enter) Next field"
+                },
+            )?;
             text::clear_to_end()?;
         }
     };

@@ -1,16 +1,10 @@
 use argon2::{
-    password_hash::{
-        rand_core::OsRng,
-        PasswordHash,
-        PasswordHasher,
-        PasswordVerifier,
-        SaltString
-    },
-    Argon2
+    Argon2,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 
 use hmac::{Hmac, Mac};
-use jwt::{ SignWithKey, VerifyWithKey };
+use jwt::{SignWithKey, VerifyWithKey};
 use sha2::Sha256;
 use std::collections::BTreeMap;
 
@@ -23,20 +17,22 @@ pub fn hash_password(password: &str) -> String {
     let argon2 = Argon2::default();
     let password_hash = argon2
         .hash_password(password.as_bytes(), &salt)
-        .expect("Could not hash password").to_string();
+        .expect("Could not hash password")
+        .to_string();
     password_hash
 }
 
 /// Return whether the incoming password matches the stored one
 pub fn verify_password(incoming: &str, stored_hash: &str) -> bool {
     let parsed_hash = PasswordHash::new(stored_hash).expect("Could not parse stored hash");
-    Argon2::default().verify_password(incoming.as_bytes(), &parsed_hash).is_ok()
+    Argon2::default()
+        .verify_password(incoming.as_bytes(), &parsed_hash)
+        .is_ok()
 }
 
 fn create_hmac_key() -> Hmac<Sha256> {
     let jwt_secret = &config::get_config()["JWT_SECRET"];
-    Hmac::new_from_slice(jwt_secret.as_bytes())
-        .expect("Could not generate key")
+    Hmac::new_from_slice(jwt_secret.as_bytes()).expect("Could not generate key")
 }
 
 /// Create and sign a JWT for auth with the user ID
@@ -58,8 +54,8 @@ pub fn verify_jwt(incoming_token: &str) -> Option<i64> {
     match verif_res {
         Ok(claims) => match claims.get("sub") {
             Some(res) => Some(res.clone()),
-            None => None
+            None => None,
         },
-        Err(_) => None
+        Err(_) => None,
     }
 }

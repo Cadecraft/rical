@@ -1,18 +1,19 @@
-use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use chrono::{NaiveDate, Datelike};
+use chrono::{Datelike, NaiveDate};
 use regex::Regex;
 
 use reqwest;
 
 pub struct KeyInfo {
     pub modifiers: KeyModifiers,
-    pub code: KeyCode
+    pub code: KeyCode,
 }
 
 pub fn read_key_event(event: KeyEvent) -> KeyInfo {
     KeyInfo {
-        modifiers: event.modifiers, code: event.code
+        modifiers: event.modifiers,
+        code: event.code,
     }
 }
 
@@ -25,14 +26,17 @@ pub fn key_pressed(key: &KeyInfo, modifiers: KeyModifiers, code: KeyCode) -> boo
 pub struct RicalDate {
     pub year: i32,
     pub month: u32,
-    pub day: u32
+    pub day: u32,
 }
 
 impl RicalDate {
     pub fn new(year: i32, month: u32, day: u32) -> RicalDate {
         // Validate with chrono
         if chrono::NaiveDate::from_ymd_opt(year, month, day).is_none() {
-            panic!("This date is invalid (be sure to use 1-based months and days): {}/{}/{}", year, month, day);
+            panic!(
+                "This date is invalid (be sure to use 1-based months and days): {}/{}/{}",
+                year, month, day
+            );
         }
 
         RicalDate { year, month, day }
@@ -42,19 +46,24 @@ impl RicalDate {
         RicalDate {
             year: naive.year(),
             month: naive.month0() + 1,
-            day: naive.day0() + 1
+            day: naive.day0() + 1,
         }
     }
 
     pub fn to_naive_date(&self) -> chrono::NaiveDate {
         // self should be valid because of checks in the constructors
-        chrono::NaiveDate::from_ymd_opt(self.year, self.month, self.day).expect("The RicalDate is not valid")
+        chrono::NaiveDate::from_ymd_opt(self.year, self.month, self.day)
+            .expect("The RicalDate is not valid")
     }
 
     /// Return today's date (in local time)
     pub fn today() -> RicalDate {
         let curr_date = chrono::offset::Local::now().date_naive();
-        RicalDate::new(curr_date.year(), curr_date.month0() + 1, curr_date.day0() + 1)
+        RicalDate::new(
+            curr_date.year(),
+            curr_date.month0() + 1,
+            curr_date.day0() + 1,
+        )
     }
 
     /// Add a certain number of days and return the new date
@@ -63,7 +72,7 @@ impl RicalDate {
         RicalDate::from_naive_date(
             self.to_naive_date()
                 .checked_add_days(chrono::Days::new(days))
-                .expect("Could not add days")
+                .expect("Could not add days"),
         )
     }
 
@@ -72,19 +81,32 @@ impl RicalDate {
     pub fn sub_days(&self, days: u64) -> RicalDate {
         RicalDate::from_naive_date(
             self.to_naive_date()
-            .checked_sub_days(chrono::Days::new(days))
-            .expect("Could not subtract days")
+                .checked_sub_days(chrono::Days::new(days))
+                .expect("Could not subtract days"),
         )
     }
 
     /// Format the date as a YYYY/MM/DD string
     pub fn format(&self) -> String {
-        format!("{}/{}/{}", self.year, fmt_twodigit(self.month), fmt_twodigit(self.day))
+        format!(
+            "{}/{}/{}",
+            self.year,
+            fmt_twodigit(self.month),
+            fmt_twodigit(self.day)
+        )
     }
 
     /// Get the name of this date's weekday
     pub fn weekday_name(&self) -> String {
-        const WEEKDAY_NAMES: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const WEEKDAY_NAMES: [&str; 7] = [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+        ];
         let weekday = self.to_naive_date().weekday().number_from_sunday() - 1;
         WEEKDAY_NAMES[weekday as usize].to_string()
     }
@@ -93,18 +115,17 @@ impl RicalDate {
 fn next_month(year: i32, month: u32) -> (i32, u32) {
     match month {
         12 => (year + 1, 1),
-        _ => (year, month + 1)
+        _ => (year, month + 1),
     }
 }
 
 fn get_days_in_month(year: i32, month: u32) -> u32 {
-    NaiveDate::from_ymd_opt(
-        next_month(year, month).0,
-        next_month(year, month).1,
-        1
-    )
+    NaiveDate::from_ymd_opt(next_month(year, month).0, next_month(year, month).1, 1)
         .expect("Could not obtain previous month (calculating days in month)")
-        .signed_duration_since(NaiveDate::from_ymd_opt(year, month, 1).expect("Could not obtain days in month")).num_days() as u32
+        .signed_duration_since(
+            NaiveDate::from_ymd_opt(year, month, 1).expect("Could not obtain days in month"),
+        )
+        .num_days() as u32
 }
 
 type CalendarFrame = Vec<Vec<i32>>;
@@ -117,7 +138,8 @@ pub fn get_calendar_frame(year: i32, month: u32) -> CalendarFrame {
     const DAYS_PER_WEEK: usize = 7;
 
     for date in 1..=days_in_month {
-        let naive = NaiveDate::from_ymd_opt(year, month as u32, date).expect("Could not generate a chrono::NaiveDate");
+        let naive = NaiveDate::from_ymd_opt(year, month as u32, date)
+            .expect("Could not generate a chrono::NaiveDate");
         // If naive is a Sunday, weekday will be 0
         let weekday = naive.weekday().number_from_sunday() - 1;
         // If start of a new week, add that new week to the result
@@ -136,7 +158,7 @@ pub enum GridDirection {
     Left,
     Right,
     Up,
-    Down
+    Down,
 }
 
 /// Navigate visually between days on the calendar grid, possibly going to a previous or next month
@@ -147,7 +169,7 @@ pub fn calendar_grid_navigation(current_date: &RicalDate, direction: GridDirecti
         GridDirection::Left => current_date.sub_days(1),
         GridDirection::Right => current_date.add_days(1),
         GridDirection::Up => current_date.sub_days(7),
-        GridDirection::Down => current_date.add_days(7)
+        GridDirection::Down => current_date.add_days(7),
     }
 }
 
@@ -160,14 +182,14 @@ pub fn fmt_twodigit<T: ToString>(number: T) -> String {
 pub fn fmt_mins(mins_opt: Option<i32>) -> String {
     match mins_opt {
         Some(mins) => format!("{}:{}", fmt_twodigit(mins / 60), fmt_twodigit(mins % 60)),
-        None => String::new()
+        None => String::new(),
     }
 }
 
 /// Format a time range of minutes
 pub fn fmt_timerange(start_min: Option<i32>, end_min: Option<i32>) -> String {
     if start_min.is_none() && end_min.is_none() {
-        return String::new()
+        return String::new();
     }
     format!("{}-{}", fmt_mins(start_min), fmt_mins(end_min))
 }
@@ -175,7 +197,7 @@ pub fn fmt_timerange(start_min: Option<i32>, end_min: Option<i32>) -> String {
 enum PeriodType {
     AM,
     PM,
-    TwentyFourHour
+    TwentyFourHour,
 }
 
 /// Parse a user-inputted time shorthand string and return the minutes
@@ -190,7 +212,8 @@ pub fn time_shorthand_to_mins(s: &str) -> Option<i32> {
     let formatted = no_whitespace.to_lowercase();
 
     // Check for valid structure (see tests below for examples)
-    let valid_shorthand = Regex::new(r"^\s*[0-9][0-9]?\s*(:\s*[0-9][0-9]?)?\s*((?i)pm|(?i)am)?\s*$").unwrap();
+    let valid_shorthand =
+        Regex::new(r"^\s*[0-9][0-9]?\s*(:\s*[0-9][0-9]?)?\s*((?i)pm|(?i)am)?\s*$").unwrap();
     if !valid_shorthand.is_match(s) {
         return None;
     }
@@ -227,13 +250,13 @@ pub fn time_shorthand_to_mins(s: &str) -> Option<i32> {
             if hours == 12 {
                 hours = 0;
             }
-        },
+        }
         PeriodType::PM => {
             if hours != 12 {
                 hours += 12;
             }
-        },
-        PeriodType::TwentyFourHour => ()
+        }
+        PeriodType::TwentyFourHour => (),
     }
 
     let total_minutes = hours * 60 + minutes;
@@ -259,7 +282,7 @@ pub fn get_month_name(month: u32) -> String {
         "September",
         "October",
         "November",
-        "December"
+        "December",
     ];
     MONTH_NAMES[month as usize - 1].to_string()
 }
@@ -290,7 +313,10 @@ mod tests {
         assert_eq!(time_shorthand_to_mins("3am"), Some(3 * 60));
         assert_eq!(time_shorthand_to_mins(" 3 PM  "), Some(15 * 60));
         assert_eq!(time_shorthand_to_mins(" 5: 22 PM  "), Some(17 * 60 + 22));
-        assert_eq!(time_shorthand_to_mins(" 5    : 22  pM  "), Some(17 * 60 + 22));
+        assert_eq!(
+            time_shorthand_to_mins(" 5    : 22  pM  "),
+            Some(17 * 60 + 22)
+        );
         assert_eq!(time_shorthand_to_mins("03:30pm"), Some(15 * 60 + 30));
         assert_eq!(time_shorthand_to_mins("15"), Some(15 * 60));
         assert_eq!(time_shorthand_to_mins("15pm"), None);

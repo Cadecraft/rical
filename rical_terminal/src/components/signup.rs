@@ -1,33 +1,35 @@
 use std::io;
 
-use crate::state;
-use crate::utils::{KeyInfo, display_error};
 use crate::api::ApiHandler;
+use crate::state;
 use crate::styles;
+use crate::utils::{KeyInfo, display_error};
 
-use crate::components::inputtext;
 use crate::components::form;
+use crate::components::inputtext;
 
 // The sign up screen
 
-pub fn handle_input(currstate: &state::FormState<3>, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
+pub fn handle_input(
+    currstate: &state::FormState<3>,
+    key: &KeyInfo,
+    api_handler: &mut ApiHandler,
+) -> state::ScreenState {
     let res = form::handle_input(currstate, key, ["username", "password", "confirmpw"], None);
     match res.1 {
-        form::FormResult::InProgress => {
-            state::ScreenState::Menu(state::MenuState::Signup(res.0))
-        },
-        form::FormResult::CancelAll => {
-            state::ScreenState::Menu(state::MenuState::MainMenu)
-        },
+        form::FormResult::InProgress => state::ScreenState::Menu(state::MenuState::Signup(res.0)),
+        form::FormResult::CancelAll => state::ScreenState::Menu(state::MenuState::MainMenu),
         form::FormResult::Submit(result) => {
             // TODO: show loading screen
             let username = result["username"].clone();
             let password = result["password"].clone();
             let confirm_password = result["confirmpw"].clone();
             if confirm_password != password {
-                return state::ScreenState::Menu(state::MenuState::Signup(state::FormState::from_result_message(vec![
-                    "Your passwords don't match! Be careful when typing".to_string(),
-                ])))
+                return state::ScreenState::Menu(state::MenuState::Signup(
+                    state::FormState::from_result_message(vec![
+                        "Your passwords don't match! Be careful when typing".to_string(),
+                    ]),
+                ));
             }
             match api_handler.try_signup(username.clone(), password) {
                 Ok(_) => {
@@ -62,7 +64,7 @@ pub fn render(currstate: &state::FormState<3>) -> io::Result<()> {
                     width: Some(38),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                input_mode: inputtext::InputMode::Normal,
             },
             form::FormFieldParameters {
                 name: "New password".to_string(),
@@ -72,7 +74,7 @@ pub fn render(currstate: &state::FormState<3>) -> io::Result<()> {
                     width: Some(38),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Password
+                input_mode: inputtext::InputMode::Password,
             },
             form::FormFieldParameters {
                 name: "^ Confirm pw".to_string(),
@@ -82,11 +84,11 @@ pub fn render(currstate: &state::FormState<3>) -> io::Result<()> {
                     width: Some(38),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Password
-            }
+                input_mode: inputtext::InputMode::Password,
+            },
         ],
         decoration_strings: vec![],
-        clear_lines: vec![7]
+        clear_lines: vec![7],
     };
     form::render(currstate, render_params)?;
     Ok(())

@@ -1,24 +1,24 @@
 use std::io;
 
-use crate::state;
-use crate::utils::{KeyInfo, RicalDate, display_error};
 use crate::api::ApiHandler;
+use crate::state;
 use crate::styles;
+use crate::utils::{KeyInfo, RicalDate, display_error};
 
-use crate::components::inputtext;
 use crate::components::form;
+use crate::components::inputtext;
 
 // The login screen
 
-pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
+pub fn handle_input(
+    currstate: &state::FormState<2>,
+    key: &KeyInfo,
+    api_handler: &mut ApiHandler,
+) -> state::ScreenState {
     let res = form::handle_input(currstate, key, ["username", "password"], None);
     match res.1 {
-        form::FormResult::InProgress => {
-            state::ScreenState::Menu(state::MenuState::Login(res.0))
-        },
-        form::FormResult::CancelAll => {
-            state::ScreenState::Menu(state::MenuState::MainMenu)
-        },
+        form::FormResult::InProgress => state::ScreenState::Menu(state::MenuState::Login(res.0)),
+        form::FormResult::CancelAll => state::ScreenState::Menu(state::MenuState::MainMenu),
         form::FormResult::Submit(result) => {
             // TODO: show loading screen
             let username = result["username"].clone();
@@ -26,16 +26,20 @@ pub fn handle_input(currstate: &state::FormState<2>, key: &KeyInfo, api_handler:
             match api_handler.try_login(username, password) {
                 Ok(_) => {
                     let today = RicalDate::today();
-                    state::ScreenState::Calendar(state::CalendarState::new(today.year, today.month, today.day))
-                },
-                Err(err) => {
-                    state::ScreenState::Menu(state::MenuState::Login(state::FormState::from_result_message(vec![
+                    state::ScreenState::Calendar(state::CalendarState::new(
+                        today.year,
+                        today.month,
+                        today.day,
+                    ))
+                }
+                Err(err) => state::ScreenState::Menu(state::MenuState::Login(
+                    state::FormState::from_result_message(vec![
                         "Login failed:".to_string(),
                         format!("  - {}", display_error(err)),
                         "Make sure your username and password are correct.".to_string(),
-                        "If you don't have an account, sign up first!".to_string()
-                    ])))
-                }
+                        "If you don't have an account, sign up first!".to_string(),
+                    ]),
+                )),
             }
         }
     }
@@ -54,7 +58,7 @@ pub fn render(currstate: &state::FormState<2>) -> io::Result<()> {
                     width: Some(38),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Normal
+                input_mode: inputtext::InputMode::Normal,
             },
             form::FormFieldParameters {
                 name: "Password".to_string(),
@@ -64,11 +68,11 @@ pub fn render(currstate: &state::FormState<2>) -> io::Result<()> {
                     width: Some(38),
                     ..styles::Styles::new()
                 },
-                input_mode: inputtext::InputMode::Password
-            }
+                input_mode: inputtext::InputMode::Password,
+            },
         ],
         decoration_strings: vec![],
-        clear_lines: vec![6]
+        clear_lines: vec![6],
     };
     form::render(currstate, render_params)?;
     Ok(())
