@@ -1,24 +1,28 @@
 use sqlx::{
-    postgres::{Postgres, PgPoolOptions},
-    Pool
+    Pool,
+    postgres::{PgPoolOptions, Postgres},
 };
 
-use tokio;
 use std::env;
-use dotenvy;
 
 pub async fn setup_schemas(pool: &Pool<Postgres>) {
     let mut transaction = pool.begin().await.unwrap();
 
-    sqlx::query(r#"
+    sqlx::query(
+        r#"
         CREATE TABLE IF NOT EXISTS account(
             account_id BIGSERIAL PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             hashed_password TEXT NOT NULL
         );
-        "#).execute(&mut *transaction).await.expect("Failed to create account table");
+        "#,
+    )
+    .execute(&mut *transaction)
+    .await
+    .expect("Failed to create account table");
 
-    sqlx::query(r#"
+    sqlx::query(
+        r#"
         CREATE TABLE IF NOT EXISTS task(
             account_id BIGINT references account(account_id),
             task_id BIGSERIAL PRIMARY KEY,
@@ -36,7 +40,11 @@ pub async fn setup_schemas(pool: &Pool<Postgres>) {
             CHECK (end_min IS NULL OR (end_min >= 0 AND end_min < 1440)),
             CHECK (end_min IS NULL OR (end_min IS NOT NULL AND start_min IS NOT NULL))
         );
-        "#).execute(&mut *transaction).await.expect("Failed to create task table");
+        "#,
+    )
+    .execute(&mut *transaction)
+    .await
+    .expect("Failed to create task table");
 
     transaction.commit().await.unwrap();
 }

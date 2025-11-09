@@ -9,12 +9,12 @@ pub struct TaskData {
     pub end_min: Option<i32>,
     pub title: String,
     pub description: Option<String>,
-    pub complete: bool
+    pub complete: bool,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct TaskId {
-    pub task_id: i64
+    pub task_id: i64,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -27,5 +27,5 @@ pub struct TaskDataWithId {
     pub title: String,
     pub description: Option<String>,
     pub complete: bool,
-    pub task_id: i64
+    pub task_id: i64,
 }

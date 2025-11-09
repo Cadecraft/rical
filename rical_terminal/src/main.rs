@@ -1,20 +1,14 @@
-use std::io::{self, stdout, Write};
+use std::io::{self, Write, stdout};
 
-use crossterm::{
-    execute,
-    terminal,
-    cursor,
-    event::read,
-};
+use crossterm::{cursor, event::read, execute, terminal};
 
-use dotenvy;
 
 mod api;
-mod state;
 mod components;
-mod utils;
+mod state;
 mod styles;
 mod types;
+mod utils;
 
 fn main() -> io::Result<()> {
     // TODO: connect to the API/get auth token
@@ -25,9 +19,7 @@ fn main() -> io::Result<()> {
     // State and data setup
     // TODO: default to main page, not calendar
     let mut state = state::RicalState {
-        screen_state: state::ScreenState::Menu(
-            state::MenuState::MainMenu
-        )
+        screen_state: state::ScreenState::Menu(state::MenuState::MainMenu),
     };
     /*let mut state = state::RicalState {
         screen_state: state::ScreenState::Calendar(state::CalendarState {
@@ -46,7 +38,8 @@ fn main() -> io::Result<()> {
     let mut stdout = stdout();
     terminal::enable_raw_mode()?;
 
-    execute!(stdout,
+    execute!(
+        stdout,
         terminal::EnterAlternateScreen,
         terminal::Clear(terminal::ClearType::All),
         cursor::Hide
@@ -63,12 +56,13 @@ fn main() -> io::Result<()> {
         let keypress = utils::read_key_event(event);
 
         // Handle input and update state
-        let new_screen_state = components::root::handle_input(&state, &keypress, &mut api_handler).screen_state;
+        let new_screen_state =
+            components::root::handle_input(&state, &keypress, &mut api_handler).screen_state;
         match new_screen_state {
             state::ScreenState::ShouldQuit => {
                 // Quit now
                 break;
-            },
+            }
             _ => {
                 state.screen_state = new_screen_state;
             }
@@ -81,9 +75,7 @@ fn main() -> io::Result<()> {
 
     // Cleanup
     // TODO: any other cleanup?
-    execute!(stdout,
-        terminal::LeaveAlternateScreen
-    )?;
+    execute!(stdout, terminal::LeaveAlternateScreen)?;
     terminal::disable_raw_mode()?;
 
     Ok(())

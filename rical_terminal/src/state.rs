@@ -5,14 +5,14 @@ use crate::types;
 /// Other fields can be added to represent important global state
 #[derive(Clone)]
 pub struct RicalState {
-    pub screen_state: ScreenState
+    pub screen_state: ScreenState,
 }
 
 #[derive(Clone)]
 pub enum ScreenState {
-    Calendar (CalendarState),
+    Calendar(CalendarState),
     Menu(MenuState),
-    ShouldQuit
+    ShouldQuit,
 }
 
 #[derive(Clone)]
@@ -20,28 +20,28 @@ pub enum MenuState {
     MainMenu,
     About,
     Login(FormState<2>),
-    Signup(FormState<3>)
+    Signup(FormState<3>),
 }
 
 /// The state for any text input
 #[derive(Clone)]
 pub struct TextInputState {
     pub cursor_pos: usize,
-    pub contents: String
+    pub contents: String,
 }
 
 impl TextInputState {
     pub fn new() -> TextInputState {
         TextInputState {
             cursor_pos: 0,
-            contents: String::new()
+            contents: String::new(),
         }
     }
     /// Create an input from the initial contents and place the cursor at the end of the contents
     pub fn from_contents(contents: String) -> TextInputState {
         TextInputState {
             cursor_pos: contents.chars().count(),
-            contents
+            contents,
         }
     }
 }
@@ -53,7 +53,7 @@ pub struct FormState<const N: usize> {
     pub fields: [TextInputState; N],
     /// If some, then the form has been submitted and is now displaying a message
     /// This can be multiple lines (multiple elements in the Vec)
-    pub result_message: Option<Vec<String>>
+    pub result_message: Option<Vec<String>>,
 }
 
 impl<const N: usize> FormState<N> {
@@ -61,15 +61,15 @@ impl<const N: usize> FormState<N> {
         FormState {
             form_pos: 0,
             fields: core::array::from_fn::<TextInputState, N, _>(|_| TextInputState::new()),
-            result_message: None
+            result_message: None,
         }
     }
 
     pub fn from_field_contents(form_pos: usize, contents: [String; N]) -> FormState<N> {
         FormState {
             form_pos,
-            fields: contents.map(|c| TextInputState::from_contents(c)),
-            result_message: None
+            fields: contents.map(TextInputState::from_contents),
+            result_message: None,
         }
     }
 
@@ -91,7 +91,7 @@ pub struct CalendarState {
     pub pane: CalendarPane,
     pub making_new_task: Option<FormState<4>>,
     pub editing_task: Option<EditTaskState>,
-    pub task_clipboard: Option<types::TaskData>
+    pub task_clipboard: Option<types::TaskData>,
 }
 
 impl CalendarState {
@@ -112,11 +112,11 @@ impl CalendarState {
 #[derive(Clone)]
 pub struct EditTaskState {
     pub task_id: i64,
-    pub form: FormState<8>
+    pub form: FormState<8>,
 }
 
 #[derive(Clone)]
 pub enum CalendarPane {
     Month,
-    Tasks
+    Tasks,
 }

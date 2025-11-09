@@ -1,19 +1,19 @@
-use std::io;
 use crossterm::{
-    queue,
     cursor,
-    terminal,
     event::{KeyCode, KeyModifiers},
+    queue,
     style::{self, Stylize},
+    terminal,
 };
+use std::io;
 
-use crate::state;
-use crate::utils::{self, KeyInfo, key_pressed, get_calendar_frame, fmt_mins, fmt_twodigit};
 use crate::api::{ApiHandler, CacheType};
+use crate::state;
+use crate::utils::{self, KeyInfo, fmt_mins, fmt_twodigit, get_calendar_frame, key_pressed};
 
 use crate::types;
 
-use crate::components::{text, new_task_form, edit_task_form};
+use crate::components::{edit_task_form, new_task_form, text};
 
 // The main calendar screen
 
@@ -28,41 +28,57 @@ enum CalAction {
     ToggleCompleted,
     DeleteSelectedTask,
     PasteTask,
-    None
+    None,
 }
 
-pub fn get_task_index_by_id(date_tasks: &Vec<types::TaskDataWithId>, task_id: i64) -> Option<usize> {
+pub fn get_task_index_by_id(
+    date_tasks: &[types::TaskDataWithId],
+    task_id: i64,
+) -> Option<usize> {
     date_tasks.iter().position(|task| task.task_id == task_id)
 }
 
 pub fn get_selected_task(
-    api_handler: &mut ApiHandler, selected_date: &utils::RicalDate, task_id: Option<i64>
+    api_handler: &mut ApiHandler,
+    selected_date: &utils::RicalDate,
+    task_id: Option<i64>,
 ) -> Option<types::TaskDataWithId> {
     let date_tasks = api_handler.fetch_tasks_at_date(selected_date, CacheType::PreferCache);
 
     match task_id {
         Some(id) => date_tasks.iter().find(|e| e.task_id == id).cloned(),
-        None => None
+        None => None,
     }
 }
 
 pub fn edit_task_state_from_task(task: &types::TaskDataWithId) -> state::EditTaskState {
     state::EditTaskState {
         task_id: task.task_id,
-        form: state::FormState::<8>::from_field_contents(5, [
-            task.year.to_string(),
-            task.month.to_string(),
-            task.day.to_string(),
-            fmt_mins(task.start_min),
-            fmt_mins(task.end_min),
-            task.title.clone(),
-            task.description.clone().unwrap_or(String::new()),
-            if task.complete { "Yes".to_string() } else { "No".to_string() }
-        ])
+        form: state::FormState::<8>::from_field_contents(
+            5,
+            [
+                task.year.to_string(),
+                task.month.to_string(),
+                task.day.to_string(),
+                fmt_mins(task.start_min),
+                fmt_mins(task.end_min),
+                task.title.clone(),
+                task.description.clone().unwrap_or_default(),
+                if task.complete {
+                    "Yes".to_string()
+                } else {
+                    "No".to_string()
+                },
+            ],
+        ),
     }
 }
 
-pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler: &mut ApiHandler) -> state::ScreenState {
+pub fn handle_input(
+    currstate: &state::CalendarState,
+    key: &KeyInfo,
+    api_handler: &mut ApiHandler,
+) -> state::ScreenState {
     if currstate.making_new_task.is_some() {
         return new_task_form::handle_input(currstate, key, api_handler);
     }
@@ -70,7 +86,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
         return edit_task_form::handle_input(currstate, key, api_handler);
     }
 
-    if key_pressed(&key, KeyModifiers::CONTROL, KeyCode::Char('m')) {
+    if key_pressed(key, KeyModifiers::CONTROL, KeyCode::Char('m')) {
         return state::ScreenState::Menu(state::MenuState::MainMenu);
     }
 
@@ -94,7 +110,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             } else {
                 CalAction::None
             }
-        },
+        }
         state::CalendarPane::Tasks => {
             if key_pressed(key, KeyModifiers::NONE, KeyCode::Char('j')) {
                 CalAction::SelectTaskDown
@@ -136,24 +152,18 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 task_id: None,
                 ..currstate.clone()
             }
+        }
+        CalAction::SwitchToTasks => state::CalendarState {
+            pane: state::CalendarPane::Tasks,
+            ..currstate.clone()
         },
-        CalAction::SwitchToTasks => {
-            state::CalendarState {
-                pane: state::CalendarPane::Tasks,
-                ..currstate.clone()
-            }
+        CalAction::SwitchToMonth => state::CalendarState {
+            pane: state::CalendarPane::Month,
+            ..currstate.clone()
         },
-        CalAction::SwitchToMonth => {
-            state::CalendarState {
-                pane: state::CalendarPane::Month,
-                ..currstate.clone()
-            }
-        },
-        CalAction::StartNewTask => {
-            state::CalendarState {
-                making_new_task: Some(state::FormState::<4>::new()),
-                ..currstate.clone()
-            }
+        CalAction::StartNewTask => state::CalendarState {
+            making_new_task: Some(state::FormState::<4>::new()),
+            ..currstate.clone()
         },
         CalAction::EditSelectedTask => {
             match get_selected_task(api_handler, &selected_date, currstate.task_id) {
@@ -161,22 +171,15 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                     editing_task: Some(edit_task_state_from_task(&task)),
                     ..currstate.clone()
                 },
-                None => currstate.clone()
+                None => currstate.clone(),
             }
-        },
+        }
         CalAction::ToggleCompleted => {
-            match get_selected_task(api_handler, &selected_date, currstate.task_id) {
-                Some(task) => {
-                    match api_handler.toggle_completed(&task) {
-                        Ok(_) => (),
-                        Err(_) => ()
-                    };
-                },
-                None => ()
-            }
+            if let Some(task) = get_selected_task(api_handler, &selected_date, currstate.task_id)
+                && api_handler.toggle_completed(&task).is_ok() {  };
 
             currstate.clone()
-        },
+        }
         CalAction::DeleteSelectedTask => {
             match get_selected_task(api_handler, &selected_date, currstate.task_id) {
                 Some(task) => {
@@ -187,35 +190,34 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                             task_clipboard: Some(task.without_id()),
                             ..currstate.clone()
                         },
-                        Err(_) => currstate.clone()
+                        Err(_) => currstate.clone(),
                     }
-                },
-                None => currstate.clone()
+                }
+                None => currstate.clone(),
             }
-        },
-        CalAction::PasteTask => {
-            match &currstate.task_clipboard {
-                Some(task) => {
-                    let new_task = types::TaskData {
-                        year: currstate.year,
-                        month: currstate.month as i32,
-                        day: currstate.day as i32,
-                        start_min: task.start_min,
-                        end_min: task.end_min,
-                        title: task.title.clone(),
-                        description: task.description.clone(),
-                        complete: task.complete
-                    };
-                    match api_handler.post_new_task(&new_task) {
-                        Ok(_) => currstate.clone(),
-                        Err(_) => currstate.clone()
-                    }
-                },
-                None => currstate.clone()
+        }
+        CalAction::PasteTask => match &currstate.task_clipboard {
+            Some(task) => {
+                let new_task = types::TaskData {
+                    year: currstate.year,
+                    month: currstate.month as i32,
+                    day: currstate.day as i32,
+                    start_min: task.start_min,
+                    end_min: task.end_min,
+                    title: task.title.clone(),
+                    description: task.description.clone(),
+                    complete: task.complete,
+                };
+                match api_handler.post_new_task(&new_task) {
+                    Ok(_) => currstate.clone(),
+                    Err(_) => currstate.clone(),
+                }
             }
+            None => currstate.clone(),
         },
         CalAction::SelectTaskUp => {
-            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
+            let date_tasks =
+                api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 
             // Select the task/day above the current one
             match currstate.task_id {
@@ -228,13 +230,14 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                     Some(index) => state::CalendarState {
                         task_id: Some(date_tasks[index - 1].task_id),
                         ..currstate.clone()
-                    }
+                    },
                 },
                 None => {
                     // Previous date's last task
                     let res = selected_date.sub_days(1);
-                    let date_tasks_prev = api_handler.fetch_tasks_at_date(&res, CacheType::PreferCache);
-                    if date_tasks_prev.len() > 0 {
+                    let date_tasks_prev =
+                        api_handler.fetch_tasks_at_date(&res, CacheType::PreferCache);
+                    if !date_tasks_prev.is_empty() {
                         state::CalendarState {
                             year: res.year,
                             month: res.month,
@@ -255,7 +258,8 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
             }
         }
         CalAction::SelectTaskDown => {
-            let date_tasks = api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
+            let date_tasks =
+                api_handler.fetch_tasks_at_date(&selected_date, CacheType::PreferCache);
 
             // Select the task/day after the current one
             match currstate.task_id {
@@ -281,7 +285,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                                     ..currstate.clone()
                                 }
                             }
-                        },
+                        }
                         None => {
                             // Should never happen; just reset
                             state::CalendarState {
@@ -290,10 +294,10 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                             }
                         }
                     }
-                },
+                }
                 None => {
                     // First task or next date
-                    if date_tasks.len() > 0 {
+                    if !date_tasks.is_empty() {
                         state::CalendarState {
                             task_id: Some(date_tasks[0].task_id),
                             ..currstate.clone()
@@ -312,7 +316,7 @@ pub fn handle_input(currstate: &state::CalendarState, key: &KeyInfo, api_handler
                 }
             }
         }
-        CalAction::None => currstate.clone()
+        CalAction::None => currstate.clone(),
     })
 }
 
@@ -338,36 +342,49 @@ fn is_mini_mode() -> io::Result<bool> {
 }
 
 /// A small, colorful representation of a task
-pub fn render_task_candy(x: u16, y: u16, task: &types::TaskDataWithId, overdue: bool) -> io::Result<()> {
+pub fn render_task_candy(
+    x: u16,
+    y: u16,
+    task: &types::TaskDataWithId,
+    overdue: bool,
+) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     // TODO: in the future, determine whether overdue here? (issue only arises with demo fake api data)
 
     let task_char = if task.start_min.is_some() && task.end_min.is_none() {
         "▼"
-    } else { match task.duration_mins() {
-        Some(dur) => {
-            if dur <= 15 { "▂" }
-            else if dur <= 30 { "▃" }
-            else if dur <= 45 { "▄" }
-            else if dur <= 60 { "▅" }
-            else if dur <= 120 { "▆" }
-            else { "█" }
-        }
-        None => "•",
-    } };
-
-    queue!(stdout,
-        cursor::MoveTo(x, y),
-        style::PrintStyledContent(
-            if task.complete {
-                task_char.dark_green()
-            } else if overdue {
-                task_char.dark_yellow()
-            } else {
-                task_char.dark_blue()
+    } else {
+        match task.duration_mins() {
+            Some(dur) => {
+                if dur <= 15 {
+                    "▂"
+                } else if dur <= 30 {
+                    "▃"
+                } else if dur <= 45 {
+                    "▄"
+                } else if dur <= 60 {
+                    "▅"
+                } else if dur <= 120 {
+                    "▆"
+                } else {
+                    "█"
+                }
             }
-        )
+            None => "•",
+        }
+    };
+
+    queue!(
+        stdout,
+        cursor::MoveTo(x, y),
+        style::PrintStyledContent(if task.complete {
+            task_char.dark_green()
+        } else if overdue {
+            task_char.dark_yellow()
+        } else {
+            task_char.dark_blue()
+        })
     )?;
     Ok(())
 }
@@ -378,43 +395,47 @@ pub fn render_date_square(
     x: u16,
     y: u16,
     is_selected: bool,
-    tasks: &Vec<types::TaskDataWithId>,
-    pane: &state::CalendarPane
+    tasks: &[types::TaskDataWithId],
+    pane: &state::CalendarPane,
 ) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     let dayformat = match &date {
         Some(d) => format!(" {} ", fmt_twodigit(d.day)),
-        None => " -- ".to_string()
+        None => " -- ".to_string(),
     };
 
-    let is_today = match &date { Some(d) => *d == utils::RicalDate::today(), None => false };
-    let is_overdue = match &date { Some(d) => *d < utils::RicalDate::today(), None => false };
+    let is_today = match &date {
+        Some(d) => *d == utils::RicalDate::today(),
+        None => false,
+    };
+    let is_overdue = match &date {
+        Some(d) => *d < utils::RicalDate::today(),
+        None => false,
+    };
 
     let date_height: u16 = if is_mini_mode()? { 3 } else { 4 };
 
-    queue!(stdout,
+    queue!(
+        stdout,
         cursor::MoveTo(x, y),
-        style::PrintStyledContent(
-            if date.is_none() {
-                dayformat.dark_grey()
+        style::PrintStyledContent(if date.is_none() {
+            dayformat.dark_grey()
+        } else if is_selected && is_today {
+            match pane {
+                state::CalendarPane::Month => dayformat.black().on_dark_cyan(),
+                state::CalendarPane::Tasks => dayformat.cyan().on_dark_grey(),
             }
-            else if is_selected && is_today {
-                match pane {
-                    state::CalendarPane::Month => dayformat.black().on_dark_cyan(),
-                    state::CalendarPane::Tasks => dayformat.cyan().on_dark_grey(),
-                }
-            } else if is_selected {
-                match pane {
-                    state::CalendarPane::Month => dayformat.black().on_white(),
-                    state::CalendarPane::Tasks => dayformat.black().on_dark_grey(),
-                }
-            } else if is_today {
-                dayformat.cyan()
-            } else {
-                dayformat.reset()
+        } else if is_selected {
+            match pane {
+                state::CalendarPane::Month => dayformat.black().on_white(),
+                state::CalendarPane::Tasks => dayformat.black().on_dark_grey(),
             }
-        )
+        } else if is_today {
+            dayformat.cyan()
+        } else {
+            dayformat.reset()
+        })
     )?;
     let max_tasks_displayed = (date_height - 1) * 2;
     for i in 0..max_tasks_displayed {
@@ -422,20 +443,25 @@ pub fn render_date_square(
         let task_y = y + 1 + i / 2;
         match tasks.get(i as usize) {
             Some(task) => {
-                render_task_candy(task_x, task_y, &task, is_overdue)?;
-            },
+                render_task_candy(task_x, task_y, task, is_overdue)?;
+            }
             None => {
-                queue!(stdout,
-                    cursor::MoveTo(task_x, task_y),
-                    style::Print(" ")
-                )?;
+                queue!(stdout, cursor::MoveTo(task_x, task_y), style::Print(" "))?;
             }
         }
     }
     // Clear the rest of the space beneath the date
     for clear_y in 0..(date_height - 1) {
-        queue!(stdout, cursor::MoveTo(x, y + clear_y + 1), style::Print(" "))?;
-        queue!(stdout, cursor::MoveTo(x + 3, y + clear_y + 1), style::Print(" "))?;
+        queue!(
+            stdout,
+            cursor::MoveTo(x, y + clear_y + 1),
+            style::Print(" ")
+        )?;
+        queue!(
+            stdout,
+            cursor::MoveTo(x + 3, y + clear_y + 1),
+            style::Print(" ")
+        )?;
     }
 
     Ok(())
@@ -450,7 +476,7 @@ pub fn render_tasks_date(
     is_selected: bool,
     selected_task_id: Option<i64>,
     is_today: bool,
-    tasks: &Vec<types::TaskDataWithId>,
+    tasks: &[types::TaskDataWithId],
     pane: &state::CalendarPane,
     key_help: &str,
 ) -> io::Result<u16> {
@@ -461,28 +487,31 @@ pub fn render_tasks_date(
     let date_title = format!(" {} - {} ", date.format(), date.weekday_name());
     let date_title_len = date_title.len();
     let is_title_selected = is_selected && selected_task_id.is_none();
-    queue!(stdout,
+    queue!(
+        stdout,
         cursor::MoveTo(x, cursory),
-        style::PrintStyledContent(
-            if is_title_selected && is_today {
-                match pane {
-                    state::CalendarPane::Month => date_title.cyan().on_dark_grey(),
-                    state::CalendarPane::Tasks => date_title.black().on_dark_cyan(),
-                }
-            } else if is_title_selected {
-                match pane {
-                    state::CalendarPane::Month => date_title.black().on_dark_grey(),
-                    state::CalendarPane::Tasks => date_title.black().on_white(),
-                }
-            } else if is_today {
-                date_title.cyan()
-            } else {
-                date_title.dark_grey()
+        style::PrintStyledContent(if is_title_selected && is_today {
+            match pane {
+                state::CalendarPane::Month => date_title.cyan().on_dark_grey(),
+                state::CalendarPane::Tasks => date_title.black().on_dark_cyan(),
             }
-        ),
+        } else if is_title_selected {
+            match pane {
+                state::CalendarPane::Month => date_title.black().on_dark_grey(),
+                state::CalendarPane::Tasks => date_title.black().on_white(),
+            }
+        } else if is_today {
+            date_title.cyan()
+        } else {
+            date_title.dark_grey()
+        }),
     )?;
     if is_selected {
-        text::pad_characters(tasks_pane_width, (date_title_len + key_help.len()) as u16, " ")?;
+        text::pad_characters(
+            tasks_pane_width,
+            (date_title_len + key_help.len()) as u16,
+            " ",
+        )?;
         queue!(stdout, style::Print(key_help))?;
     } else {
         text::pad_characters(tasks_pane_width, date_title_len as u16, " ")?;
@@ -499,38 +528,59 @@ pub fn render_tasks_date(
         // Time column
         const COL_TIME_WIDTH: u16 = 13;
         let timerange_text = format!(" {}", utils::fmt_timerange(task.start_min, task.end_min));
-        text::padded_text_styled(if task.complete { (&timerange_text as &str).dark_grey() } else { (&timerange_text as &str).reset() }, COL_TIME_WIDTH, " ".reset())?;
+        text::padded_text_styled(
+            if task.complete {
+                (&timerange_text as &str).dark_grey()
+            } else {
+                (&timerange_text as &str).reset()
+            },
+            COL_TIME_WIDTH,
+            " ".reset(),
+        )?;
         // Checkbox column
-        let is_task_selected = is_selected && match selected_task_id {
-            Some(id) => task.task_id == id,
-            None => false
-        };
-        queue!(stdout, if task.complete {
-            let checkbox = "[x]";
-            style::PrintStyledContent(if is_task_selected {
-                match pane {
-                    state::CalendarPane::Month => checkbox.green().on_dark_grey(),
-                    state::CalendarPane::Tasks => checkbox.black().on_dark_green(),
-                }
+        let is_task_selected = is_selected
+            && match selected_task_id {
+                Some(id) => task.task_id == id,
+                None => false,
+            };
+        queue!(
+            stdout,
+            if task.complete {
+                let checkbox = "[x]";
+                style::PrintStyledContent(if is_task_selected {
+                    match pane {
+                        state::CalendarPane::Month => checkbox.green().on_dark_grey(),
+                        state::CalendarPane::Tasks => checkbox.black().on_dark_green(),
+                    }
+                } else {
+                    checkbox.green()
+                })
             } else {
-                checkbox.green()
-            })
-        } else {
-            let checkbox = "[ ]";
-            style::PrintStyledContent(if is_task_selected {
-                match pane {
-                    state::CalendarPane::Month => checkbox.black().on_dark_grey(),
-                    state::CalendarPane::Tasks => checkbox.black().on_white(),
-                }
-            } else {
-                checkbox.reset()
-            })
-        }, style::Print(" "))?;
+                let checkbox = "[ ]";
+                style::PrintStyledContent(if is_task_selected {
+                    match pane {
+                        state::CalendarPane::Month => checkbox.black().on_dark_grey(),
+                        state::CalendarPane::Tasks => checkbox.black().on_white(),
+                    }
+                } else {
+                    checkbox.reset()
+                })
+            },
+            style::Print(" ")
+        )?;
         // Task text column
         // TODO: multiline
         // TODO: descriptions too?
         // TODO: what if user selects it
-        text::padded_text_styled(if task.complete { (&task.title as &str).dark_grey() } else { (&task.title as &str).reset() }, tasks_pane_width - COL_TIME_WIDTH - 6, " ".reset())?;
+        text::padded_text_styled(
+            if task.complete {
+                (&task.title as &str).dark_grey()
+            } else {
+                (&task.title as &str).reset()
+            },
+            tasks_pane_width - COL_TIME_WIDTH - 6,
+            " ".reset(),
+        )?;
         queue!(stdout, style::Print("│"))?;
         queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
         cursory += 1;
@@ -557,52 +607,84 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     let selected_date = utils::RicalDate::new(currstate.year, currstate.month, currstate.day);
 
     // Fetch data
-    let calendar_tasks = api_handler.fetch_calendar_tasks(selected_date.year, selected_date.month as i32, CacheType::PreferCache);
+    let calendar_tasks = api_handler.fetch_calendar_tasks(
+        selected_date.year,
+        selected_date.month as i32,
+        CacheType::PreferCache,
+    );
 
     // Responsive layout
     let viewport_width = get_viewport_width()?;
-    let tasks_pane_width = std::cmp::min(TASKS_PANE_WIDTH_MAX, std::cmp::max(TASKS_PANE_WIDTH_MIN, viewport_width - CALENDAR_WIDTH - 1));
+    let tasks_pane_width = (viewport_width - CALENDAR_WIDTH - 1).clamp(TASKS_PANE_WIDTH_MIN, TASKS_PANE_WIDTH_MAX);
     let date_height: u16 = if is_mini_mode()? { 3 } else { 4 };
 
     // Main layout
     // Previously included '| (^S) settings'
     let top_right_str = "(^M) menu/log out | (^C) quit";
     queue!(stdout, cursor::MoveTo(0, 0))?;
-    text::padded_text("[username]'s Calendar ([private])", viewport_width - top_right_str.chars().count() as u16, " ")?;
+    text::padded_text(
+        "[username]'s Calendar ([private])",
+        viewport_width - top_right_str.chars().count() as u16,
+        " ",
+    )?;
     queue!(stdout, style::Print(top_right_str))?;
     queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
     text::println(1, "")?;
     // Titles and top container edge
-    queue!(stdout, cursor::MoveTo(0, CALENDAR_MARGIN_TOP), style::Print("┌"))?;
-    queue!(stdout, style::PrintStyledContent(match currstate.pane {
-        state::CalendarPane::Month => "─".blue(),
-        state::CalendarPane::Tasks => "─".reset()
-    }))?;
-    let calendar_title = format!(" {}/{} - {} ", selected_date.year, utils::fmt_twodigit(selected_date.month), utils::get_month_name(selected_date.month));
+    queue!(
+        stdout,
+        cursor::MoveTo(0, CALENDAR_MARGIN_TOP),
+        style::Print("┌")
+    )?;
+    queue!(
+        stdout,
+        style::PrintStyledContent(match currstate.pane {
+            state::CalendarPane::Month => "─".blue(),
+            state::CalendarPane::Tasks => "─".reset(),
+        })
+    )?;
+    let calendar_title = format!(
+        " {}/{} - {} ",
+        selected_date.year,
+        utils::fmt_twodigit(selected_date.month),
+        utils::get_month_name(selected_date.month)
+    );
     let calendar_title_str: &str = &calendar_title;
-    text::padded_text_styled(match currstate.pane {
-        state::CalendarPane::Month => calendar_title_str.blue(),
-        state::CalendarPane::Tasks => calendar_title_str.dark_grey(),
-    }, CALENDAR_WIDTH - 3, match currstate.pane {
-        state::CalendarPane::Month => "─".blue(),
-        state::CalendarPane::Tasks => "─".reset(),
-    })?;
+    text::padded_text_styled(
+        match currstate.pane {
+            state::CalendarPane::Month => calendar_title_str.blue(),
+            state::CalendarPane::Tasks => calendar_title_str.dark_grey(),
+        },
+        CALENDAR_WIDTH - 3,
+        match currstate.pane {
+            state::CalendarPane::Month => "─".blue(),
+            state::CalendarPane::Tasks => "─".reset(),
+        },
+    )?;
     queue!(stdout, style::Print("┬"))?;
-    queue!(stdout, style::PrintStyledContent(match currstate.pane {
-        state::CalendarPane::Month => "─".reset(),
-        state::CalendarPane::Tasks => "─".blue()
-    }))?;
+    queue!(
+        stdout,
+        style::PrintStyledContent(match currstate.pane {
+            state::CalendarPane::Month => "─".reset(),
+            state::CalendarPane::Tasks => "─".blue(),
+        })
+    )?;
     let tasks_title_str = " Tasks ";
-    text::padded_text_styled(match currstate.pane {
-        state::CalendarPane::Month => tasks_title_str.dark_grey(),
-        state::CalendarPane::Tasks => tasks_title_str.blue(),
-    }, tasks_pane_width - 1, match currstate.pane {
-        state::CalendarPane::Month => "─".reset(),
-        state::CalendarPane::Tasks => "─".blue(),
-    })?;
+    text::padded_text_styled(
+        match currstate.pane {
+            state::CalendarPane::Month => tasks_title_str.dark_grey(),
+            state::CalendarPane::Tasks => tasks_title_str.blue(),
+        },
+        tasks_pane_width - 1,
+        match currstate.pane {
+            state::CalendarPane::Month => "─".reset(),
+            state::CalendarPane::Tasks => "─".blue(),
+        },
+    )?;
     queue!(stdout, style::Print("┐"))?;
     text::clear_rest_of_line()?;
-    queue!(stdout,
+    queue!(
+        stdout,
         cursor::MoveTo(0, CALENDAR_MARGIN_TOP + 1),
         style::Print("│"),
         style::Print(" Su  Mo  Tu  We  Th  Fr  Sa │")
@@ -612,27 +694,39 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     let calendar_frame = get_calendar_frame(selected_date.year, selected_date.month);
     let mut cursory = CALENDAR_MARGIN_TOP + 2;
     for week in calendar_frame {
-        queue!(stdout,
-            cursor::MoveTo(0, cursory),
-            style::Print("│"),
-        )?;
+        queue!(stdout, cursor::MoveTo(0, cursory), style::Print("│"),)?;
         let mut cursorx = 1;
         for date in week {
             // Date itself
             let is_selected = date == selected_date.day as i32;
             let empty_tasks = vec![];
-            let tasks = calendar_tasks.days.get((date - 1) as usize).unwrap_or(&empty_tasks);
+            let tasks = calendar_tasks
+                .days
+                .get((date - 1) as usize)
+                .unwrap_or(&empty_tasks);
             let date_opt = if date > 0 {
-                Some(utils::RicalDate::new(selected_date.year, selected_date.month, date as u32))
+                Some(utils::RicalDate::new(
+                    selected_date.year,
+                    selected_date.month,
+                    date as u32,
+                ))
             } else {
                 None
             };
-            render_date_square(date_opt, cursorx, cursory, is_selected, tasks, &currstate.pane)?;
+            render_date_square(
+                date_opt,
+                cursorx,
+                cursory,
+                is_selected,
+                tasks,
+                &currstate.pane,
+            )?;
 
             cursorx += DATE_SQUARE_WIDTH;
         }
         for _i in 0..date_height {
-            queue!(stdout,
+            queue!(
+                stdout,
                 cursor::MoveTo(0, cursory),
                 style::Print("│"),
                 cursor::MoveTo(cursorx, cursory),
@@ -648,7 +742,11 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
     const DAYS_DISPLAYED: u64 = 7;
     cursory = CALENDAR_MARGIN_TOP + 1;
     let cursorx = CALENDAR_WIDTH;
-    let key_help = if currstate.task_clipboard.is_some() { "(p) paste" } else { "" };
+    let key_help = if currstate.task_clipboard.is_some() {
+        "(p) paste"
+    } else {
+        ""
+    };
     for date_offset in 0..DAYS_DISPLAYED {
         let date = selected_date.add_days(date_offset);
         if date.month != currstate.month {
@@ -658,7 +756,10 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
         let is_selected = date_offset == 0;
         let is_today = date == utils::RicalDate::today();
         let empty_tasks = vec![];
-        let tasks = calendar_tasks.days.get((date.day - 1) as usize).unwrap_or(&empty_tasks);
+        let tasks = calendar_tasks
+            .days
+            .get((date.day - 1) as usize)
+            .unwrap_or(&empty_tasks);
         cursory = render_tasks_date(
             date,
             cursorx,
@@ -669,12 +770,16 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
             is_today,
             tasks,
             &currstate.pane,
-            key_help
+            key_help,
         )?;
         // Divider between selected date and upcoming dates
         if date_offset == 0 {
             queue!(stdout, cursor::MoveTo(cursorx, cursory))?;
-            text::padded_text_styled("──── Upcoming ".dark_grey(), tasks_pane_width, "─".dark_grey())?;
+            text::padded_text_styled(
+                "──── Upcoming ".dark_grey(),
+                tasks_pane_width,
+                "─".dark_grey(),
+            )?;
             queue!(stdout, style::Print("│"))?;
             queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
             cursory += 1;

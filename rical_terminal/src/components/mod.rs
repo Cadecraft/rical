@@ -1,11 +1,11 @@
 pub mod root;
 
-mod menu;
-mod login;
-mod inputtext;
-mod new_task_form;
-mod edit_task_form;
-mod signup;
 mod calendar;
-mod text;
+mod edit_task_form;
 mod form;
+mod inputtext;
+mod login;
+mod menu;
+mod new_task_form;
+mod signup;
+mod text;

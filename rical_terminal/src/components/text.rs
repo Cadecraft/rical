@@ -1,18 +1,17 @@
-use std::io;
 use crossterm::{
-    queue,
-    cursor,
-    style,
-    terminal::{Clear, ClearType}
+    cursor, queue, style,
+    terminal::{Clear, ClearType},
 };
+use std::io;
 
 /// Print text at a specific line and clear the rest of that line
 pub fn println(y: u16, line: &str) -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    queue!(stdout,
+    queue!(
+        stdout,
         // TODO: use my own wrappers around these functionalities
-        cursor::MoveTo(0,y),
+        cursor::MoveTo(0, y),
         style::Print(line),
         Clear(ClearType::UntilNewLine),
     )?;
@@ -23,9 +22,7 @@ pub fn println(y: u16, line: &str) -> io::Result<()> {
 pub fn clear_to_end() -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    queue!(stdout,
-        Clear(ClearType::FromCursorDown),
-    )?;
+    queue!(stdout, Clear(ClearType::FromCursorDown),)?;
     Ok(())
 }
 
@@ -33,9 +30,7 @@ pub fn clear_to_end() -> io::Result<()> {
 pub fn clear_rest_of_line() -> io::Result<()> {
     let mut stdout = io::stdout();
 
-    queue!(stdout,
-        Clear(ClearType::UntilNewLine),
-    )?;
+    queue!(stdout, Clear(ClearType::UntilNewLine),)?;
     Ok(())
 }
 
@@ -50,7 +45,11 @@ pub fn pad_characters(total_width: u16, taken_up: u16, ch: &str) -> io::Result<(
 }
 
 /// Pad characters to the remaining space (styled)
-pub fn pad_characters_styled(total_width: u16, taken_up: u16, ch: style::StyledContent<&str>) -> io::Result<()> {
+pub fn pad_characters_styled(
+    total_width: u16,
+    taken_up: u16,
+    ch: style::StyledContent<&str>,
+) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     for _i in taken_up..total_width {
@@ -70,7 +69,11 @@ pub fn padded_text(text: &str, total_width: u16, ch: &str) -> io::Result<()> {
 }
 
 /// Render text padded to a constant width at wherever the cursor currently is (styled)
-pub fn padded_text_styled(text: style::StyledContent<&str>, total_width: u16, ch: style::StyledContent<&str>) -> io::Result<()> {
+pub fn padded_text_styled(
+    text: style::StyledContent<&str>,
+    total_width: u16,
+    ch: style::StyledContent<&str>,
+) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     let len = text.content().chars().count();

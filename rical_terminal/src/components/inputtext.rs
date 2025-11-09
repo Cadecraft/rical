@@ -1,14 +1,14 @@
-use std::io;
 use crossterm::{
-    queue,
     cursor,
     event::{KeyCode, KeyModifiers},
-    style::{self, Stylize}
+    queue,
+    style::{self, Stylize},
 };
+use std::io;
 
-use crate::utils::KeyInfo;
-use crate::styles::Styles;
 use crate::state;
+use crate::styles::Styles;
+use crate::utils::KeyInfo;
 
 use crate::components::text;
 
@@ -16,7 +16,7 @@ use crate::components::text;
 
 pub enum InputMode {
     Normal,
-    Password
+    Password,
 }
 
 /// Given the current state and the user's keypress, returns the new state
@@ -31,44 +31,68 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::
         KeyModifiers::NONE => match key.code {
             KeyCode::Char(c) => {
                 chars.insert(cursor_pos, c);
-                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos + 1 }
-            },
+                state::TextInputState {
+                    contents: chars.into_iter().collect(),
+                    cursor_pos: cursor_pos + 1,
+                }
+            }
             KeyCode::Backspace => {
                 if cursor_pos == 0 {
                     return currstate.clone();
                 }
                 chars.remove(cursor_pos - 1);
-                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos - 1 }
-            },
+                state::TextInputState {
+                    contents: chars.into_iter().collect(),
+                    cursor_pos: cursor_pos - 1,
+                }
+            }
             KeyCode::Delete => {
                 if cursor_pos < chars.len() {
                     chars.remove(cursor_pos);
                 }
-                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos }
-            },
+                state::TextInputState {
+                    contents: chars.into_iter().collect(),
+                    cursor_pos,
+                }
+            }
             KeyCode::Left => {
                 let new_cursor_pos = if cursor_pos == 0 { 0 } else { cursor_pos - 1 };
-                state::TextInputState { cursor_pos: new_cursor_pos, ..currstate.clone() }
-            },
+                state::TextInputState {
+                    cursor_pos: new_cursor_pos,
+                    ..currstate.clone()
+                }
+            }
             KeyCode::Right => {
-                let new_cursor_pos = if cursor_pos == contents.chars().count() { cursor_pos } else { cursor_pos + 1 };
-                state::TextInputState { cursor_pos: new_cursor_pos, ..currstate.clone() }
+                let new_cursor_pos = if cursor_pos == contents.chars().count() {
+                    cursor_pos
+                } else {
+                    cursor_pos + 1
+                };
+                state::TextInputState {
+                    cursor_pos: new_cursor_pos,
+                    ..currstate.clone()
+                }
+            }
+            KeyCode::End => state::TextInputState {
+                cursor_pos: contents.chars().count(),
+                ..currstate.clone()
             },
-            KeyCode::End => {
-                state::TextInputState { cursor_pos: contents.chars().count(), ..currstate.clone() }
+            KeyCode::Home => state::TextInputState {
+                cursor_pos: 0,
+                ..currstate.clone()
             },
-            KeyCode::Home => {
-                state::TextInputState { cursor_pos: 0, ..currstate.clone() }
-            },
-            _ => currstate.clone()
+            _ => currstate.clone(),
         },
         KeyModifiers::SHIFT => match key.code {
             KeyCode::Char(c) => {
                 let capitalized: String = c.to_uppercase().collect();
                 // TODO: better capitalization logic?
-                chars.insert(cursor_pos, capitalized.chars().nth(0).unwrap_or(' '));
-                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos + 1 }
-            },
+                chars.insert(cursor_pos, capitalized.chars().next().unwrap_or(' '));
+                state::TextInputState {
+                    contents: chars.into_iter().collect(),
+                    cursor_pos: cursor_pos + 1,
+                }
+            }
             KeyCode::Backspace => {
                 // Duplicated for the sake of simplicity
                 // TODO: reduce duplicate code?
@@ -76,10 +100,13 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::
                     return currstate.clone();
                 }
                 chars.remove(cursor_pos - 1);
-                state::TextInputState { contents: chars.into_iter().collect(), cursor_pos: cursor_pos - 1 }
-            },
+                state::TextInputState {
+                    contents: chars.into_iter().collect(),
+                    cursor_pos: cursor_pos - 1,
+                }
+            }
             // TODO: allow "shift+tab" to go backwards
-            _ => currstate.clone()
+            _ => currstate.clone(),
         },
         KeyModifiers::CONTROL => match key.code {
             KeyCode::Backspace | KeyCode::Char('w') => {
@@ -113,16 +140,25 @@ pub fn handle_input(currstate: &state::TextInputState, key: &KeyInfo) -> state::
                     }
                 }
                 let res_string: String = reversed.into_iter().rev().collect();
-                let new_cursor_pos = cursor_pos.saturating_sub(contents.len() - res_string.chars().count());
-                state::TextInputState { contents: res_string, cursor_pos: new_cursor_pos }
-            },
-            _ => currstate.clone()
-        }
-        _ => currstate.clone()
+                let new_cursor_pos =
+                    cursor_pos.saturating_sub(contents.len() - res_string.chars().count());
+                state::TextInputState {
+                    contents: res_string,
+                    cursor_pos: new_cursor_pos,
+                }
+            }
+            _ => currstate.clone(),
+        },
+        _ => currstate.clone(),
     }
 }
 
-pub fn render(label: &str, currstate: &state::TextInputState, styles: &Styles, mode: &InputMode) -> io::Result<()> {
+pub fn render(
+    label: &str,
+    currstate: &state::TextInputState,
+    styles: &Styles,
+    mode: &InputMode,
+) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     if styles.wrap_text {
@@ -133,7 +169,8 @@ pub fn render(label: &str, currstate: &state::TextInputState, styles: &Styles, m
     let label_width = label.chars().count() as u16 + 1 + gap;
     let total_width = styles.width.unwrap_or(30);
 
-    queue!(stdout,
+    queue!(
+        stdout,
         cursor::MoveTo(styles.margin_left, styles.margin_top),
         style::Print(label),
         style::Print(":"),
@@ -141,27 +178,41 @@ pub fn render(label: &str, currstate: &state::TextInputState, styles: &Styles, m
     )?;
     let mut count = label_width;
     for c in currstate.contents.chars() {
-        queue!(stdout, style::Print(match mode {
-            InputMode::Normal => c,
-            InputMode::Password => '*'
-        }))?;
+        queue!(
+            stdout,
+            style::Print(match mode {
+                InputMode::Normal => c,
+                InputMode::Password => '*',
+            })
+        )?;
         count += 1;
     }
     text::pad_characters(total_width, count, "_")?;
     // Clear to the end of the line unless explicitly told not to
     match styles.last_in_row {
-        Some(is_last) => if is_last {
-            text::clear_rest_of_line()?;
-        },
+        Some(is_last) => {
+            if is_last {
+                text::clear_rest_of_line()?;
+            }
+        }
         _ => {
             text::clear_rest_of_line()?;
         }
     };
     // Render the "cursor" if the user is actively typing
     if styles.active {
-        let char_under_cursor = currstate.contents.chars().nth(currstate.cursor_pos).unwrap_or('_').to_string();
-        queue!(stdout,
-            cursor::MoveTo(styles.margin_left + label_width + currstate.cursor_pos as u16, styles.margin_top),
+        let char_under_cursor = currstate
+            .contents
+            .chars()
+            .nth(currstate.cursor_pos)
+            .unwrap_or('_')
+            .to_string();
+        queue!(
+            stdout,
+            cursor::MoveTo(
+                styles.margin_left + label_width + currstate.cursor_pos as u16,
+                styles.margin_top
+            ),
             style::PrintStyledContent(char_under_cursor.black().on_white())
         )?;
     }
@@ -169,7 +220,12 @@ pub fn render(label: &str, currstate: &state::TextInputState, styles: &Styles, m
     Ok(())
 }
 
-fn render_multiline(label: &str, currstate: &state::TextInputState, styles: &Styles, mode: &InputMode) -> io::Result<()> {
+fn render_multiline(
+    label: &str,
+    currstate: &state::TextInputState,
+    styles: &Styles,
+    mode: &InputMode,
+) -> io::Result<()> {
     let mut stdout = io::stdout();
 
     let gap = styles.gap.unwrap_or(1);
@@ -181,7 +237,8 @@ fn render_multiline(label: &str, currstate: &state::TextInputState, styles: &Sty
     let x_start = styles.margin_left + label_width;
 
     // Label
-    queue!(stdout,
+    queue!(
+        stdout,
         cursor::MoveTo(styles.margin_left, styles.margin_top),
         style::Print(label),
         style::Print(":"),
@@ -189,7 +246,8 @@ fn render_multiline(label: &str, currstate: &state::TextInputState, styles: &Sty
     )?;
     // Blank space below label
     for local_y in 1..(region_height) {
-        queue!(stdout,
+        queue!(
+            stdout,
             cursor::MoveTo(styles.margin_left, styles.margin_top + local_y),
             style::Print((0..label_width).map(|_| " ").collect::<String>()),
         )?;
@@ -202,12 +260,17 @@ fn render_multiline(label: &str, currstate: &state::TextInputState, styles: &Sty
             let char_to_render = match char_stack.next_back() {
                 Some(c) => match mode {
                     InputMode::Normal => c,
-                    InputMode::Password => '*'
+                    InputMode::Password => '*',
                 },
-                None => if local_y == 0 { '_' } else { ' ' }
+                None => {
+                    if local_y == 0 {
+                        '_'
+                    } else {
+                        ' '
+                    }
+                }
             };
-            let render_cursor = current_char_index == currstate.cursor_pos as u16
-                && styles.active;
+            let render_cursor = current_char_index == currstate.cursor_pos as u16 && styles.active;
             queue!(
                 stdout,
                 cursor::MoveTo(x_start + local_x, y_start + local_y),
@@ -219,9 +282,11 @@ fn render_multiline(label: &str, currstate: &state::TextInputState, styles: &Sty
             )?;
         }
         match styles.last_in_row {
-            Some(is_last) => if is_last {
-                text::clear_rest_of_line()?;
-            },
+            Some(is_last) => {
+                if is_last {
+                    text::clear_rest_of_line()?;
+                }
+            }
             _ => {
                 text::clear_rest_of_line()?;
             }
