@@ -15,7 +15,7 @@ pub fn hash_password(password: &str) -> String {
     // See docs: https://docs.rs/argon2/latest/argon2/
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
-    
+
     argon2
         .hash_password(password.as_bytes(), &salt)
         .expect("Could not hash password")
@@ -42,7 +42,7 @@ pub fn create_jwt(user_id: i64) -> String {
     let key = create_hmac_key();
     let mut claims = BTreeMap::new();
     claims.insert("sub", user_id);
-    
+
     claims.sign_with_key(&key).expect("Could not sign")
 }
 

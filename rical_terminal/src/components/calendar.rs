@@ -31,10 +31,7 @@ enum CalAction {
     None,
 }
 
-pub fn get_task_index_by_id(
-    date_tasks: &[types::TaskDataWithId],
-    task_id: i64,
-) -> Option<usize> {
+pub fn get_task_index_by_id(date_tasks: &[types::TaskDataWithId], task_id: i64) -> Option<usize> {
     date_tasks.iter().position(|task| task.task_id == task_id)
 }
 
@@ -176,7 +173,8 @@ pub fn handle_input(
         }
         CalAction::ToggleCompleted => {
             if let Some(task) = get_selected_task(api_handler, &selected_date, currstate.task_id)
-                && api_handler.toggle_completed(&task).is_ok() {  };
+                && api_handler.toggle_completed(&task).is_ok()
+            {};
 
             currstate.clone()
         }
@@ -615,7 +613,8 @@ pub fn render(currstate: &state::CalendarState, api_handler: &mut ApiHandler) ->
 
     // Responsive layout
     let viewport_width = get_viewport_width()?;
-    let tasks_pane_width = (viewport_width - CALENDAR_WIDTH - 1).clamp(TASKS_PANE_WIDTH_MIN, TASKS_PANE_WIDTH_MAX);
+    let tasks_pane_width =
+        (viewport_width - CALENDAR_WIDTH - 1).clamp(TASKS_PANE_WIDTH_MIN, TASKS_PANE_WIDTH_MAX);
     let date_height: u16 = if is_mini_mode()? { 3 } else { 4 };
 
     // Main layout

@@ -3,7 +3,6 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use chrono::{Datelike, NaiveDate};
 use regex::Regex;
 
-
 pub struct KeyInfo {
     pub modifiers: KeyModifiers,
     pub code: KeyCode,
