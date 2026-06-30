@@ -10,7 +10,7 @@ function Page() {
             <h1>Rical</h1>
             <span>The latest calendar app for minimalists</span>
           </div>
-          <img src="/RicalIcon.svg" width={40} />
+          <img src="/RicalIcon.svg" alt="Rical icon" width={40} />
         </div>
         <div class="section">
           <h2>Get started</h2>
@@ -28,7 +28,7 @@ function Page() {
           <LinkButton href="https://github.com/Cadecraft/rical" hotkey="i">
             Install
           </LinkButton>
-          <img class="terminal-ss" src="/RicalTerminal.png">
+          <img class="terminal-ss" alt="A screenshot of Rical Terminal" src="/RicalTerminal.png">
           </img>
         </div>
         <div class="section">

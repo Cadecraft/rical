@@ -15,6 +15,7 @@
   --rical-accent: #ffab58;
   --gray: #c5c9d3;
   --gray-dark: #a9adb9;
+  --border: #c9ced3;
 
   background-color: var(--white);
   color: var(--text);
@@ -32,8 +33,13 @@ a:hover {
   color: var(--blue-light);
 }
 
+html, #root {
+  height: 100%;
+}
+
 body {
   margin: 0px;
+  height: 100%;
 }
 
 h1, h2, h3 {

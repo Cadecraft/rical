@@ -9,7 +9,7 @@ function Page() {
             <h1>Rical</h1>
             <span>The latest calendar app for minimalists</span>
           </div>
-          <img src="/RicalIcon.svg" width={40} />
+          <img src="/RicalIcon.svg" alt="Rical icon" width={40} />
         </div>
         <div class="section">
           <h2>Not found!</h2>
