@@ -1,7 +1,7 @@
-import './App.css'
-import { LinkButton } from './components/Button';
+import './Landing.css'
+import { LinkButton } from '../components/Button';
 
-function App() {
+function Page() {
   return (
     <div class="outer">
       <div class="inner">
@@ -54,4 +54,4 @@ function App() {
   )
 }
 
-export default App;
+export default Page;

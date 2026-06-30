@@ -1,6 +1,7 @@
 import './Button.css';
 import type { JSX } from 'solid-js';
 import { children, createEffect, createSignal, Show } from 'solid-js';
+import { A, useNavigate } from '@solidjs/router';
 
 // TODO: make LinkButton with same behavior but uses an a
 export function Button(props: {
@@ -55,6 +56,8 @@ export function LinkButton(props: {
 
   const [hotkeyDown, setHotkeyDown] = createSignal(false);
 
+  const navigate = useNavigate();
+
   createEffect(() => {
     if (!props.hotkey) return;
 
@@ -67,7 +70,7 @@ export function LinkButton(props: {
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key == props.hotkey) {
         if (hotkeyDown()) {
-          location.href = props.href;
+          navigate(props.href);
         }
         setHotkeyDown(false);
       }
@@ -78,13 +81,13 @@ export function LinkButton(props: {
   });
 
   return (
-    <a draggable={false} class={`rical-button ${hotkeyDown() ? 'pressed' : ''}`} href={location.href}>
+    <A draggable={false} class={`rical-button ${hotkeyDown() ? 'pressed' : ''}`} href={props.href}>
       {resolved()}
       <Show when={props.hotkey}>
         <div class="hotkey" title={`The hotkey for this button is ${props.hotkey}`}>
           {props.hotkey}
         </div>
       </Show>
-    </a>
+    </A>
   );
 }
