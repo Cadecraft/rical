@@ -1,50 +1,5 @@
 import './App.css'
-import type { JSX } from 'solid-js';
-import { children, createEffect, createSignal, Show } from 'solid-js';
-
-// TODO: make LinkButton with same behavior but uses an a
-function Button(props: {
-  children: JSX.Element,
-  hotkey?: string,
-  onClick: () => void,
-}) {
-  const resolved = children(() => props.children);
-
-  const [hotkeyDown, setHotkeyDown] = createSignal(false);
-
-  createEffect(() => {
-    if (!props.hotkey) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key == props.hotkey) {
-        setHotkeyDown(true);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key == props.hotkey) {
-        if (hotkeyDown()) {
-          props.onClick();
-        }
-        setHotkeyDown(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("keyup", handleKeyUp);
-  });
-
-  return (
-    <button class={`rical-button ${hotkeyDown() ? 'pressed' : ''}`} onClick={props.onClick}>
-      {resolved()}
-      <Show when={props.hotkey}>
-        <div class="hotkey" title={`The hotkey for this button is ${props.hotkey}`}>
-          {props.hotkey}
-        </div>
-      </Show>
-    </button>
-  );
-}
+import { LinkButton } from './components/Button';
 
 function App() {
   return (
@@ -70,9 +25,9 @@ function App() {
             Manage your calendar without ever leaving your terminal
           </div>
           <br />
-          <Button onClick={() => location.href="https://github.com/Cadecraft/rical"} hotkey="i">
+          <LinkButton href="https://github.com/Cadecraft/rical" hotkey="i">
             Install
-          </Button>
+          </LinkButton>
           <img class="terminal-ss" src="/RicalTerminal.png">
           </img>
         </div>
