@@ -1,89 +1,82 @@
 import './App.css'
-import RicalIcon from './assets/RicalIcon.svg';
-import RicalTerminal from './assets/RicalTerminal.png';
-import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import type { JSX } from 'solid-js';
+import { children, createEffect, createSignal, Show } from 'solid-js';
 
+// TODO: make LinkButton with same behavior but uses an a
 function Button(props: {
-  children: ReactNode,
+  children: JSX.Element,
   hotkey?: string,
   onClick: () => void,
 }) {
-  const { children, hotkey, onClick } = props;
+  const resolved = children(() => props.children);
 
-  const [hotkeyDown, setHotkeyDown] = useState(false);
+  const [hotkeyDown, setHotkeyDown] = createSignal(false);
 
-  useEffect(() => {
-    if (!hotkey) return;
+  createEffect(() => {
+    if (!props.hotkey) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key == hotkey) {
+      if (e.key == props.hotkey) {
         setHotkeyDown(true);
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key == hotkey) {
-        setHotkeyDown(false);
-        // Releasing the key after it was down represents clicking the item
-        if (hotkeyDown) {
-          onClick();
+      if (e.key == props.hotkey) {
+        if (hotkeyDown()) {
+          props.onClick();
         }
+        setHotkeyDown(false);
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("keyup", handleKeyUp);
-    }
-  }, [hotkey, hotkeyDown, onClick, setHotkeyDown]);
+  });
 
   return (
-    <button className={`rical-button ${hotkeyDown ? 'pressed' : ''}`} onClick={onClick}>
-      {children}
-      {hotkey && (
-        <div className="hotkey" title={`The hotkey for this button is ${hotkey}`}>
-          {hotkey}
+    <button class={`rical-button ${hotkeyDown() ? 'pressed' : ''}`} onClick={props.onClick}>
+      {resolved()}
+      <Show when={props.hotkey}>
+        <div class="hotkey" title={`The hotkey for this button is ${props.hotkey}`}>
+          {props.hotkey}
         </div>
-      )}
+      </Show>
     </button>
   );
 }
 
 function App() {
   return (
-    <div className="outer">
-      <div className="inner">
-        <div className="banner">
-          <div className="banner-info">
+    <div class="outer">
+      <div class="inner">
+        <div class="banner">
+          <div class="banner-info">
             <h1>Rical</h1>
             <span>The latest calendar app for minimalists</span>
           </div>
-          <img src={RicalIcon} width={40} />
+          <img src="/RicalIcon.svg" width={40} />
         </div>
-        <div className="section">
+        <div class="section">
           <h2>Get started</h2>
-          <span className="secondary">
+          <span class="secondary">
             Rical Web is coming soon! For now, you'll have to use the{" "}
             <a href="https://github.com/Cadecraft/rical">terminal UI</a>.
           </span>
         </div>
-        <div className="section">
+        <div class="section">
           <h2>Learn Rical terminal</h2>
-          <div className="secondary">
+          <div class="secondary">
             Manage your calendar without ever leaving your terminal
           </div>
           <br />
           <Button onClick={() => location.href="https://github.com/Cadecraft/rical"} hotkey="i">
             Install
           </Button>
-          <img className="terminal-ss" src={RicalTerminal}>
+          <img class="terminal-ss" src="/RicalTerminal.png">
           </img>
         </div>
-        <div className="section">
+        <div class="section">
           <h2>Why Rical?</h2>
           <br />
           Modern calendar apps are too slow! If you want these, Rical might be for you:
@@ -96,7 +89,7 @@ function App() {
           </ul>
           * <i>Rical is far from complete yet. Check back soon for more features, mark your calendars...</i>
         </div>
-        <div className="section footer">
+        <div class="section footer">
           © 2025 Rical contributors
           <br />
           <a href="https://github.com/Cadecraft/rical">GitHub</a>
@@ -106,4 +99,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

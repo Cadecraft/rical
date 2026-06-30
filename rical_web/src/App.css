@@ -17,7 +17,7 @@
 .banner {
   width: 100%;
   border-radius: 8px;
-  background-image: url('./assets/Cloudscape.jpg');
+  background-image: url('/Cloudscape.jpg');
   background-size: cover;
   background-position: bottom;
   background-color: rgba(255, 255, 255, 0.3);
