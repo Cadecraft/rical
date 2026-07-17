@@ -58,7 +58,7 @@ function MonthView() {
   const [state, _] = useCalendarState();
 
   const days = createMemo(() => {
-    const frame = getCalendarFrame(2026, state.selectedMonth);
+    const frame = getCalendarFrame(state.selectedYear, state.selectedMonth);
     const frameAugmented: DateData[][] = frame.map(week => week.map(date => ({
       date,
       tasks: []
