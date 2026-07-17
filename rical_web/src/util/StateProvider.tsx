@@ -1,8 +1,11 @@
-import { createContext, useContext, children, type JSX } from 'solid-js';
-import { createStore } from 'solid-js/store';
+import { createContext, useContext, type JSX } from 'solid-js';
+import { createStore, type SetStoreFunction } from 'solid-js/store';
+import { currentDate } from '../util/ridate';
 
 export type CalendarStore = {
   selectedTaskId: number;
+  selectedMonth: number;
+  selectedYear: number;
 };
 
 const CalendarStateContext = createContext();
@@ -10,19 +13,19 @@ const CalendarStateContext = createContext();
 export function CalendarStateProvider(props: { children: JSX.Element }) {
   const [store, setStore] = createStore<CalendarStore>({
     selectedTaskId: 0,
+    selectedMonth: currentDate().month,
+    selectedYear: currentDate().year,
   });
 
   const packagedStore = [store, setStore];
 
-  const resolved = children(() => props.children);
-
   return (
     <CalendarStateContext.Provider value={packagedStore}>
-      {resolved()}
+      {props.children}
     </CalendarStateContext.Provider>
   );
 }
 
-export function useCalendarState() {
-  return useContext(CalendarStateContext);
+export function useCalendarState(): [CalendarStore, SetStoreFunction<CalendarStore>] {
+  return useContext(CalendarStateContext) as [CalendarStore, SetStoreFunction<CalendarStore>];
 }

@@ -87,3 +87,15 @@ export function getCalendarFrame(year: number, month: number) {
 
   return res;
 }
+
+export function currentDate(): Ridate {
+  return toRidate(new Date());
+}
+
+export function leadingZero(x: number): string {
+  if (x < 10) {
+    return '0' + x.toString();
+  } else {
+    return x.toString();
+  }
+}

@@ -1,11 +1,9 @@
 import './Calendar.css';
-import { For } from 'solid-js';
-import { type Ridate, monthName, eq, weekdayName, getCalendarFrame } from '../util/ridate';
+import { For, createEffect, createMemo } from 'solid-js';
+import { useSearchParams } from '@solidjs/router';
+import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate, leadingZero } from '../util/ridate';
 import { useCalendarState } from '../util/StateProvider';
 import { DAYS_PER_WEEK } from '../util/constants';
-
-const todayDate = { year: 1990, month: 6, dayOfMonth: 30 };
-const viewingMonth = 6;
 
 type Task = {
   title: string;
@@ -20,8 +18,7 @@ type DateData = {
 };
 
 function TaskTile(props: { task: Task }) {
-  const selected = useCalendarState();
-  console.log(selected);
+  const [state, setState] = useCalendarState();
 
   return (
     <button class={`task ${props.task.complete ? 'complete' : ''}`}>
@@ -31,11 +28,12 @@ function TaskTile(props: { task: Task }) {
 }
 
 function MonthDay(props: { day: DateData }) {
-  const isToday = () => eq(todayDate, props.day.date);
+  const [state, _] = useCalendarState();
+  const isToday = () => eq(currentDate(), props.day.date);
 
   const dayOfMonthDisp = () => {
     const dayOfMonth = props.day.date.dayOfMonth;
-    if (viewingMonth === props.day.date.month) {
+    if (state.selectedMonth === props.day.date.month) {
       return dayOfMonth.toString();
     } else {
       return `${monthName(props.day.date)} ${dayOfMonth}`
@@ -57,35 +55,38 @@ function MonthDay(props: { day: DateData }) {
 }
 
 function MonthView() {
-  const populateWeeks = () => {
-    const frame = getCalendarFrame(2026, viewingMonth);
+  const [state, _] = useCalendarState();
+
+  const days = createMemo(() => {
+    const frame = getCalendarFrame(2026, state.selectedMonth);
     const frameAugmented: DateData[][] = frame.map(week => week.map(date => ({
       date,
       tasks: []
     })));
     const res = frameAugmented.flat();
     // TODO: remove dummy tasks
-    res[30].tasks = [
+    res[27].tasks = [
       { title: 'clean', complete: false, task_id: 1 },
       { title: 'debug code', complete: false, description: 'Debug stuff in the codebase', task_id: 2 },
       { title: 'some long task that idk what to do', complete: true, task_id: 3 },
     ]
     return res;
-  };
+  });
 
-  const days = populateWeeks();
+  // TODO: fix grid for 2026/08
+  // TODO: fix grid for 2027/02
 
   return (
     <div class="month-view">
       <div class="month-view-weekdays">
-        <For each={days.slice(0, DAYS_PER_WEEK)}>
+        <For each={days().slice(0, DAYS_PER_WEEK)}>
           {(day) => (
             <div>{weekdayName(day.date)}</div>
           )}
         </For>
       </div>
       <div class="month-view-grid">
-        <For each={days}>
+        <For each={days()}>
           {(day) => (
             <MonthDay day={day} />
           )}
@@ -96,14 +97,45 @@ function MonthView() {
 }
 
 function TopBar() {
+  const [state] = useCalendarState();
+  const [_, setParams] = useSearchParams();
+
+  const prevMonth = () => {
+    setParams({
+      y: state.selectedMonth === 1 ? state.selectedYear - 1 : state.selectedYear,
+      m: state.selectedMonth === 1 ? 12 : state.selectedMonth - 1,
+    });
+  }
+
+  const nextMonth = () => {
+    setParams({
+      y: state.selectedMonth === 12 ? state.selectedYear + 1 : state.selectedYear,
+      m: state.selectedMonth === 12 ? 1 : state.selectedMonth + 1,
+    });
+  }
+
   return (
     <div class="top-bar">
       <img src="/RicalIcon.svg" alt="Rical Home" />
+      <div class="month-select">
+        <button onClick={prevMonth}>Prev</button>
+        <h2>{state.selectedYear}/{leadingZero(state.selectedMonth)}</h2>
+        <button onClick={nextMonth}>Next</button>
+      </div>
     </div>
   );
 }
 
 function Page() {
+  const [params] = useSearchParams();
+  const [_, setState] = useCalendarState();
+  createEffect(() => {
+    const year = () => Number(params.y || currentDate().year);
+    const month = () => Number(params.m || currentDate().month);
+    
+    setState('selectedYear', year());
+    setState('selectedMonth', month());
+  });
 
   return (
     <div class="cal-root">
