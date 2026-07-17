@@ -1,18 +1,34 @@
 import './Calendar.css';
 import { For } from 'solid-js';
-import { type Ridate, monthName, eq } from '../util/ridate';
+import { type Ridate, monthName, eq, weekdayName, getCalendarFrame } from '../util/ridate';
+import { useCalendarState } from '../util/StateProvider';
+import { DAYS_PER_WEEK } from '../util/constants';
 
 const todayDate = { year: 1990, month: 6, dayOfMonth: 30 };
 const viewingMonth = 6;
 
 type Task = {
   title: string;
+  description?: string;
+  task_id: number;
+  complete: boolean;
 }
 
 type DateData = {
   date: Ridate;
   tasks: Task[];
 };
+
+function TaskTile(props: { task: Task }) {
+  const selected = useCalendarState();
+  console.log(selected);
+
+  return (
+    <button class={`task ${props.task.complete ? 'complete' : ''}`}>
+      {props.task.title}
+    </button>
+  )
+}
 
 function MonthDay(props: { day: DateData }) {
   const isToday = () => eq(todayDate, props.day.date);
@@ -28,53 +44,53 @@ function MonthDay(props: { day: DateData }) {
 
   return (
     <div class={`month-day ${isToday() ? 'today' : ''}`}>
-      <div class="day-of-month">{dayOfMonthDisp()}</div>
+      <div class="month-day-top">
+        <div class="day-of-month">{dayOfMonthDisp()}</div>
+      </div>
+      <div class="tasks">
+        <For each={props.day.tasks}>
+          {(task) => <TaskTile task={task} />}
+        </For>
+      </div>
     </div>
   );
 }
 
 function MonthView() {
-  const days: DateData[] = [];
-
-  // TODO: remove dummy code
   const populateWeeks = () => {
-    let date = 0;
-    let currMonth = 5;
-    for (let i = 0; i < 35; ++i) {
-      // TODO: replace dummy logic with real logic
-      if (date == 1 && currMonth == 5) {
-        currMonth += 1;
-      }
-      if (date == 31) {
-        date = 1;
-        currMonth = 7;
-      }
-      days.push({
-        date: {
-          year: 1990,
-          month: currMonth,
-          dayOfMonth: date === 0 ? 31 : date,
-        },
-        tasks: [],
-      });
-      date += 1;
-    }
-    days[30].tasks = [
-      { title: 'clean' }, { title: 'debug code' }
+    const frame = getCalendarFrame(2026, viewingMonth);
+    const frameAugmented: DateData[][] = frame.map(week => week.map(date => ({
+      date,
+      tasks: []
+    })));
+    const res = frameAugmented.flat();
+    // TODO: remove dummy tasks
+    res[30].tasks = [
+      { title: 'clean', complete: false, task_id: 1 },
+      { title: 'debug code', complete: false, description: 'Debug stuff in the codebase', task_id: 2 },
+      { title: 'some long task that idk what to do', complete: true, task_id: 3 },
     ]
-
-    console.log(days);
+    return res;
   };
 
-  populateWeeks();
+  const days = populateWeeks();
 
   return (
     <div class="month-view">
-      <For each={days}>
-        {(day) => (
-          <MonthDay day={day} />
-        )}
-      </For>
+      <div class="month-view-weekdays">
+        <For each={days.slice(0, DAYS_PER_WEEK)}>
+          {(day) => (
+            <div>{weekdayName(day.date)}</div>
+          )}
+        </For>
+      </div>
+      <div class="month-view-grid">
+        <For each={days}>
+          {(day) => (
+            <MonthDay day={day} />
+          )}
+        </For>
+      </div>
     </div>
   );
 }
@@ -88,6 +104,7 @@ function TopBar() {
 }
 
 function Page() {
+
   return (
     <div class="cal-root">
       <TopBar />

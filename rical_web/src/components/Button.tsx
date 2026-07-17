@@ -70,7 +70,11 @@ export function LinkButton(props: {
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key == props.hotkey) {
         if (hotkeyDown()) {
-          navigate(props.href);
+          if (props.href.startsWith("http")) {
+            location.href = props.href;
+          } else {
+            navigate(props.href);
+          }
         }
         setHotkeyDown(false);
       }

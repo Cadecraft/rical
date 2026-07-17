@@ -3,11 +3,14 @@
   font-weight: 400;
 
   --text: rgb(40, 50, 70);
+  --text-gray: rgb(40, 50, 70);
   --text-secondary: rgb(90, 100, 110);
   --white: #fff;
+  --background: #fff;
   --surface: rgb(240, 242, 249);
   --blue: rgb(80, 130, 215);
   --blue-light: rgb(120, 180, 240);
+  --blue-light-2: #9fd3f4;
   --blue-outline: rgba(120, 180, 240, 0.7);
   --rical-red: #b92f1a;
   --rical-red-dark: #9b1b12;
@@ -17,7 +20,22 @@
   --gray-dark: #a9adb9;
   --border: #c9ced3;
 
-  background-color: var(--white);
+  /* TODO: dark mode settings */
+  @media (prefers-color-scheme: dark) {
+    --text: #c9ced3;
+    --text-gray: rgb(40, 50, 70);
+    --text-secondary: #929ba3;
+    --background: #131721;
+    --surface: #1a1f2b;
+    --gray: #c5c9d3;
+    --gray-dark: #a9adb9;
+    --border: #303644;
+    --blue: #3665aa;
+    --blue-light: #437bb7;
+    --blue-light-2: #255282;
+  }
+
+  background-color: var(--background);
   color: var(--text);
 }
 

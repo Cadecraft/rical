@@ -5,16 +5,19 @@ import './index.css'
 import Landing from './pages/Landing.tsx'
 import NotFound from './pages/NotFound.tsx'
 import Calendar from './pages/Calendar.tsx';
+import { CalendarStateProvider } from './util/StateProvider.tsx';
 
 const root = document.getElementById('root')
 
 render(
   () => (
-    <Router>
-      <Route path="/" component={Landing} />
-      <Route path="/cal" component={Calendar} />
-      <Route path="*404" component={NotFound} />
-    </Router>
+    <CalendarStateProvider>
+      <Router>
+        <Route path="/" component={Landing} />
+        <Route path="/cal" component={Calendar} />
+        <Route path="*404" component={NotFound} />
+      </Router>
+    </CalendarStateProvider>
   ),
   root!
 );

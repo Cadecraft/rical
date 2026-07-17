@@ -20,8 +20,8 @@
   background-image: url('/Cloudscape.jpg');
   background-size: cover;
   background-position: bottom;
-  background-color: rgba(255, 255, 255, 0.3);
-  background-blend-mode:lighten;
+  background-color: rgba(25, 22, 136, 0.2);
+  background-blend-mode: multiply;
 
   color: white;
   padding: 10px 16px;
@@ -54,22 +54,4 @@
   width: 100%;
   border-radius: 8px;
   margin-top: 10px;
-}
-
-.hotkey {
-  position: absolute;
-  right: -8px;
-  top: -4px;
-  width: 18px;
-  height: 18px;
-  font-size: 14px;
-  font-weight: 400;
-  background-color: var(--gray);
-  color: var(--text);
-  border-radius: 2px;
-  border-bottom: solid 4px var(--gray-dark);
-
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
 }
