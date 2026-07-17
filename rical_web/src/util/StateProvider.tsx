@@ -3,7 +3,7 @@ import { createStore, type SetStoreFunction } from 'solid-js/store';
 import { currentDate } from '../util/ridate';
 
 export type CalendarStore = {
-  selectedTaskId: number;
+  selectedTaskId: number | undefined;
   selectedMonth: number;
   selectedYear: number;
 };
@@ -12,7 +12,7 @@ const CalendarStateContext = createContext();
 
 export function CalendarStateProvider(props: { children: JSX.Element }) {
   const [store, setStore] = createStore<CalendarStore>({
-    selectedTaskId: 0,
+    selectedTaskId: undefined,
     selectedMonth: currentDate().month,
     selectedYear: currentDate().year,
   });

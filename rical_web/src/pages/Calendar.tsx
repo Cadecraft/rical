@@ -1,5 +1,5 @@
 import './Calendar.css';
-import { For, createEffect, createMemo } from 'solid-js';
+import { For, createEffect, createMemo, Show } from 'solid-js';
 import { useSearchParams } from '@solidjs/router';
 import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate, leadingZero } from '../util/ridate';
 import { useCalendarState } from '../util/StateProvider';
@@ -17,13 +17,38 @@ type DateData = {
   tasks: Task[];
 };
 
+function TaskPopover(props: { task: Task }) {
+  // TODO: display popover to the left if it's on a saturday, and top if it's bottom week
+  // TODO: interaction: marking complete, etc.
+
+  return (
+    <div class={`task-popover ${props.task.complete ? 'complete' : ''}`}>
+      <h3>{props.task.title}</h3>
+      <textarea class="description" placeholder="Description">{props.task.description}</textarea>
+    </div>
+  );
+}
+
 function TaskTile(props: { task: Task }) {
   const [state, setState] = useCalendarState();
 
+  const selected = () => state.selectedTaskId === props.task.task_id;
+  const toggleSelected = () => {
+    setState('selectedTaskId', selected() ? undefined : props.task.task_id);
+  }
+
   return (
-    <button class={`task ${props.task.complete ? 'complete' : ''}`}>
-      {props.task.title}
-    </button>
+    <div class="task-tile">
+      <button
+        class={`task ${props.task.complete ? 'complete' : ''} ${selected() ? 'selected' : ''}`}
+        onClick={toggleSelected}
+      >
+        {props.task.title}
+      </button>
+      <Show when={selected()}>
+        <TaskPopover task={props.task} />
+      </Show>
+    </div>
   )
 }
 
@@ -49,6 +74,9 @@ function MonthDay(props: { day: DateData }) {
         <For each={props.day.tasks}>
           {(task) => <TaskTile task={task} />}
         </For>
+        <button class="new-task">
+          +
+        </button>
       </div>
     </div>
   );
@@ -65,16 +93,13 @@ function MonthView() {
     })));
     const res = frameAugmented.flat();
     // TODO: remove dummy tasks
-    res[27].tasks = [
+    res[25].tasks = [
       { title: 'clean', complete: false, task_id: 1 },
       { title: 'debug code', complete: false, description: 'Debug stuff in the codebase', task_id: 2 },
       { title: 'some long task that idk what to do', complete: true, task_id: 3 },
     ]
     return res;
   });
-
-  // TODO: fix grid for 2026/08
-  // TODO: fix grid for 2027/02
 
   return (
     <div class="month-view">
