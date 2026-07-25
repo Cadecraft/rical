@@ -15,9 +15,14 @@ function Page() {
         <div class="section">
           <h2>Get started</h2>
           <span class="secondary">
-            Rical Web is coming soon! For now, you'll have to use the{" "}
-            <a href="https://github.com/Cadecraft/rical">terminal UI</a>.
+            Rical Web is still in progress! For now, use the{" "}
+            <a href="https://github.com/Cadecraft/rical">terminal UI</a> for full features.
           </span>
+          <br />
+          <br />
+          <LinkButton href="/login" hotkey="l">
+            Log in
+          </LinkButton>
         </div>
         <div class="section">
           <h2>Learn Rical terminal</h2>

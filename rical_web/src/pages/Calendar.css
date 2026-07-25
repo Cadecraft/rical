@@ -32,11 +32,11 @@
     button {
       border-radius: 4px;
       background-color: var(--surface);
-      color: var(--blue);
+      color: var(--bg-blue);
 
       &:hover {
         cursor: pointer;
-        color: var(--blue-light);
+        color: var(--bg-blue-light);
       }
     }
   }
@@ -118,7 +118,7 @@
 
   &.today {
     .day-of-month {
-      background-color: var(--blue);
+      background-color: var(--bg-blue);
       color: var(--white);
     }
   }
@@ -152,7 +152,7 @@
     font-size: inherit;
     text-align: left;
 
-    background-color: var(--blue-light);
+    background-color: var(--bg-blue);
     color: var(--white);
     border-radius: 4px;
     padding-inline: 4px;
@@ -163,12 +163,12 @@
     transition: background-color 0.1s;
 
     &:focus-visible {
-      outline: solid 4px var(--blue-outline);
+      outline: solid 4px var(--bg-blue-outline);
     }
 
     &:hover {
       cursor: pointer;
-      background-color: var(--blue);
+      background-color: var(--bg-blue-light);
     }
 
     &.complete {
@@ -177,7 +177,7 @@
     }
 
     &.selected {
-      background-color: var(--blue);
+      background-color: var(--bg-blue-light);
       border-bottom-left-radius: 0px;
       border-bottom-right-radius: 0px;
     }
@@ -194,7 +194,7 @@
     &:hover {
       cursor: pointer;
       color: var(--white);
-      background-color: var(--blue-light);
+      background-color: var(--bg-blue-light);
     }
   }
 }

@@ -1,7 +1,8 @@
 import './Button.css';
 import type { JSX } from 'solid-js';
-import { children, createEffect, createSignal, Show } from 'solid-js';
+import { children, Show } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
+import { useHotkey } from '../util/hooks';
 
 // TODO: make LinkButton with same behavior but uses an a
 export function Button(props: {
@@ -11,35 +12,13 @@ export function Button(props: {
 }) {
   const resolved = children(() => props.children);
 
-  const [hotkeyDown, setHotkeyDown] = createSignal(false);
-
-  createEffect(() => {
-    if (!props.hotkey) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key == props.hotkey) {
-        setHotkeyDown(true);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key == props.hotkey) {
-        if (hotkeyDown()) {
-          props.onClick();
-        }
-        setHotkeyDown(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("keyup", handleKeyUp);
-  });
+  const hotkeyDown = useHotkey(props.onClick, props.hotkey);
 
   return (
     <button class={`rical-button ${hotkeyDown() ? 'pressed' : ''}`} onClick={props.onClick}>
       {resolved()}
       <Show when={props.hotkey}>
-        <div class="hotkey" title={`The hotkey for this button is ${props.hotkey}`}>
+        <div class="hotkey" title={`Hotkey for this button: ${props.hotkey}`}>
           {props.hotkey}
         </div>
       </Show>
@@ -54,43 +33,50 @@ export function LinkButton(props: {
 }) {
   const resolved = children(() => props.children);
 
-  const [hotkeyDown, setHotkeyDown] = createSignal(false);
+  const hotkeyDown = useHotkey(() => {
+    if (props.href.startsWith("http")) {
+      location.href = props.href;
+    } else {
+      navigate(props.href);
+    }
+  }, props.hotkey);
 
   const navigate = useNavigate();
-
-  createEffect(() => {
-    if (!props.hotkey) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key == props.hotkey) {
-        setHotkeyDown(true);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key == props.hotkey) {
-        if (hotkeyDown()) {
-          if (props.href.startsWith("http")) {
-            location.href = props.href;
-          } else {
-            navigate(props.href);
-          }
-        }
-        setHotkeyDown(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("keyup", handleKeyUp);
-  });
 
   return (
     <A draggable={false} class={`rical-button ${hotkeyDown() ? 'pressed' : ''}`} href={props.href}>
       {resolved()}
       <Show when={props.hotkey}>
-        <div class="hotkey" title={`The hotkey for this button is ${props.hotkey}`}>
+        <div class="hotkey" title={`Hotkey for this link: ${props.hotkey}`}>
           {props.hotkey}
         </div>
+      </Show>
+    </A>
+  );
+}
+
+export function PlainLink(props: {
+  children: JSX.Element,
+  hotkey?: string,
+  href: string,
+}) {
+  const resolved = children(() => props.children);
+
+  const hotkeyDown = useHotkey(() => {
+    if (props.href.startsWith("http")) {
+      location.href = props.href;
+    } else {
+      navigate(props.href);
+    }
+  }, props.hotkey);
+
+  const navigate = useNavigate();
+
+  return (
+    <A draggable={false} class={`rical-link ${hotkeyDown() ? 'pressed' : ''}`} href={props.href}>
+      {resolved()}
+      <Show when={props.hotkey}>
+        {' '}({props.hotkey})
       </Show>
     </A>
   );

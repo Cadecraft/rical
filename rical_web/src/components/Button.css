@@ -54,3 +54,12 @@
   flex-direction: row;
   justify-content: center;
 }
+
+.rical-link {
+  position: relative;
+  padding-right: 10px;
+
+  &.pressed {
+    color: var(--blue-light);
+  }
+}
