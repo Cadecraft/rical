@@ -163,7 +163,7 @@
     transition: background-color 0.1s;
 
     &:focus-visible {
-      outline: solid 4px var(--bg-blue-outline);
+      outline: solid 4px var(--blue-outline);
     }
 
     &:hover {

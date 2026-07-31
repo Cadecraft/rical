@@ -125,6 +125,11 @@ cargo run
 cargo install --path .
 ```
 
+**Starting Rical Web**
+- Copy `rical_web/.env.example` into `rical_web/.env` and set the `VITE_API_URL` variable. Make sure the backend is running.
+- `npm install`
+- `npm run dev`
+
 ## Deployment
 Self-hosting the backend is encouraged!
 - Using Railway, getting a Postgres database is straightforward: <https://docs.railway.com/guides/postgresql>

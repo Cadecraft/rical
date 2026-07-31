@@ -76,7 +76,7 @@ export function PlainLink(props: {
     <A draggable={false} class={`rical-link ${hotkeyDown() ? 'pressed' : ''}`} href={props.href}>
       {resolved()}
       <Show when={props.hotkey}>
-        {' '}({props.hotkey})
+        <span title={`Hotkey for this link: ${props.hotkey}`}>{' '}({props.hotkey})</span>
       </Show>
     </A>
   );

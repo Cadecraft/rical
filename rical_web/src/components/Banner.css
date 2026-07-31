@@ -1,0 +1,34 @@
+.banner-clip {
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.banner {
+  width: 100%;
+  /* TODO: fix borders with the blur? */
+  background-image: url('/Cloudscape_Small.jpg');
+  background-color: rgba(25, 22, 136, 0.2);
+  background-size: cover;
+  background-position: bottom;
+  background-blend-mode: multiply;
+
+  .banner-inner {
+    backdrop-filter: blur(3px);
+
+    color: white;
+    padding: 10px 16px;
+    padding-bottom: 20px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .banner-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+}

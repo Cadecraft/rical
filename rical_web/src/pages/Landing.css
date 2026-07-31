@@ -14,29 +14,6 @@
   gap: 20px;
 }
 
-.banner {
-  width: 100%;
-  border-radius: 8px;
-  background-image: url('/Cloudscape.jpg');
-  background-size: cover;
-  background-position: bottom;
-  background-color: rgba(25, 22, 136, 0.2);
-  background-blend-mode: multiply;
-
-  color: white;
-  padding: 10px 16px;
-  padding-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-
-  .banner-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-}
-
 .section {
   padding: 10px 16px;
   border-radius: 8px;

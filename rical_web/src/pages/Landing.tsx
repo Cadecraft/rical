@@ -1,17 +1,12 @@
 import './Landing.css'
 import { LinkButton } from '../components/Button';
+import Banner from '../components/Banner';
 
 function Page() {
   return (
     <div class="outer">
       <div class="inner">
-        <div class="banner">
-          <div class="banner-info">
-            <h1>Rical</h1>
-            <span>The latest calendar app for minimalists</span>
-          </div>
-          <img src="/RicalIcon.svg" alt="Rical icon" width={40} />
-        </div>
+        <Banner />
         <div class="section">
           <h2>Get started</h2>
           <span class="secondary">
