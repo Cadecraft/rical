@@ -117,3 +117,7 @@ input {
 
   width: 300px;
 }
+
+.error {
+  color: var(--rical-accent);
+}

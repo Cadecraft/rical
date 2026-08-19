@@ -5,12 +5,13 @@ import Banner from '../components/Banner';
 function Page(props: { signup: boolean }) {
   const [username, setUsername] = createSignal("");
   const [password, setPassword] = createSignal("");
+  const [error, setError] = createSignal("");
 
   // TODO: make form so user can press enter at any time
 
   function submit() {
     // TODO: actually submit
-    return;
+    setError("");
     if (props.signup) {
       fetch(`${import.meta.env.VITE_API_URL}/signup`, {
         method: 'POST',
@@ -20,7 +21,9 @@ function Page(props: { signup: boolean }) {
         }),
       }).then(res => {
         if (res.ok) {
-          // TODO: send the user to login
+          location.href = "/login";
+        } else {
+          setError("Error signing up.");
         }
       });
     } else {
@@ -32,9 +35,14 @@ function Page(props: { signup: boolean }) {
         }),
       }).then(res => {
         if (res.ok) {
-          // TODO: store token
-          // TODO: start sending token in cookie
-          // TODO: send the user to their calendar
+          res.json().then(j => {
+            // TODO: store token
+            // TODO: localStorage is temporary. start sending token in cookie
+            localStorage.setItem("tok", j.token);
+            // TODO: send the user to their calendar
+          });
+        } else {
+          setError("Could not log in. Do you have an account?");
         }
       });
     }
@@ -78,6 +86,7 @@ function Page(props: { signup: boolean }) {
                 </Button>
               </div>
               <br />
+              <div class="error">{error()}</div>
               <PlainLink href="/signup" hotkey={"s"}>
                 Sign up instead
               </PlainLink>
