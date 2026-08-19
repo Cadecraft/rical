@@ -6,43 +6,52 @@ function Page(props: { signup: boolean }) {
   const [username, setUsername] = createSignal("");
   const [password, setPassword] = createSignal("");
   const [error, setError] = createSignal("");
+  const [loading, setLoading] = createSignal(false);
 
   // TODO: make form so user can press enter at any time
 
   function submit() {
     // TODO: actually submit
     setError("");
+    setLoading(true);
     if (props.signup) {
-      fetch(`${import.meta.env.VITE_API_URL}/signup`, {
+      fetch(`${import.meta.env.VITE_API_URL}/account/signup`, {
         method: 'POST',
         body: JSON.stringify({
           username: username(),
           password: password(),
         }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       }).then(res => {
         if (res.ok) {
           location.href = "/login";
         } else {
           setError("Error signing up.");
+          setLoading(false);
         }
       });
     } else {
-      fetch(`${import.meta.env.VITE_API_URL}/login`, {
+      fetch(`${import.meta.env.VITE_API_URL}/account/login`, {
         method: 'POST',
         body: JSON.stringify({
           username: username(),
           password: password(),
         }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       }).then(res => {
         if (res.ok) {
           res.json().then(j => {
-            // TODO: store token
             // TODO: localStorage is temporary. start sending token in cookie
             localStorage.setItem("tok", j.token);
-            // TODO: send the user to their calendar
+            location.href = "/cal";
           });
         } else {
-          setError("Could not log in. Do you have an account?");
+          setError("Username or password did not match an existing account");
+          setLoading(false);
         }
       });
     }
@@ -63,7 +72,7 @@ function Page(props: { signup: boolean }) {
               <div class="form">
                 <input type="text" placeholder="New username" value={username()} onChange={e => setUsername(e.target.value)} />
                 <input type="password" placeholder="New password" value={password()} onChange={e => setPassword(e.target.value)} />
-                <Button onClick={submit}>
+                <Button disabled={loading()} onClick={submit}>
                   Sign up
                 </Button>
               </div>
@@ -81,7 +90,7 @@ function Page(props: { signup: boolean }) {
               <div class="form">
                 <input type="text" placeholder="Username" value={username()} onChange={e => setUsername(e.target.value)} />
                 <input type="password" placeholder="Password" value={password()} onChange={e => setPassword(e.target.value)} />
-                <Button onClick={submit}>
+                <Button disabled={loading()} onClick={submit}>
                   Log in
                 </Button>
               </div>

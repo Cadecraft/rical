@@ -5,6 +5,7 @@
   --text: rgb(40, 50, 70);
   --text-gray: rgb(40, 50, 70);
   --text-secondary: rgb(90, 100, 110);
+  --disabled: #575b66;
   --white: #fff;
   --background: #fff;
   --surface: rgb(240, 242, 249);
@@ -30,8 +31,6 @@
     --text-secondary: #929ba3;
     --background: #131721;
     --surface: #1a1f2b;
-    --gray: #c5c9d3;
-    --gray-dark: #a9adb9;
     --border: #303644;
     --blue: rgb(131, 188, 226);
     --blue-light: rgb(103, 153, 206);

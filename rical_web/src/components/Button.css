@@ -35,6 +35,12 @@
       top: -2px;
     }
   }
+
+  &:disabled {
+    background-color: var(--disabled);
+    cursor: default;
+    color: var(--gray-dark);
+  }
 }
 
 .hotkey {
