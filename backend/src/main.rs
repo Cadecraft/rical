@@ -1,5 +1,9 @@
-use axum::Router;
+use axum::{
+    Router,
+    http::{HeaderValue, Method},
+};
 use std::sync::Arc;
+use tower_http::cors::{Any, CorsLayer};
 
 use sqlx::postgres::PgPoolOptions;
 
@@ -20,6 +24,7 @@ async fn main() {
 
     let db_url = &config::get_config()["DATABASE_URL"];
     let port = &config::get_config()["PORT"];
+    let allowed_origins_str = &config::get_config()["ALLOWED_ORIGINS"];
 
     println!("Connecting to db...");
     let pool = PgPoolOptions::new()
@@ -31,11 +36,22 @@ async fn main() {
 
     let state = Arc::new(AppState { db_pool: pool });
 
+    let allowed_origins: Vec<HeaderValue> = allowed_origins_str
+        .split(',')
+        .map(|s| s.parse().expect("An allowed origin could not be parsed"))
+        .collect();
+
     // Set up the Axum app
     let app = Router::new()
         .nest("/account", routes::account::get_routes(&state))
         .nest("/task", routes::task::get_routes(&state))
-        .nest("/calendar", routes::calendar::get_routes(&state));
+        .nest("/calendar", routes::calendar::get_routes(&state))
+        .layer(
+            CorsLayer::new()
+                .allow_headers(Any)
+                .allow_methods([Method::GET, Method::PUT])
+                .allow_origin(allowed_origins),
+        );
 
     let addr = format!("0.0.0.0:{}", port);
     println!(

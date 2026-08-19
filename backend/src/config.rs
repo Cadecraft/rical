@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::env;
 
 pub fn get_config() -> HashMap<String, String> {
-    let required: Vec<&str> = vec!["DATABASE_URL", "JWT_SECRET", "PORT"];
+    let required: Vec<&str> = vec!["DATABASE_URL", "JWT_SECRET", "PORT", "ALLOWED_ORIGINS"];
     let mut res: HashMap<String, String> = HashMap::new();
     for key in required {
         let val = env::var(key).unwrap_or_else(|_| panic!("{} must be set", key));
