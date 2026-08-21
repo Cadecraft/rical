@@ -28,9 +28,12 @@ function Page(props: { signup: boolean }) {
         if (res.ok) {
           location.href = "/login";
         } else {
-          setError("Error signing up.");
+          setError("Error signing up. This username may already be taken.");
           setLoading(false);
         }
+      }).catch(() => {
+        setError("Error signing up.");
+        setLoading(false);
       });
     } else {
       fetch(`${import.meta.env.VITE_API_URL}/account/login`, {
@@ -53,6 +56,9 @@ function Page(props: { signup: boolean }) {
           setError("Username or password did not match an existing account");
           setLoading(false);
         }
+      }).catch(() => {
+        setError("Error logging in.");
+        setLoading(false);
       });
     }
   }
@@ -77,6 +83,7 @@ function Page(props: { signup: boolean }) {
                 </Button>
               </div>
               <br />
+              <div class="error">{error()}</div>
               <PlainLink href={"/login"} hotkey={"l"}>
                 Log in instead
               </PlainLink>

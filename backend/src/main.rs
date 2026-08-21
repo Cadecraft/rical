@@ -1,9 +1,10 @@
 use axum::{
     Router,
+    http::header,
     http::{HeaderValue, Method},
 };
 use std::sync::Arc;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 use sqlx::postgres::PgPoolOptions;
 
@@ -48,7 +49,7 @@ async fn main() {
         .nest("/calendar", routes::calendar::get_routes(&state))
         .layer(
             CorsLayer::new()
-                .allow_headers(Any)
+                .allow_headers([header::AUTHORIZATION, header::ACCEPT, header::CONTENT_TYPE])
                 .allow_methods([Method::GET, Method::PUT])
                 .allow_origin(allowed_origins),
         );

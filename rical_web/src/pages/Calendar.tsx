@@ -4,13 +4,8 @@ import { useSearchParams } from '@solidjs/router';
 import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate, leadingZero } from '../util/ridate';
 import { useCalendarState } from '../util/StateProvider';
 import { DAYS_PER_WEEK } from '../util/constants';
-
-type Task = {
-  title: string;
-  description?: string;
-  task_id: number;
-  complete: boolean;
-}
+import { useCalCache } from '../util/calCache';
+import type { Task } from '../util/types';
 
 type DateData = {
   date: Ridate;
@@ -85,6 +80,15 @@ function MonthDay(props: { day: DateData }) {
 function MonthView() {
   const [state, _] = useCalendarState();
 
+  const calCache = useCalCache();
+
+  createEffect(() => {
+    console.log(`[DBG] Rerendering month view`);
+    calCache.getMonth(state.selectedYear, state.selectedMonth).then((c) => {
+      console.log(c);
+    });
+  });
+
   const days = createMemo(() => {
     const frame = getCalendarFrame(state.selectedYear, state.selectedMonth);
     const frameAugmented: DateData[][] = frame.map(week => week.map(date => ({
@@ -154,6 +158,9 @@ function TopBar() {
 function Page() {
   const [params] = useSearchParams();
   const [_, setState] = useCalendarState();
+
+  // TODO: kick out un-authed users
+
   createEffect(() => {
     const year = () => Number(params.y || currentDate().year);
     const month = () => Number(params.m || currentDate().month);
