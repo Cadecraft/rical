@@ -4,3 +4,5 @@ export type Task = {
   task_id: number;
   complete: boolean;
 }
+
+export type TaskData = Omit<Task, 'task_id'>;

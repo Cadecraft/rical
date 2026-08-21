@@ -1,9 +1,5 @@
 import { createSignal } from 'solid-js';
-import type { Task } from './types';
-
-type Calendar = {
-  days: Task[],
-};
+import { type Calendar, fetchCalMonth } from './apiInterface';
 
 export function useCalCache() {
   const [cache, setCache] = createSignal<Record<string, Calendar>>({});
@@ -17,21 +13,11 @@ export function useCalCache() {
     if (key in cache()) {
       return Promise.resolve(cache()[key]);
     } else {
-      fetch(`${import.meta.env.VITE_API_URL}/calendar/${year}/${month}`, {
-        method: 'GET',
-        headers: {
-          // TODO: switch to cookies
-          'Authorization': 'Bearer ' + localStorage.tok,
-        }
-      }).then(res => {
-        if (res.ok) {
-          res.json().then(j => {
-            console.log(JSON.stringify(j));
-            const newCache = structuredClone(cache());
-            newCache[key] = j;
-            setCache(newCache);
-          });
-        }
+      fetchCalMonth(year, month).then(res => {
+        console.log(`[DBG] fetched month: ${JSON.stringify(res)}`);
+        const newCache = structuredClone(cache());
+        newCache[key] = res;
+        setCache(newCache);
       });
     }
   }

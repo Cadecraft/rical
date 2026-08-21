@@ -188,6 +188,7 @@
     border-radius: 4px;
     background-color: var(--surface);
     color: var(--text);
+    position: relative;
 
     transition: background-color 0.1s, color 0.1s;
 

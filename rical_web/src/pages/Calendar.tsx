@@ -1,11 +1,12 @@
 import './Calendar.css';
-import { For, createEffect, createMemo, Show } from 'solid-js';
+import { For, createEffect, createMemo, Show, createSignal } from 'solid-js';
 import { useSearchParams } from '@solidjs/router';
 import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate, leadingZero } from '../util/ridate';
 import { useCalendarState } from '../util/StateProvider';
 import { DAYS_PER_WEEK } from '../util/constants';
 import { useCalCache } from '../util/calCache';
-import type { Task } from '../util/types';
+import type { Task, TaskData } from '../util/types';
+import { Button } from '../components/Button';
 
 type DateData = {
   date: Ridate;
@@ -15,12 +16,66 @@ type DateData = {
 function TaskPopover(props: { task: Task }) {
   // TODO: display popover to the left if it's on a saturday, and top if it's bottom week
   // TODO: interaction: marking complete, etc.
+  // TODO: close with esc
 
   return (
     <div class={`task-popover ${props.task.complete ? 'complete' : ''}`}>
       <h3>{props.task.title}</h3>
       <textarea class="description" placeholder="Description">{props.task.description}</textarea>
     </div>
+  );
+}
+
+function NewTaskPopover(props: { date: Ridate }) {
+  // TODO: display popover to the left if it's on a saturday, and top if it's bottom week
+  // TODO: interaction: marking complete, etc.
+  // TODO: refactor to reuse code from normal task popover
+  let newEntryRef!: HTMLInputElement;
+
+  createEffect(() => {
+    newEntryRef.focus();
+  });
+
+  const [currTask, setCurrTask] = createSignal<TaskData>({
+    title: '',
+    description: '',
+    complete: false,
+  });
+
+  const [loading, setLoading] = createSignal(false);
+
+  const createTask = () => {
+    setLoading(true);
+
+    // TODO: create task
+  }
+
+  return (
+    <div class={`task-popover`}>
+      <input ref={newEntryRef} placeholder="New Entry" autofocus>{currTask().title}</input>
+      <textarea class="description" placeholder="Description">{currTask().description}</textarea>
+      <Button disabled={loading()} onClick={createTask}>Create</Button>
+    </div>
+  );
+}
+
+function NewTaskButton(props: { date: Ridate }) {
+  const [state, setState] = useCalendarState();
+
+  const creatingNewTask = () => state.creatingNewTask;
+  const startNewTask = () => {
+    setState('creatingNewTask', creatingNewTask() ? undefined : props.date);
+  }
+
+  return (
+    <>
+      <button class="new-task" onClick={startNewTask}>
+        +
+      </button>
+      <Show when={creatingNewTask() && eq(creatingNewTask()!, props.date)}>
+        <NewTaskPopover date={props.date} />
+      </Show>
+    </>
   );
 }
 
@@ -69,9 +124,7 @@ function MonthDay(props: { day: DateData }) {
         <For each={props.day.tasks}>
           {(task) => <TaskTile task={task} />}
         </For>
-        <button class="new-task">
-          +
-        </button>
+        <NewTaskButton date={props.day.date} />
       </div>
     </div>
   );
