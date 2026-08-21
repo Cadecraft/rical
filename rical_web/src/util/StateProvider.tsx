@@ -1,12 +1,14 @@
 import { createContext, useContext, type JSX } from 'solid-js';
 import { createStore, type SetStoreFunction } from 'solid-js/store';
 import { currentDate, type Ridate } from '../util/ridate';
+import { type Calendar } from './types';
 
 export type CalendarStore = {
   selectedTaskId: number | undefined;
   selectedMonth: number;
   selectedYear: number;
   creatingNewTask: Ridate | undefined;
+  calCache: Record<string, Calendar>;
 };
 
 const CalendarStateContext = createContext();
@@ -17,6 +19,7 @@ export function CalendarStateProvider(props: { children: JSX.Element }) {
     selectedMonth: currentDate().month,
     selectedYear: currentDate().year,
     creatingNewTask: undefined,
+    calCache: {},
   });
 
   const packagedStore = [store, setStore];

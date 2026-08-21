@@ -5,7 +5,7 @@ import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate,
 import { useCalendarState } from '../util/StateProvider';
 import { DAYS_PER_WEEK } from '../util/constants';
 import { useCalCache } from '../util/calCache';
-import type { Task, TaskData } from '../util/types';
+import type { Task, TaskData, Calendar } from '../util/types';
 import { Button } from '../components/Button';
 
 type DateData = {
@@ -32,6 +32,8 @@ function NewTaskPopover(props: { date: Ridate }) {
   // TODO: refactor to reuse code from normal task popover
   let newEntryRef!: HTMLInputElement;
 
+  const calCache = useCalCache();
+
   createEffect(() => {
     newEntryRef.focus();
   });
@@ -40,6 +42,11 @@ function NewTaskPopover(props: { date: Ridate }) {
     title: '',
     description: '',
     complete: false,
+    year: props.date.year,
+    month: props.date.month,
+    day: props.date.dayOfMonth,
+    start_min: undefined,
+    end_min: undefined,
   });
 
   const [loading, setLoading] = createSignal(false);
@@ -47,8 +54,14 @@ function NewTaskPopover(props: { date: Ridate }) {
   const createTask = () => {
     setLoading(true);
 
-    // TODO: create task
+    calCache.createTask(currTask()).then(() => {
+      // TODO: close
+    }).catch((err) => {
+      // TODO: catch
+    });
   }
+
+  // TODO: allow editing of fields
 
   return (
     <div class={`task-popover`}>
@@ -93,7 +106,7 @@ function TaskTile(props: { task: Task }) {
         class={`task ${props.task.complete ? 'complete' : ''} ${selected() ? 'selected' : ''}`}
         onClick={toggleSelected}
       >
-        {props.task.title}
+        {props.task.title || <>&nbsp;</>}
       </button>
       <Show when={selected()}>
         <TaskPopover task={props.task} />
@@ -132,29 +145,25 @@ function MonthDay(props: { day: DateData }) {
 
 function MonthView() {
   const [state, _] = useCalendarState();
+  const [monthFromApi, setMonthFromApi] = createSignal<Calendar | undefined>(undefined);
 
   const calCache = useCalCache();
 
   createEffect(() => {
     console.log(`[DBG] Rerendering month view`);
     calCache.getMonth(state.selectedYear, state.selectedMonth).then((c) => {
-      console.log(c);
+      setMonthFromApi(c);
     });
   });
 
   const days = createMemo(() => {
+    console.log('rerendering days');
     const frame = getCalendarFrame(state.selectedYear, state.selectedMonth);
     const frameAugmented: DateData[][] = frame.map(week => week.map(date => ({
       date,
-      tasks: []
+      tasks: (monthFromApi() && date.month === state.selectedMonth) ? monthFromApi()!.days[date.dayOfMonth - 1] : [],
     })));
     const res = frameAugmented.flat();
-    // TODO: remove dummy tasks
-    res[25].tasks = [
-      { title: 'clean', complete: false, task_id: 1 },
-      { title: 'debug code', complete: false, description: 'Debug stuff in the codebase', task_id: 2 },
-      { title: 'some long task that idk what to do', complete: true, task_id: 3 },
-    ]
     return res;
   });
 

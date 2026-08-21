@@ -189,6 +189,7 @@
     background-color: var(--surface);
     color: var(--text);
     position: relative;
+    margin-top: 1px;
 
     transition: background-color 0.1s, color 0.1s;
 
