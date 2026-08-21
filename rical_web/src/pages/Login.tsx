@@ -1,6 +1,8 @@
 import { Button, PlainLink } from '../components/Button';
 import { Switch, Match, createSignal } from 'solid-js';
 import Banner from '../components/Banner';
+import { fetchSignup, fetchLogin } from '../util/apiInterface';
+import { useSearchParams } from '@solidjs/router';
 
 function Page(props: { signup: boolean }) {
   const [username, setUsername] = createSignal("");
@@ -8,58 +10,38 @@ function Page(props: { signup: boolean }) {
   const [error, setError] = createSignal("");
   const [loading, setLoading] = createSignal(false);
 
+  const [params] = useSearchParams();
+
   // TODO: make form so user can press enter at any time
 
   function submit() {
-    // TODO: actually submit
     setError("");
     setLoading(true);
+
     if (props.signup) {
-      fetch(`${import.meta.env.VITE_API_URL}/account/signup`, {
-        method: 'POST',
-        body: JSON.stringify({
-          username: username(),
-          password: password(),
-        }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }).then(res => {
-        if (res.ok) {
-          location.href = "/login";
-        } else {
-          setError("Error signing up. This username may already be taken.");
-          setLoading(false);
-        }
+      fetchSignup(username(), password()).then(() => {
+        location.href = "/login?signupSuccess=true";
       }).catch(() => {
-        setError("Error signing up.");
+        setError("Error signing up. This username may already be taken.");
         setLoading(false);
       });
     } else {
-      fetch(`${import.meta.env.VITE_API_URL}/account/login`, {
-        method: 'POST',
-        body: JSON.stringify({
-          username: username(),
-          password: password(),
-        }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }).then(res => {
-        if (res.ok) {
-          res.json().then(j => {
-            // TODO: localStorage is temporary. start sending token in cookie
-            localStorage.setItem("tok", j.token);
-            location.href = "/cal";
-          });
-        } else {
-          setError("Username or password did not match an existing account");
-          setLoading(false);
-        }
+      fetchLogin(username(), password()).then((res) => {
+        // TODO: localStorage is temporary. start sending token in cookie
+        localStorage.setItem("tok", res.token);
+        location.href = "/cal";
       }).catch(() => {
-        setError("Error logging in.");
+        setError("Username or password did not match an existing account");
         setLoading(false);
       });
+    }
+  }
+
+  const loginMessage = () => {
+    if (params.signupSuccess) {
+      return "Your account was created successfully. Log in to start using Rical!";
+    } else {
+      return "Log in with a username and password.";
     }
   }
 
@@ -91,7 +73,7 @@ function Page(props: { signup: boolean }) {
             <Match when={!props.signup}>
               <h2>Login</h2>
               <div class="secondary">
-                Log in with a username and password.
+                {loginMessage()}
               </div>
               <br />
               <div class="form">
