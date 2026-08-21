@@ -2,6 +2,7 @@ export type Task = {
   year: number,
   month: number,
   day: number,
+  // TODO: these could be null too, from the api
   start_min?: number,
   end_min?: number,
   title: string;

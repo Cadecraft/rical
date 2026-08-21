@@ -51,7 +51,7 @@ export async function fetchSignup(username: string, password: string): Promise<t
 }
 
 export async function fetchLogin(username: string, password: string): Promise<{ token: string }> {
-  return await fetchTemplate('POST', "/account/login", ['json'], 'none', JSON.stringify({
+  return await fetchTemplate('POST', "/account/login", ['json'], 'json', JSON.stringify({
     username, password
   }));
 }
@@ -67,4 +67,9 @@ export async function fetchCreateTask(taskData: TaskData): Promise<number> {
 
 export async function fetchTask(id: number): Promise<Task> {
   return await fetchTemplate('GET', `/task/${id}`, ['auth', 'json'], 'json');
+}
+
+/** Returns the old task */
+export async function fetchPutTask(task: Task): Promise<Task> {
+  return await fetchTemplate('PUT', `/task/${task.task_id}`, ['auth', 'json'], 'json', JSON.stringify(task));
 }

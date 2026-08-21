@@ -43,18 +43,21 @@
 }
 
 .main-cal {
-  height: 100%;
   padding: 8px 12px;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .month-view {
   height: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .month-view-grid {
-  height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
 
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -93,7 +96,7 @@
 }
 
 .month-day {
-  padding: 4px 4px;
+  padding: 4px 0px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -141,16 +144,22 @@
   flex-direction: column;
   gap: 2px;
 
+  padding-inline: 4px;
+
+  overflow: auto;
+
   .task-tile {
     position: relative;
+    height: fit-content;
   }
 
   .task {
     width: 100%;
     border: none;
     font-family: inherit;
-    font-size: inherit;
     text-align: left;
+    height: 20px;
+    display: block;
 
     background-color: var(--bg-blue);
     color: var(--white);
@@ -178,8 +187,6 @@
 
     &.selected {
       background-color: var(--bg-blue-light);
-      border-bottom-left-radius: 0px;
-      border-bottom-right-radius: 0px;
     }
   }
 
@@ -189,7 +196,6 @@
     background-color: var(--surface);
     color: var(--text);
     position: relative;
-    margin-top: 1px;
 
     transition: background-color 0.1s, color 0.1s;
 
@@ -202,19 +208,29 @@
 }
 
 .task-popover {
-  width: 280px;
+  width: 300px;
   height: fit-content;
   max-height: 300px;
   overflow-y: auto;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
   position: absolute;
-  left: 0px;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
   border-radius: 8px;
-  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
   z-index: 1;
 
   background-color: var(--surface);
   padding: 6px 6px;
+
+  &.top-half {
+    bottom: unset;
+    top: 60px;
+    border-bottom-left-radius: unset;
+    border-bottom-right-radius: unset;
+  }
 
   &.complete {
     h3 {

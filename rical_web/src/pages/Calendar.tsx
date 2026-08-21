@@ -14,37 +14,71 @@ type DateData = {
   tasks: Task[];
 };
 
-function TaskPopover(props: { task: Task }) {
+function TaskPopoverForm(props: { taskData: TaskData, setTaskData: (t: TaskData) => void, loading: boolean, submit: () => void, id?: number }) {
+  let newEntryRef!: HTMLInputElement;
+
+  createEffect(() => {
+    if (!props.id) {
+      newEntryRef.focus();
+    }
+  }, [props.taskData.day, props.taskData.year, props.taskData.month, props.id]);
+
+  // TODO: disable the button if there is no diff on an existing entry
+
+  return (
+    <div class={`task-popover ${props.taskData.complete ? 'complete' : ''}`}>
+      <input onChange={(e) => props.setTaskData({...props.taskData, title: e.target.value})} ref={newEntryRef} placeholder="New Entry" autofocus value={props.taskData.title} />
+      <textarea onChange={(e) => props.setTaskData({...props.taskData, description: e.target.value})} class="description" placeholder="Description">{props.taskData.description}</textarea>
+      <Button disabled={props.loading} onClick={props.submit}>{props.id ? "Save Changes" : "Create"}</Button>
+    </div>
+  );
+}
+
+function ExistingTaskPopover(props: { taskId: number }) {
+  const calCache = useCalCache();
+  const [task, setTask] = createSignal<Task | undefined>(undefined);
+  const [loading, setLoading] = createSignal(false);
+
+  createEffect(() => {
+    setTask(undefined);
+    calCache.getTask(props.taskId).then(res => setTask(res));
+  }, [props.taskId]);
+
   // TODO: display popover to the left if it's on a saturday, and top if it's bottom week
   // TODO: interaction: marking complete, etc.
-  // TODO: close with esc
   const [_, setState] = useCalendarState();
 
   useGlobalKey(() => {
     setState('selectedTask', undefined);
   }, 'Escape');
 
+  const updateTask = () => {
+    // TODO: impl, loading, etc
+    if (!task()) {
+      return;
+    }
+    setLoading(true);
+    calCache.putTask(task()!).then(() => {
+      setState('selectedTask', undefined);
+    }).catch((err) => {
+      // TODO: catch
+      setLoading(false);
+    });
+  };
+
   return (
-    <div class={`task-popover ${props.task.complete ? 'complete' : ''}`}>
-      <h3>{props.task.title}</h3>
-      <textarea class="description" placeholder="Description">{props.task.description}</textarea>
-    </div>
+    <Show when={task()}>{(task) => (
+      <TaskPopoverForm taskData={task()} setTaskData={setTask} loading={false} submit={updateTask} id={props.taskId} />
+    )}</Show>
   );
 }
 
 function NewTaskPopover(props: { date: Ridate }) {
   // TODO: display popover to the left if it's on a saturday, and top if it's bottom week
   // TODO: interaction: marking complete, etc.
-  // TODO: refactor to reuse code from normal task popover
-  let newEntryRef!: HTMLInputElement;
 
   const [_, setState] = useCalendarState();
   const calCache = useCalCache();
-
-  createEffect(() => {
-    newEntryRef.focus();
-  });
-
   const [currTask, setCurrTask] = createSignal<TaskData>({
     title: '',
     description: '',
@@ -55,7 +89,6 @@ function NewTaskPopover(props: { date: Ridate }) {
     start_min: undefined,
     end_min: undefined,
   });
-
   const [loading, setLoading] = createSignal(false);
 
   const createTask = () => {
@@ -65,6 +98,7 @@ function NewTaskPopover(props: { date: Ridate }) {
       setState('selectedTask', undefined);
     }).catch((err) => {
       // TODO: catch
+      setLoading(false);
     });
   }
 
@@ -75,11 +109,7 @@ function NewTaskPopover(props: { date: Ridate }) {
   // TODO: allow editing of fields
 
   return (
-    <div class={`task-popover`}>
-      <input onChange={(e) => setCurrTask({...currTask(), title: e.target.value})} ref={newEntryRef} placeholder="New Entry" autofocus>{currTask().title}</input>
-      <textarea onChange={(e) => setCurrTask({...currTask(), description: e.target.value})} class="description" placeholder="Description">{currTask().description}</textarea>
-      <Button disabled={loading()} onClick={createTask}>Create</Button>
-    </div>
+    <TaskPopoverForm taskData={currTask()} setTaskData={setCurrTask} loading={loading()} submit={createTask} />
   );
 }
 
@@ -88,7 +118,7 @@ function NewTaskButton(props: { date: Ridate }) {
 
   const creatingNewTaskDate = () => (state.selectedTask && state.selectedTask.newTask) ? state.selectedTask.date : undefined;
   const startNewTask = () => {
-    setState('selectedTask', creatingNewTaskDate() ? undefined : { newTask: true, date: props.date });
+    setState('selectedTask', (creatingNewTaskDate() && eq(creatingNewTaskDate()!, props.date)) ? undefined : { newTask: true, date: props.date });
   }
 
   return (
@@ -96,9 +126,6 @@ function NewTaskButton(props: { date: Ridate }) {
       <button class="new-task" onClick={startNewTask}>
         +
       </button>
-      <Show when={creatingNewTaskDate() && eq(creatingNewTaskDate()!, props.date)}>
-        <NewTaskPopover date={props.date} />
-      </Show>
     </>
   );
 }
@@ -119,9 +146,6 @@ function TaskTile(props: { task: Task }) {
       >
         {props.task.title || <>&nbsp;</>}
       </button>
-      <Show when={selected()}>
-        <TaskPopover task={props.task} />
-      </Show>
     </div>
   )
 }
@@ -170,7 +194,6 @@ function MonthView() {
   });
 
   const days = createMemo(() => {
-    console.log('rerendering days');
     const frame = getCalendarFrame(state.selectedYear, state.selectedMonth);
     const frameAugmented: DateData[][] = frame.map(week => week.map(date => ({
       date,
@@ -232,7 +255,7 @@ function TopBar() {
 
 function Page() {
   const [params] = useSearchParams();
-  const [_, setState] = useCalendarState();
+  const [state, setState] = useCalendarState();
 
   // TODO: kick out un-authed users
 
@@ -250,6 +273,12 @@ function Page() {
       <div class="main-cal">
         <MonthView />
       </div>
+      <Show when={state.selectedTask && state.selectedTask.newTask === false && state.selectedTask.id}>{(id) => (
+        <ExistingTaskPopover taskId={id()} />
+      )}</Show>
+      <Show when={state.selectedTask && state.selectedTask.newTask === true && state.selectedTask.date}>{(date) => (
+        <NewTaskPopover date={date()} />
+      )}</Show>
     </div>
   );
 }
