@@ -7,6 +7,7 @@ import { DAYS_PER_WEEK } from '../util/constants';
 import { useCalCache } from '../util/calCache';
 import type { Task, TaskData, Calendar } from '../util/types';
 import { Button } from '../components/Button';
+import { useGlobalKey } from '../util/hooks';
 
 type DateData = {
   date: Ridate;
@@ -17,6 +18,11 @@ function TaskPopover(props: { task: Task }) {
   // TODO: display popover to the left if it's on a saturday, and top if it's bottom week
   // TODO: interaction: marking complete, etc.
   // TODO: close with esc
+  const [_, setState] = useCalendarState();
+
+  useGlobalKey(() => {
+    setState('selectedTask', undefined);
+  }, 'Escape');
 
   return (
     <div class={`task-popover ${props.task.complete ? 'complete' : ''}`}>
@@ -32,6 +38,7 @@ function NewTaskPopover(props: { date: Ridate }) {
   // TODO: refactor to reuse code from normal task popover
   let newEntryRef!: HTMLInputElement;
 
+  const [_, setState] = useCalendarState();
   const calCache = useCalCache();
 
   createEffect(() => {
@@ -55,18 +62,22 @@ function NewTaskPopover(props: { date: Ridate }) {
     setLoading(true);
 
     calCache.createTask(currTask()).then(() => {
-      // TODO: close
+      setState('selectedTask', undefined);
     }).catch((err) => {
       // TODO: catch
     });
   }
 
+  useGlobalKey(() => {
+    setState('selectedTask', undefined);
+  }, 'Escape');
+
   // TODO: allow editing of fields
 
   return (
     <div class={`task-popover`}>
-      <input ref={newEntryRef} placeholder="New Entry" autofocus>{currTask().title}</input>
-      <textarea class="description" placeholder="Description">{currTask().description}</textarea>
+      <input onChange={(e) => setCurrTask({...currTask(), title: e.target.value})} ref={newEntryRef} placeholder="New Entry" autofocus>{currTask().title}</input>
+      <textarea onChange={(e) => setCurrTask({...currTask(), description: e.target.value})} class="description" placeholder="Description">{currTask().description}</textarea>
       <Button disabled={loading()} onClick={createTask}>Create</Button>
     </div>
   );
@@ -75,9 +86,9 @@ function NewTaskPopover(props: { date: Ridate }) {
 function NewTaskButton(props: { date: Ridate }) {
   const [state, setState] = useCalendarState();
 
-  const creatingNewTask = () => state.creatingNewTask;
+  const creatingNewTaskDate = () => (state.selectedTask && state.selectedTask.newTask) ? state.selectedTask.date : undefined;
   const startNewTask = () => {
-    setState('creatingNewTask', creatingNewTask() ? undefined : props.date);
+    setState('selectedTask', creatingNewTaskDate() ? undefined : { newTask: true, date: props.date });
   }
 
   return (
@@ -85,7 +96,7 @@ function NewTaskButton(props: { date: Ridate }) {
       <button class="new-task" onClick={startNewTask}>
         +
       </button>
-      <Show when={creatingNewTask() && eq(creatingNewTask()!, props.date)}>
+      <Show when={creatingNewTaskDate() && eq(creatingNewTaskDate()!, props.date)}>
         <NewTaskPopover date={props.date} />
       </Show>
     </>
@@ -95,9 +106,9 @@ function NewTaskButton(props: { date: Ridate }) {
 function TaskTile(props: { task: Task }) {
   const [state, setState] = useCalendarState();
 
-  const selected = () => state.selectedTaskId === props.task.task_id;
+  const selected = () => state.selectedTask && !state.selectedTask.newTask && state.selectedTask?.id === props.task.task_id;
   const toggleSelected = () => {
-    setState('selectedTaskId', selected() ? undefined : props.task.task_id);
+    setState('selectedTask', selected() ? undefined : { newTask: false, id: props.task.task_id });
   }
 
   return (
@@ -151,6 +162,8 @@ function MonthView() {
 
   createEffect(() => {
     console.log(`[DBG] Rerendering month view`);
+    setMonthFromApi(undefined);
+
     calCache.getMonth(state.selectedYear, state.selectedMonth).then((c) => {
       setMonthFromApi(c);
     });

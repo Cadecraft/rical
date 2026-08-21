@@ -15,7 +15,7 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
       if (isAnythingFocused()) {
         return;
       }
-      if (e.key == hotkey && !e.ctrlKey && !e.shiftKey) {
+      if (e.key === hotkey && !e.ctrlKey && !e.shiftKey) {
         setHotkeyDown(true);
       } else if (e.key == 'Escape') {
         setHotkeyDown(false);
@@ -26,7 +26,7 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
       if (isAnythingFocused()) {
         return;
       }
-      if (e.key == hotkey) {
+      if (e.key === hotkey) {
         if (hotkeyDown()) {
           onActivated();
         }
@@ -44,4 +44,20 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
   });
 
   return hotkeyDown;
+}
+
+export function useGlobalKey(onActivated: () => void, hotkey: string) {
+  createEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === hotkey && !e.ctrlKey && !e.shiftKey) {
+        onActivated();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    onCleanup(() => {
+      document.removeEventListener("keydown", handleKeyDown);
+    });
+  });
 }

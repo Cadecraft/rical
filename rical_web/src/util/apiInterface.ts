@@ -1,6 +1,6 @@
-import type { Calendar, TaskData } from './types';
+import type { Calendar, TaskData, Task } from './types';
 
-export function apiRoot() {
+function apiRoot() {
   const res: string | undefined = import.meta.env.VITE_API_URL;
   if (!res) {
     console.error("Root API URL is undefined");
@@ -8,7 +8,9 @@ export function apiRoot() {
   return res;
 }
 
-export function genHeaders(...needed: ('auth' | 'json')[]): HeadersInit {
+type HeaderOptions = ('auth' | 'json')[];
+
+export function genHeaders(needed: HeaderOptions): HeadersInit {
   const res: HeadersInit = {};
   if (needed.includes('auth')) {
     // TODO: switch to cookies
@@ -20,50 +22,49 @@ export function genHeaders(...needed: ('auth' | 'json')[]): HeadersInit {
   return res;
 }
 
-export async function fetchCalMonth(year: number, month: number): Promise<Calendar> {
-  const res = await fetch(`${apiRoot()}/calendar/${year}/${month}`, {
-    method: 'GET',
-    headers: genHeaders('auth', 'json'),
+async function fetchTemplate(
+  method: string,
+  path: string,
+  headersNeeded: HeaderOptions,
+  expectedReturn: 'json' | 'none',
+  body?: string,
+) {
+  const res = await fetch(apiRoot() + path, {
+    method,
+    headers: genHeaders(headersNeeded),
+    body,
   });
   if (!res.ok) {
-    throw new Error("Could not fetch calendar from API");
+    throw new Error("Could not fetch from API: " + res.status);
   }
-  return await res.json();
+  if (expectedReturn === 'json') {
+    return await res.json();
+  } else {
+    return true;
+  }
 }
 
 export async function fetchSignup(username: string, password: string): Promise<true> {
-  const res = await fetch(`${apiRoot()}/account/signup`, {
-    method: 'POST',
-    headers: genHeaders('json'),
-    body: JSON.stringify({ username, password }),
-  });
-  if (!res.ok) {
-    throw new Error("Could not sign up with API");
-  }
-  return true;
+  return await fetchTemplate('POST', "/account/signup", ['json'], 'none', JSON.stringify({
+    username, password
+  }));
 }
 
 export async function fetchLogin(username: string, password: string): Promise<{ token: string }> {
-  const res = await fetch(`${apiRoot()}/account/login`, {
-    method: 'POST',
-    headers: genHeaders('json'),
-    body: JSON.stringify({ username, password }),
-  });
-  if (!res.ok) {
-    throw new Error("Could not log in with API");
-  }
-  return await res.json();
+  return await fetchTemplate('POST', "/account/login", ['json'], 'none', JSON.stringify({
+    username, password
+  }));
+}
+
+export async function fetchCalMonth(year: number, month: number): Promise<Calendar> {
+  return await fetchTemplate('GET', `/calendar/${year}/${month}`, ['auth', 'json'], 'json');
 }
 
 /** Returns task id */
 export async function fetchCreateTask(taskData: TaskData): Promise<number> {
-  const res = await fetch(`${apiRoot()}/task`, {
-    method: 'POST',
-    headers: genHeaders('auth', 'json'),
-    body: JSON.stringify(taskData),
-  });
-  if (!res.ok) {
-    throw new Error("Could not fetch calendar from API");
-  }
-  return await res.json();
+  return await fetchTemplate('POST', "/task", ['auth', 'json'], 'json', JSON.stringify(taskData));
+}
+
+export async function fetchTask(id: number): Promise<Task> {
+  return await fetchTemplate('GET', `/task/${id}`, ['auth', 'json'], 'json');
 }
