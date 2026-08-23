@@ -54,7 +54,8 @@ function TaskPopoverForm(props: {
               onInput={(e) => props.setTaskData({...props.taskData, title: e.target.value})}
               ref={newEntryRef}
               placeholder="New Entry"
-              autofocus value={props.taskData.title}
+              value={props.taskData.title}
+              title={props.taskData.title}
             />
           </div>
         </div>

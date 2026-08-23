@@ -34,12 +34,12 @@ export function useCalCache() {
   const createTask = async (taskData: TaskData) => {
     const cache = state.calCache;
 
-    fetchCreateTask(taskData).then((task_id) => {
+    fetchCreateTask(taskData).then((res) => {
       const key = toKey(taskData.year, taskData.month);
       const newCache = structuredClone(unwrap(cache));
-      const createdTask = { ...taskData, task_id };
+      const createdTask = { ...taskData, task_id: res.task_id };
       newCache.months[key].days[taskData.day - 1].push(createdTask);
-      newCache.tasks[task_id] = createdTask;
+      newCache.tasks[res.task_id] = createdTask;
       setState('calCache', newCache);
     });
   }

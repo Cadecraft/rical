@@ -61,7 +61,7 @@ export async function fetchCalMonth(year: number, month: number): Promise<Calend
 }
 
 /** Returns task id */
-export async function fetchCreateTask(taskData: TaskData): Promise<number> {
+export async function fetchCreateTask(taskData: TaskData): Promise<{ task_id: number }> {
   return await fetchTemplate('POST', "/task", ['auth', 'json'], 'json', JSON.stringify(taskData));
 }
 

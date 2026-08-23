@@ -127,12 +127,12 @@
   }
 
   .new-task {
-    display: none;
+    opacity: 0;
   }
 
   &:hover {
     .new-task {
-      display: block;
+      opacity: 1;
     }
   }
 }
