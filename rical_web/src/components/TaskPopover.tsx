@@ -126,9 +126,8 @@ export function ExistingTaskPopover(props: { taskId: number }) {
 
   const deleteTask = () => {
     setLoading(true);
-    calCache.deleteTask(props.taskId).then(() => {
-      setState('selectedTask', undefined);
-    });
+    calCache.deleteTask(props.taskId);
+    setState('selectedTask', undefined);
   }
 
   return (

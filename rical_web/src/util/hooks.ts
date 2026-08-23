@@ -2,6 +2,11 @@ import { createEffect, createSignal, onCleanup } from 'solid-js';
 
 /** Binds a function to be called by a keypress. Returns whether the hotkey is down */
 export function useHotkey(onActivated: () => void, hotkey?: string) {
+  // Keydown may fire with #, but if the user releases shift first, keyup fires with 3
+  const SHIFT_HOTKEY_EQUIV: Record<string, string> = {
+    '#': '3'
+  };
+
   const [hotkeyDown, setHotkeyDown] = createSignal(false);
 
   function isAnythingFocused() {
@@ -28,7 +33,7 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
       if (isAnythingFocused()) {
         return;
       }
-      if (e.key === hotkey) {
+      if (e.key === hotkey || (hotkey in SHIFT_HOTKEY_EQUIV && e.key === SHIFT_HOTKEY_EQUIV[hotkey])) {
         if (hotkeyDown()) {
           onActivated();
         }

@@ -78,14 +78,14 @@ export function useCalCache() {
   const deleteTask = async (id: number) => {
     const cache = state.calCache;
 
-    fetchDeleteTask(id).then(() => {
-      const newCache = structuredClone(unwrap(cache));
-      const task = newCache.tasks[id];
-      const month = newCache.months[toKey(task.year, task.month)];
-      month.days[task.day - 1] = month.days[task.day - 1].filter((d) => d.task_id != id);
-      delete newCache.tasks[id];
-      setState('calCache', newCache);
-    });
+    await fetchDeleteTask(id);
+
+    const newCache = structuredClone(unwrap(cache));
+    const task = newCache.tasks[id];
+    const month = newCache.months[toKey(task.year, task.month)];
+    month.days[task.day - 1] = month.days[task.day - 1].filter((d) => d.task_id != id);
+    delete newCache.tasks[id];
+    setState('calCache', newCache);
   }
 
   return {
