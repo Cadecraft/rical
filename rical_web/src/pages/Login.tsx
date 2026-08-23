@@ -14,6 +14,8 @@ function Page(props: { signup: boolean }) {
 
   // TODO: make form so user can press enter at any time
 
+  // TODO: kick logged-in users to /cal
+
   function submit() {
     setError("");
     setLoading(true);

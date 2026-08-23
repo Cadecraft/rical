@@ -1,0 +1,96 @@
+.task-popover {
+  width: 300px;
+  height: fit-content;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+  z-index: 1;
+
+  background-color: var(--surface);
+
+  input {
+    background-color: var(--background);
+  }
+
+  &.top-half {
+    bottom: unset;
+    top: 60px;
+    border-bottom-left-radius: unset;
+    border-bottom-right-radius: unset;
+  }
+
+  &.complete {
+    h3 {
+      text-decoration: line-through;
+    }
+  }
+
+  .form-body {
+    padding: 6px 6px;
+    padding-bottom: 10px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .top-options {
+      display: flex;
+      flex-direction: row-reverse;
+
+      .title-form {
+        position: relative;
+        flex-grow: 1;
+
+        input {
+          width: 100%;
+        }
+      }
+    }
+
+    .time-form {
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      font-family: monospace;
+      gap: 4px;
+
+      input {
+        width: 72px;
+        height: 24px;
+      }
+    }
+
+    .bottom-options {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+  }
+
+  textarea.description {
+    margin-top: 6px;
+
+    resize: none;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background-color: var(--background);
+    border: solid 1px var(--border);
+    border-radius: 4px;
+    width: 100%;
+    height: 90px;
+    padding-left: 6px;
+    padding-bottom: 8px;
+    overflow-y: auto;
+
+    &:focus-visible {
+      outline: solid 2px var(--blue-outline);
+    }
+  }
+}

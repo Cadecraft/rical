@@ -5,113 +5,13 @@ import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate,
 import { useCalendarState } from '../util/StateProvider';
 import { DAYS_PER_WEEK } from '../util/constants';
 import { useCalCache } from '../util/calCache';
-import type { Task, TaskData, Calendar } from '../util/types';
-import { Button } from '../components/Button';
-import { useGlobalKey } from '../util/hooks';
+import type { Task, Calendar } from '../util/types';
+import { NewTaskPopover, ExistingTaskPopover } from '../components/TaskPopover';
 
 type DateData = {
   date: Ridate;
   tasks: Task[];
 };
-
-function TaskPopoverForm(props: { taskData: TaskData, setTaskData: (t: TaskData) => void, loading: boolean, submit: () => void, id?: number }) {
-  let newEntryRef!: HTMLInputElement;
-
-  createEffect(() => {
-    if (!props.id) {
-      newEntryRef.focus();
-    }
-  }, [props.taskData.day, props.taskData.year, props.taskData.month, props.id]);
-
-  // TODO: disable the button if there is no diff on an existing entry
-
-  return (
-    <div class={`task-popover ${props.taskData.complete ? 'complete' : ''}`}>
-      <input onChange={(e) => props.setTaskData({...props.taskData, title: e.target.value})} ref={newEntryRef} placeholder="New Entry" autofocus value={props.taskData.title} />
-      <textarea onChange={(e) => props.setTaskData({...props.taskData, description: e.target.value})} class="description" placeholder="Description">{props.taskData.description}</textarea>
-      <Button disabled={props.loading} onClick={props.submit}>{props.id ? "Save Changes" : "Create"}</Button>
-    </div>
-  );
-}
-
-function ExistingTaskPopover(props: { taskId: number }) {
-  const calCache = useCalCache();
-  const [task, setTask] = createSignal<Task | undefined>(undefined);
-  const [loading, setLoading] = createSignal(false);
-
-  createEffect(() => {
-    setTask(undefined);
-    calCache.getTask(props.taskId).then(res => setTask(res));
-  }, [props.taskId]);
-
-  // TODO: display popover to the left if it's on a saturday, and top if it's bottom week
-  // TODO: interaction: marking complete, etc.
-  const [_, setState] = useCalendarState();
-
-  useGlobalKey(() => {
-    setState('selectedTask', undefined);
-  }, 'Escape');
-
-  const updateTask = () => {
-    // TODO: impl, loading, etc
-    if (!task()) {
-      return;
-    }
-    setLoading(true);
-    calCache.putTask(task()!).then(() => {
-      setState('selectedTask', undefined);
-    }).catch((err) => {
-      // TODO: catch
-      setLoading(false);
-    });
-  };
-
-  return (
-    <Show when={task()}>{(task) => (
-      <TaskPopoverForm taskData={task()} setTaskData={setTask} loading={false} submit={updateTask} id={props.taskId} />
-    )}</Show>
-  );
-}
-
-function NewTaskPopover(props: { date: Ridate }) {
-  // TODO: display popover to the left if it's on a saturday, and top if it's bottom week
-  // TODO: interaction: marking complete, etc.
-
-  const [_, setState] = useCalendarState();
-  const calCache = useCalCache();
-  const [currTask, setCurrTask] = createSignal<TaskData>({
-    title: '',
-    description: '',
-    complete: false,
-    year: props.date.year,
-    month: props.date.month,
-    day: props.date.dayOfMonth,
-    start_min: undefined,
-    end_min: undefined,
-  });
-  const [loading, setLoading] = createSignal(false);
-
-  const createTask = () => {
-    setLoading(true);
-
-    calCache.createTask(currTask()).then(() => {
-      setState('selectedTask', undefined);
-    }).catch((err) => {
-      // TODO: catch
-      setLoading(false);
-    });
-  }
-
-  useGlobalKey(() => {
-    setState('selectedTask', undefined);
-  }, 'Escape');
-
-  // TODO: allow editing of fields
-
-  return (
-    <TaskPopoverForm taskData={currTask()} setTaskData={setCurrTask} loading={loading()} submit={createTask} />
-  );
-}
 
 function NewTaskButton(props: { date: Ridate }) {
   const [state, setState] = useCalendarState();

@@ -5,7 +5,9 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
   const [hotkeyDown, setHotkeyDown] = createSignal(false);
 
   function isAnythingFocused() {
-    return document.activeElement !== document.body;
+    return document.activeElement &&
+      document.activeElement !== document.body &&
+      document.activeElement.nodeName !== "BUTTON";
   }
 
   createEffect(() => {
@@ -34,12 +36,12 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     onCleanup(() => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     });
   });
 
@@ -54,10 +56,10 @@ export function useGlobalKey(onActivated: () => void, hotkey: string) {
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     onCleanup(() => {
-      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     });
   });
 }

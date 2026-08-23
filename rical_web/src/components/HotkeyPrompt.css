@@ -1,0 +1,21 @@
+.hotkey-prompt {
+  position: absolute;
+  right: -8px;
+  top: -4px;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  font-weight: 400;
+  background-color: var(--gray);
+  color: var(--text-gray);
+  border-radius: 2px;
+  border-bottom: solid 4px var(--gray-dark);
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+
+  &:hover {
+    cursor: help;
+  }
+}
