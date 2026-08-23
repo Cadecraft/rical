@@ -10,13 +10,14 @@ export function Button(props: {
   hotkey?: string,
   onClick: () => void,
   disabled?: boolean,
+  class?: string,
 }) {
   const resolved = children(() => props.children);
 
   const hotkeyDown = useHotkey(props.onClick, props.hotkey);
 
   return (
-    <button class={`rical-button ${hotkeyDown() ? 'pressed' : ''}`} disabled={props.disabled} onClick={props.onClick}>
+    <button class={`${props.class ?? 'rical-button'} ${hotkeyDown() ? 'pressed' : ''}`} disabled={props.disabled} onClick={props.onClick}>
       {resolved()}
       <Show when={props.hotkey}>
         <div class="hotkey" title={`Hotkey for this button: ${props.hotkey}`}>

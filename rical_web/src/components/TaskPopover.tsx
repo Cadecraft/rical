@@ -8,12 +8,16 @@ import { Button } from './Button';
 import { useGlobalKey } from '../util/hooks';
 import HotkeyPrompt from './HotkeyPrompt';
 
+import { IoTrashSharp } from 'solid-icons/io';
+
 function TaskPopoverForm(props: {
   taskData: TaskData,
   loading: boolean,
   unsaved: boolean,
   setTaskData: (t: TaskData) => void,
-  submit: () => void, id?: number
+  submit: () => void,
+  id?: number,
+  deleteTask?: () => void
 }) {
   let outerRef!: HTMLDivElement;
   let newEntryRef!: HTMLInputElement;
@@ -39,15 +43,17 @@ function TaskPopoverForm(props: {
     }
   }, 'Enter');
 
-  // TODO: deletion, capture and autoformat times
+  // TODO: capture and autoformat times
 
   return (
     <div ref={outerRef} class={`task-popover ${props.taskData.complete ? 'complete' : ''}`}>
       <div class="form-body">
         <div class="top-options">
-          <div>
-            Delete
-          </div>
+          <Show when={!isNewTask()}>
+            <Button hotkey="#" onClick={() => props.deleteTask?.()} class="icon-button">
+              <IoTrashSharp size={18} />
+            </Button>
+          </Show>
           <div class="title-form">
             <HotkeyPrompt hotkey={'e'} onActivated={focusForm} actionDescr="Focus edit box" />
             <input
@@ -118,9 +124,24 @@ export function ExistingTaskPopover(props: { taskId: number }) {
     });
   };
 
+  const deleteTask = () => {
+    setLoading(true);
+    calCache.deleteTask(props.taskId).then(() => {
+      setState('selectedTask', undefined);
+    });
+  }
+
   return (
     <Show when={task()}>{(task) => (
-      <TaskPopoverForm unsaved={unsaved()} taskData={task()} setTaskData={setTask} loading={loading()} submit={updateTask} id={props.taskId} />
+      <TaskPopoverForm
+        unsaved={unsaved()}
+        taskData={task()}
+        setTaskData={setTask}
+        loading={loading()}
+        submit={updateTask}
+        id={props.taskId}
+        deleteTask={deleteTask}
+      />
     )}</Show>
   );
 }
@@ -155,9 +176,13 @@ export function NewTaskPopover(props: { date: Ridate }) {
     setState('selectedTask', undefined);
   }, 'Escape');
 
-  // TODO: allow editing of fields
-
   return (
-    <TaskPopoverForm unsaved={true} taskData={currTask()} setTaskData={setCurrTask} loading={loading()} submit={createTask} />
+    <TaskPopoverForm
+      unsaved={true}
+      taskData={currTask()}
+      setTaskData={setCurrTask}
+      loading={loading()}
+      submit={createTask}
+    />
   );
 }

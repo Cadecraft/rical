@@ -28,18 +28,41 @@
 
   &:active, &.pressed {
     background-color: var(--rical-red-dark);
-
-    .hotkey {
-      border-bottom: none;
-      height: 16px;
-      top: -2px;
-    }
   }
 
   &:disabled {
     background-color: var(--disabled);
     cursor: default;
     color: var(--gray-dark);
+  }
+}
+
+.icon-button {
+  font-size: 18px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0px 8px;
+  border: none;
+  border-radius: 4px;
+
+  background-color: transparent;
+
+  color: var(--text-secondary);
+  transition: color 0.1s;
+
+  &:hover {
+    color: var(--text);
+    cursor: pointer;
+  }
+}
+
+.rical-button:active, .rical-button.pressed, .icon-button:active, .icon-button.pressed {
+  .hotkey {
+    border-bottom: none;
+    height: 16px;
+    top: -2px;
   }
 }
 

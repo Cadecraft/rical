@@ -50,7 +50,7 @@ async fn main() {
         .layer(
             CorsLayer::new()
                 .allow_headers([header::AUTHORIZATION, header::ACCEPT, header::CONTENT_TYPE])
-                .allow_methods([Method::GET, Method::PUT])
+                .allow_methods([Method::GET, Method::PUT, Method::POST, Method::DELETE])
                 .allow_origin(allowed_origins),
         );
 

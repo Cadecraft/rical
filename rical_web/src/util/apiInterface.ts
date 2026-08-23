@@ -73,3 +73,7 @@ export async function fetchTask(id: number): Promise<Task> {
 export async function fetchPutTask(task: Task): Promise<Task> {
   return await fetchTemplate('PUT', `/task/${task.task_id}`, ['auth', 'json'], 'json', JSON.stringify(task));
 }
+
+export async function fetchDeleteTask(id: number): Promise<Task> {
+  return await fetchTemplate('DELETE', `/task/${id}`, ['auth'], 'none');
+}

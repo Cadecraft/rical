@@ -17,7 +17,7 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
       if (isAnythingFocused()) {
         return;
       }
-      if (e.key === hotkey && !e.ctrlKey && !e.shiftKey) {
+      if (e.key === hotkey && !e.ctrlKey) {
         setHotkeyDown(true);
       } else if (e.key == 'Escape') {
         setHotkeyDown(false);

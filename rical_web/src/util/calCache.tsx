@@ -1,4 +1,4 @@
-import { fetchCalMonth, fetchCreateTask, fetchTask, fetchPutTask } from './apiInterface';
+import { fetchCalMonth, fetchCreateTask, fetchTask, fetchPutTask, fetchDeleteTask } from './apiInterface';
 import type { TaskData, Task } from './types';
 import { useCalendarState } from './StateProvider';
 import { unwrap } from 'solid-js/store';
@@ -61,7 +61,7 @@ export function useCalCache() {
   const putTask = async (task: Task) => {
     const cache = state.calCache;
 
-    fetchPutTask(task).then((res) => {
+    fetchPutTask(task).then(() => {
       const newCache = structuredClone(unwrap(cache));
       newCache.tasks[task.task_id] = task;
       // TODO: moving tasks
@@ -75,10 +75,24 @@ export function useCalCache() {
     });
   }
 
+  const deleteTask = async (id: number) => {
+    const cache = state.calCache;
+
+    fetchDeleteTask(id).then(() => {
+      const newCache = structuredClone(unwrap(cache));
+      const task = newCache.tasks[id];
+      const month = newCache.months[toKey(task.year, task.month)];
+      month.days[task.day - 1] = month.days[task.day - 1].filter((d) => d.task_id != id);
+      delete newCache.tasks[id];
+      setState('calCache', newCache);
+    });
+  }
+
   return {
     getMonth,
     createTask,
     getTask,
     putTask,
+    deleteTask,
   };
 }

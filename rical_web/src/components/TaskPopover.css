@@ -1,5 +1,5 @@
 .task-popover {
-  width: 300px;
+  width: 310px;
   height: fit-content;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
   position: absolute;
@@ -10,6 +10,7 @@
   border-bottom-left-radius: 0px;
   border-bottom-right-radius: 0px;
   z-index: 1;
+  border: solid 1px var(--border);
 
   background-color: var(--surface);
 
@@ -41,6 +42,8 @@
     .top-options {
       display: flex;
       flex-direction: row-reverse;
+
+      gap: 10px;
 
       .title-form {
         position: relative;

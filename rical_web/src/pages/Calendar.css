@@ -121,7 +121,7 @@
 
   &.today {
     .day-of-month {
-      background-color: var(--bg-blue);
+      background-color: var(--rical-red);
       color: var(--white);
     }
   }

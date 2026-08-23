@@ -18,4 +18,10 @@
   &:hover {
     cursor: help;
   }
+
+  &.down {
+    border-bottom: none;
+    height: 16px;
+    top: -2px;
+  }
 }
