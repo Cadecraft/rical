@@ -20,9 +20,13 @@ type DateData = {
 function NewTaskButton(props: { date: Ridate }) {
   const [state, setState] = useCalendarState();
 
-  const creatingNewTaskDate = () => (state.selectedTask && state.selectedTask.newTask) ? state.selectedTask.date : undefined;
+  const creatingNewTaskDate = () => (state.selection.type === "task" && state.selection.newTask) ? state.selection.date : undefined;
   const startNewTask = () => {
-    setState('selectedTask', (creatingNewTaskDate() && eq(creatingNewTaskDate()!, props.date)) ? undefined : { newTask: true, date: props.date });
+    if (creatingNewTaskDate() && eq(creatingNewTaskDate()!, props.date)) {
+      setState('selection', { type: 'vibing-day', day: props.date.dayOfMonth });
+    } else {
+      setState('selection', { type: 'task', newTask: true, date: props.date });
+    }
   }
 
   return (
@@ -38,14 +42,14 @@ function TaskTile(props: { task: Task }) {
   const [state, setState] = useCalendarState();
   const { toYearMonth } = useDateNav();
 
-  const selected = () => state.selectedTask && !state.selectedTask.newTask && state.selectedTask?.id === props.task.task_id;
+  const selected = () => state.selection.type === "task" && !state.selection.newTask && state.selection.id === props.task.task_id;
   const toggleSelected = () => {
     if (selected()) {
-      setState('selectedTask', undefined);
+      setState('selection', { type: 'vibing-day', day: props.task.day });
     } else {
-      setState('selectedTask', { newTask: false, id: props.task.task_id });
+      setState('selection', { type: 'task', newTask: false, id: props.task.task_id });
+      // TODO: automatically transport us (probably down near calendar) to the proper year and month if they go out of range
       toYearMonth(props.task.year, props.task.month);
-      setState('selectedDay', props.task.day);
     }
   }
 
@@ -64,9 +68,8 @@ function TaskTile(props: { task: Task }) {
 function MonthDay(props: { day: DateData }) {
   const [state, _] = useCalendarState();
   const isToday = () => eq(currentDate(), props.day.date);
-  const isSelected = () => state.selectedDay &&
-    state.selectedDay === props.day.date.dayOfMonth &&
-    state.selectedMonth === props.day.date.month;
+  const isSelected = () => state.selectedMonth === props.day.date.month &&
+    (state.selection.type === "precise-day" && state.selection.day === props.day.date.dayOfMonth);
 
   const dayOfMonthDisp = () => {
     const dayOfMonth = props.day.date.dayOfMonth;
@@ -80,7 +83,7 @@ function MonthDay(props: { day: DateData }) {
   // TODO: document 'o' for new task hotkey, only when this day is selected?
 
   return (
-    <div class={`month-day ${isToday() ? 'today' : ''} ${isSelected() ? 'selected' : ''} ${state.selectedTask ? 'task-focused' : ''}`}>
+    <div class={`month-day ${isToday() ? 'today' : ''} ${isSelected() ? 'selected' : ''} ${state.selection.type === "task" ? 'task-focused' : ''}`}>
       <div class="month-day-top">
         <div class="day-of-month">{dayOfMonthDisp()}</div>
       </div>
@@ -177,10 +180,10 @@ function Page() {
       <div class="main-cal">
         <MonthView />
       </div>
-      <Show when={state.selectedTask && state.selectedTask.newTask === false && state.selectedTask.id}>{(id) => (
+      <Show when={state.selection.type === "task" && state.selection.newTask === false && state.selection.id}>{(id) => (
         <ExistingTaskPopover taskId={id()} />
       )}</Show>
-      <Show when={state.selectedTask && state.selectedTask.newTask === true && state.selectedTask.date}>{(date) => (
+      <Show when={state.selection.type === "task" && state.selection.newTask === true && state.selection.date}>{(date) => (
         <NewTaskPopover date={date()} />
       )}</Show>
     </div>

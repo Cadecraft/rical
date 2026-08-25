@@ -3,29 +3,47 @@ import { createStore, type SetStoreFunction } from 'solid-js/store';
 import { currentDate, type Ridate } from '../util/ridate';
 import type { Calendar, Task } from './types';
 
+// If a user has a task selected, then the task's day is naturally also considered selected.
+type SelectionType = {
+  // Vibing: user has clicked a day, and unconsiously considers it focused
+  type: 'vibing-day',
+  day: number
+} | {
+  // Precise: user has used motions to get here
+  type: 'precise-day',
+  day: number
+} | {
+  type: 'task',
+  newTask: true,
+  date: Ridate
+} | {
+  type: 'task',
+  newTask: false,
+  id: number
+};
+
 export type CalendarStore = {
-  selectedTask: { newTask: false, id: number } | { newTask: true, date: Ridate } | undefined;
+  selection: SelectionType;
   selectedMonth: number;
   selectedYear: number;
   calCache: {
     months: Record<string, Calendar>;
     tasks: Record<number, Task>;
   };
-  selectedDay: number | undefined;
 };
 
 const CalendarStateContext = createContext();
 
 export function CalendarStateProvider(props: { children: JSX.Element }) {
   const [store, setStore] = createStore<CalendarStore>({
-    selectedTask: undefined,
+    // TODO: better default day, e.g. today
+    selection: { type: 'vibing-day', day: 15 },
     selectedMonth: currentDate().month,
     selectedYear: currentDate().year,
     calCache: {
       months: {},
       tasks: {},
     },
-    selectedDay: undefined,
   });
 
   const packagedStore = [store, setStore];

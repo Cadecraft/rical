@@ -66,7 +66,7 @@ function TaskPopoverForm(props: {
       props.cancelEdit();
       document.activeElement?.blur();
     } else {
-      setState('selectedTask', undefined);
+      setState('selection', { type: 'precise-day', day: props.taskData.day });
     }
   }, 'Escape');
 
@@ -151,8 +151,9 @@ export function ExistingTaskPopover(props: { taskId: number }) {
 
   const deleteTask = () => {
     setLoading(true);
+    const returnToDay = calCache.getTaskUnsafe(props.taskId).day;
     calCache.deleteTask(props.taskId);
-    setState('selectedTask', undefined);
+    setState('selection', { type: 'precise-day', day: returnToDay });
   }
 
   const cancelEdit = () => {
@@ -194,7 +195,7 @@ export function NewTaskPopover(props: { date: Ridate }) {
     setLoading(true);
 
     calCache.createTask(currTask()).then(() => {
-      setState('selectedTask', undefined);
+      setState('selection', { type: 'precise-day', day: props.date.dayOfMonth });
     }).catch((err) => {
       // TODO: catch
       setLoading(false);

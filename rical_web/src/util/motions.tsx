@@ -11,14 +11,21 @@ function useMotions() {
   const calCache = useCalCache();
 
   const selectedDate = (): Ridate | undefined => {
-    if (!state.selectedDay) {
-      return undefined;
+    let selectedDay = -1;
+    if (state.selection.type === "vibing-day" || state.selection.type === "precise-day") {
+      selectedDay = state.selection.day;
+    } else if (state.selection.type === "task" && state.selection.newTask) {
+      selectedDay = state.selection.date.dayOfMonth;
+    } else if (state.selection.type === "task" && state.selection.newTask === false) {
+      selectedDay = calCache.getTaskUnsafe(state.selection.id).day;
+    } else {
+      console.error("[err] Motions selected day could not be determined");
     }
 
     return {
       year: state.selectedYear,
       month: state.selectedMonth,
-      dayOfMonth: state.selectedDay,
+      dayOfMonth: selectedDay,
     }
   }
 
@@ -37,7 +44,7 @@ function useMotions() {
     if (date.year !== state.selectedYear || date.month !== state.selectedMonth) {
       toYearMonth(date.year, date.month);
     }
-    setState('selectedDay', date.dayOfMonth);
+    setState('selection', { type: 'precise-day', day: date.dayOfMonth });
   }
 
   const navTasks = (direction: 1 | -1) => {
@@ -46,39 +53,36 @@ function useMotions() {
 
     const tasksHere = calCache.getTasksAtDate(date);
     if (tasksHere.length === 0) {
-      setState('selectedTask', undefined);
       return;
     }
-    const selectedTask = state.selectedTask;
-    const selectedHere = (!selectedTask || selectedTask.newTask) ? undefined : tasksHere.findIndex((t) => t.task_id === selectedTask.id);
+    const existingSelectedTaskId = state.selection.type === "task" && !state.selection.newTask ? state.selection.id : undefined;
+    const selectedHere = tasksHere.findIndex((t) => t.task_id === existingSelectedTaskId);
     if (selectedHere === undefined) {
-      setState('selectedTask', { newTask: false, id: tasksHere[0].task_id });
+      setState('selection', { type: 'task', newTask: false, id: tasksHere[0].task_id });
       return;
     }
     const newSelected = selectedHere + direction;
     const newSelectedInRange = newSelected < 0 ? tasksHere.length - 1 : (newSelected >= tasksHere.length ? 0 : newSelected);
     const newSelectedId = tasksHere[newSelectedInRange].task_id;
-    setState('selectedTask', { newTask: false, id: newSelectedId });
+    setState('selection', { type: 'task', newTask: false, id: newSelectedId });
   }
 
   const motionMap: Record<string, () => void> = {
     'h': () => {
       selectDate(addDays(pseudoSelectedDate(), -1));
-      setState('selectedTask', undefined);
     },
     'l': () => {
       selectDate(addDays(pseudoSelectedDate(), 1));
-      setState('selectedTask', undefined);
     },
     'j': () => {
-      if (state.selectedTask) {
+      if (state.selection.type === "task") {
         navTasks(1);
       } else {
         selectDate(addDays(pseudoSelectedDate(), 7));
       }
     },
     'k': () => {
-      if (state.selectedTask) {
+      if (state.selection.type === "task") {
         navTasks(-1);
       } else {
         selectDate(addDays(pseudoSelectedDate(), -7));
@@ -87,15 +91,20 @@ function useMotions() {
     'o': () => {
       const date = selectedDate();
       if (date) {
-        setState('selectedTask', { newTask: true, date });
+        setState('selection', { type: 'task', newTask: true, date });
       }
     },
     'Enter': () => {
-      if (!state.selectedTask) {
+      if (state.selection.type !== "task") {
         const date = selectedDate();
         if (date) {
           navTasks(1);
         }
+      }
+    },
+    'Escape': () => {
+      if (state.selection.type === "precise-day") {
+        setState('selection', { type: "vibing-day", day: state.selection.day });
       }
     }
   };

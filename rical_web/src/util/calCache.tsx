@@ -65,6 +65,13 @@ export function useCalCache() {
     return task;
   }
 
+  const getTaskUnsafe = (id: number) => {
+    if (!(id in state.calCache.tasks)) {
+      console.error(`getTaskUnsafe failed for task id ${id}`);
+    }
+    return state.calCache.tasks[id];
+  }
+
   const putTask = async (task: Task) => {
     const cache = state.calCache;
 
@@ -102,5 +109,6 @@ export function useCalCache() {
     putTask,
     deleteTask,
     getTasksAtDate,
+    getTaskUnsafe,
   };
 }
