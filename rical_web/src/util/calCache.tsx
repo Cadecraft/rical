@@ -2,6 +2,7 @@ import { fetchCalMonth, fetchCreateTask, fetchTask, fetchPutTask, fetchDeleteTas
 import type { TaskData, Task } from './types';
 import { useCalendarState } from './StateProvider';
 import { unwrap } from 'solid-js/store';
+import { type Ridate } from './ridate';
 
 export function useCalCache() {
   const [state, setState] = useCalendarState();
@@ -29,6 +30,12 @@ export function useCalCache() {
     }
     setState('calCache', newCache);
     return res;
+  }
+
+  const getTasksAtDate = (date: Ridate) => {
+    const cache = state.calCache;
+    const key = toKey(date.year, date.month);
+    return cache.months[key].days[date.dayOfMonth - 1];
   }
 
   const createTask = async (taskData: TaskData) => {
@@ -94,5 +101,6 @@ export function useCalCache() {
     getTask,
     putTask,
     deleteTask,
+    getTasksAtDate,
   };
 }

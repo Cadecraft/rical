@@ -70,7 +70,7 @@ function TaskPopoverForm(props: {
           to
           <input placeholder="00:00" />
         </div>
-        <textarea onChange={(e) => props.setTaskData({...props.taskData, description: e.target.value})} class="description" placeholder="Description">{props.taskData.description}</textarea>
+        <textarea onInput={(e) => props.setTaskData({...props.taskData, description: e.target.value})} class="description" placeholder="Description">{props.taskData.description}</textarea>
         <div class="bottom-options">
           <Button disabled={!props.unsaved || props.loading} onClick={props.submit}>{props.id ? "Save Changes" : "Create"}</Button>
           <Show when={!isNewTask() && !props.unsaved}>

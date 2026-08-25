@@ -10,7 +10,8 @@ export type CalendarStore = {
   calCache: {
     months: Record<string, Calendar>;
     tasks: Record<number, Task>;
-  }
+  };
+  selectedDay: number | undefined;
 };
 
 const CalendarStateContext = createContext();
@@ -24,6 +25,7 @@ export function CalendarStateProvider(props: { children: JSX.Element }) {
       months: {},
       tasks: {},
     },
+    selectedDay: undefined,
   });
 
   const packagedStore = [store, setStore];

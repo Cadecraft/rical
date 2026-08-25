@@ -7,6 +7,10 @@ import { DAYS_PER_WEEK } from '../util/constants';
 import { useCalCache } from '../util/calCache';
 import type { Task, Calendar } from '../util/types';
 import { NewTaskPopover, ExistingTaskPopover } from '../components/TaskPopover';
+import useMotions from '../util/motions';
+import { useDateNav } from '../util/hooks';
+
+import { IoArrowBackSharp, IoArrowForwardSharp } from 'solid-icons/io';
 
 type DateData = {
   date: Ridate;
@@ -53,6 +57,9 @@ function TaskTile(props: { task: Task }) {
 function MonthDay(props: { day: DateData }) {
   const [state, _] = useCalendarState();
   const isToday = () => eq(currentDate(), props.day.date);
+  const isSelected = () => state.selectedDay &&
+    state.selectedDay === props.day.date.dayOfMonth &&
+    state.selectedMonth === props.day.date.month;
 
   const dayOfMonthDisp = () => {
     const dayOfMonth = props.day.date.dayOfMonth;
@@ -63,8 +70,10 @@ function MonthDay(props: { day: DateData }) {
     }
   }
 
+  // TODO: document 'o' for new task hotkey, only when this day is selected?
+
   return (
-    <div class={`month-day ${isToday() ? 'today' : ''}`}>
+    <div class={`month-day ${isToday() ? 'today' : ''} ${isSelected() ? 'selected' : ''}`}>
       <div class="month-day-top">
         <div class="day-of-month">{dayOfMonthDisp()}</div>
       </div>
@@ -125,29 +134,15 @@ function MonthView() {
 
 function TopBar() {
   const [state] = useCalendarState();
-  const [_, setParams] = useSearchParams();
-
-  const prevMonth = () => {
-    setParams({
-      y: state.selectedMonth === 1 ? state.selectedYear - 1 : state.selectedYear,
-      m: state.selectedMonth === 1 ? 12 : state.selectedMonth - 1,
-    });
-  }
-
-  const nextMonth = () => {
-    setParams({
-      y: state.selectedMonth === 12 ? state.selectedYear + 1 : state.selectedYear,
-      m: state.selectedMonth === 12 ? 1 : state.selectedMonth + 1,
-    });
-  }
+  const { prevMonth, nextMonth } = useDateNav();
 
   return (
     <div class="top-bar">
       <img src="/RicalIcon.svg" alt="Rical Home" />
       <div class="month-select">
-        <button onClick={prevMonth}>Prev</button>
+        <button onClick={prevMonth}><IoArrowBackSharp /></button>
         <h2>{state.selectedYear}/{leadingZero(state.selectedMonth)}</h2>
-        <button onClick={nextMonth}>Next</button>
+        <button onClick={nextMonth}><IoArrowForwardSharp /></button>
       </div>
     </div>
   );
@@ -166,6 +161,8 @@ function Page() {
     setState('selectedYear', year());
     setState('selectedMonth', month());
   });
+
+  useMotions();
 
   return (
     <div class="cal-root">

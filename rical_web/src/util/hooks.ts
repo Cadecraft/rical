@@ -1,4 +1,7 @@
 import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { useCalendarState } from './StateProvider';
+import { useSearchParams } from '@solidjs/router';
+import { isAnythingFocused } from './helpers';
 
 /** Binds a function to be called by a keypress. Returns whether the hotkey is down */
 export function useHotkey(onActivated: () => void, hotkey?: string) {
@@ -8,12 +11,6 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
   };
 
   const [hotkeyDown, setHotkeyDown] = createSignal(false);
-
-  function isAnythingFocused() {
-    return document.activeElement &&
-      document.activeElement !== document.body &&
-      document.activeElement.nodeName !== "BUTTON";
-  }
 
   createEffect(() => {
     if (!hotkey) return;
@@ -67,4 +64,36 @@ export function useGlobalKey(onActivated: () => void, hotkey: string) {
       window.removeEventListener("keydown", handleKeyDown);
     });
   });
+}
+
+export function useDateNav() {
+  const [state] = useCalendarState();
+  const [_, setParams] = useSearchParams();
+
+  const prevMonth = () => {
+    setParams({
+      y: state.selectedMonth === 1 ? state.selectedYear - 1 : state.selectedYear,
+      m: state.selectedMonth === 1 ? 12 : state.selectedMonth - 1,
+    });
+  }
+
+  const nextMonth = () => {
+    setParams({
+      y: state.selectedMonth === 12 ? state.selectedYear + 1 : state.selectedYear,
+      m: state.selectedMonth === 12 ? 1 : state.selectedMonth + 1,
+    });
+  }
+
+  const toYearMonth = (year: number, month: number) => {
+    setParams({
+      y: year,
+      m: month,
+    });
+  }
+
+  return {
+    prevMonth,
+    nextMonth,
+    toYearMonth,
+  }
 }

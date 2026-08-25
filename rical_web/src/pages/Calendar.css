@@ -31,12 +31,19 @@
 
     button {
       border-radius: 4px;
-      background-color: var(--surface);
-      color: var(--bg-blue);
+      color: var(--blue);
+      background-color: transparent;
+      height: 100%;
+      padding: 10px;
+      padding-bottom: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
 
       &:hover {
         cursor: pointer;
-        color: var(--bg-blue-light);
+        color: var(--blue-light);
       }
     }
   }
@@ -123,6 +130,16 @@
     .day-of-month {
       background-color: var(--rical-red);
       color: var(--white);
+    }
+  }
+
+  &.selected {
+    border: solid 3px var(--blue-outline);
+    margin-left: -1px;
+    margin-top: -1px;
+
+    .new-task {
+      opacity: 1;
     }
   }
 
