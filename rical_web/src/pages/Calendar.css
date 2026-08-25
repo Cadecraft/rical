@@ -134,9 +134,15 @@
   }
 
   &.selected {
-    border: solid 3px var(--blue-outline);
+    outline: solid 3px var(--blue-outline);
     margin-left: -1px;
     margin-top: -1px;
+    padding-left: 1px;
+    padding-top: 5px;
+
+    &.task-focused {
+      outline: solid 3px var(--border);
+    }
 
     .new-task {
       opacity: 1;

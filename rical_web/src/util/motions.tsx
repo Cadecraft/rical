@@ -62,18 +62,42 @@ function useMotions() {
   }
 
   const motionMap: Record<string, () => void> = {
-    'h': () => selectDate(addDays(pseudoSelectedDate(), -1)),
-    'l': () => selectDate(addDays(pseudoSelectedDate(), 1)),
-    'j': () => selectDate(addDays(pseudoSelectedDate(), 7)),
-    'k': () => selectDate(addDays(pseudoSelectedDate(), -7)),
+    'h': () => {
+      selectDate(addDays(pseudoSelectedDate(), -1));
+      setState('selectedTask', undefined);
+    },
+    'l': () => {
+      selectDate(addDays(pseudoSelectedDate(), 1));
+      setState('selectedTask', undefined);
+    },
+    'j': () => {
+      if (state.selectedTask) {
+        navTasks(1);
+      } else {
+        selectDate(addDays(pseudoSelectedDate(), 7));
+      }
+    },
+    'k': () => {
+      if (state.selectedTask) {
+        navTasks(-1);
+      } else {
+        selectDate(addDays(pseudoSelectedDate(), -7));
+      }
+    },
     'o': () => {
       const date = selectedDate();
       if (date) {
         setState('selectedTask', { newTask: true, date });
       }
     },
-    'ArrowDown': () => navTasks(1),
-    'ArrowUp': () => navTasks(-1),
+    'Enter': () => {
+      if (!state.selectedTask) {
+        const date = selectedDate();
+        if (date) {
+          navTasks(1);
+        }
+      }
+    }
   };
 
   createEffect(() => {
@@ -82,6 +106,7 @@ function useMotions() {
         return;
       }
       if (e.key in motionMap) {
+        e.preventDefault();
         motionMap[e.key]();
       }
     }

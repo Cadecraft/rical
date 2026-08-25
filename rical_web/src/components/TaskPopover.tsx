@@ -7,6 +7,7 @@ import type { Task, TaskData } from '../util/types';
 import { Button } from './Button';
 import { useGlobalKey } from '../util/hooks';
 import HotkeyPrompt from './HotkeyPrompt';
+import { isAnythingFocusedInclButton } from '../util/helpers';
 
 import { IoTrashSharp } from 'solid-icons/io';
 
@@ -16,15 +17,27 @@ function TaskPopoverForm(props: {
   unsaved: boolean,
   setTaskData: (t: TaskData) => void,
   submit: () => void,
+  cancelEdit: () => void,
   id?: number,
   deleteTask?: () => void
 }) {
   let outerRef!: HTMLDivElement;
   let newEntryRef!: HTMLInputElement;
 
-  const focusForm = () => newEntryRef.focus();
+  const [_, setState] = useCalendarState();
+
+  const [knowOfFocus, setKnowOfFocus] = createSignal(false);
+
+  const focusForm = () => {
+    newEntryRef.focus();
+    setKnowOfFocus(true);
+  }
 
   const isNewTask = () => !props.id;
+
+  const focusedInside = () => {
+    return isAnythingFocusedInclButton() && outerRef.contains(document.activeElement);
+  }
 
   createEffect(() => {
     if (isNewTask()) {
@@ -38,10 +51,24 @@ function TaskPopoverForm(props: {
   }
 
   useGlobalKey(() => {
-    if (props.unsaved && !props.loading) {
-      props.submit();
+    if (focusedInside()) {
+      const userFocusingTextarea = document.activeElement?.tagName === "TEXTAREA";
+      if (props.unsaved && !props.loading && !userFocusingTextarea) {
+        props.submit();
+      }
     }
   }, 'Enter');
+
+  useGlobalKey(() => {
+    setKnowOfFocus(false);
+    if (focusedInside() && document.activeElement instanceof HTMLElement && !isNewTask()) {
+      // Escape out of editing
+      props.cancelEdit();
+      document.activeElement?.blur();
+    } else {
+      setState('selectedTask', undefined);
+    }
+  }, 'Escape');
 
   // TODO: capture and autoformat times
 
@@ -55,7 +82,9 @@ function TaskPopoverForm(props: {
             </Button>
           </Show>
           <div class="title-form">
-            <HotkeyPrompt hotkey={'e'} onActivated={focusForm} actionDescr="Focus edit box" />
+            <Show when={!knowOfFocus()}>
+              <HotkeyPrompt hotkey={'Enter'} onActivated={focusForm} actionDescr="Focus edit box" />
+            </Show>
             <input
               onInput={(e) => props.setTaskData({...props.taskData, title: e.target.value})}
               ref={newEntryRef}
@@ -106,10 +135,6 @@ export function ExistingTaskPopover(props: { taskId: number }) {
 
   const [_, setState] = useCalendarState();
 
-  useGlobalKey(() => {
-    setState('selectedTask', undefined);
-  }, 'Escape');
-
   const unsaved = () => (!!task() || !!originalTask()) && JSON.stringify(task()) !== JSON.stringify(originalTask());
 
   const updateTask = () => {
@@ -130,6 +155,10 @@ export function ExistingTaskPopover(props: { taskId: number }) {
     setState('selectedTask', undefined);
   }
 
+  const cancelEdit = () => {
+    setTask(originalTask);
+  }
+
   return (
     <Show when={task()}>{(task) => (
       <TaskPopoverForm
@@ -140,6 +169,7 @@ export function ExistingTaskPopover(props: { taskId: number }) {
         submit={updateTask}
         id={props.taskId}
         deleteTask={deleteTask}
+        cancelEdit={cancelEdit}
       />
     )}</Show>
   );
@@ -171,10 +201,6 @@ export function NewTaskPopover(props: { date: Ridate }) {
     });
   }
 
-  useGlobalKey(() => {
-    setState('selectedTask', undefined);
-  }, 'Escape');
-
   return (
     <TaskPopoverForm
       unsaved={true}
@@ -182,6 +208,7 @@ export function NewTaskPopover(props: { date: Ridate }) {
       setTaskData={setCurrTask}
       loading={loading()}
       submit={createTask}
+      cancelEdit={() => {}}
     />
   );
 }

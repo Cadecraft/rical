@@ -36,10 +36,17 @@ function NewTaskButton(props: { date: Ridate }) {
 
 function TaskTile(props: { task: Task }) {
   const [state, setState] = useCalendarState();
+  const { toYearMonth } = useDateNav();
 
   const selected = () => state.selectedTask && !state.selectedTask.newTask && state.selectedTask?.id === props.task.task_id;
   const toggleSelected = () => {
-    setState('selectedTask', selected() ? undefined : { newTask: false, id: props.task.task_id });
+    if (selected()) {
+      setState('selectedTask', undefined);
+    } else {
+      setState('selectedTask', { newTask: false, id: props.task.task_id });
+      toYearMonth(props.task.year, props.task.month);
+      setState('selectedDay', props.task.day);
+    }
   }
 
   return (
@@ -73,7 +80,7 @@ function MonthDay(props: { day: DateData }) {
   // TODO: document 'o' for new task hotkey, only when this day is selected?
 
   return (
-    <div class={`month-day ${isToday() ? 'today' : ''} ${isSelected() ? 'selected' : ''}`}>
+    <div class={`month-day ${isToday() ? 'today' : ''} ${isSelected() ? 'selected' : ''} ${state.selectedTask ? 'task-focused' : ''}`}>
       <div class="month-day-top">
         <div class="day-of-month">{dayOfMonthDisp()}</div>
       </div>
