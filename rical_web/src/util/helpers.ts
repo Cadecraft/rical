@@ -19,19 +19,21 @@ export function leadingZero(x: number): string {
   }
 }
 
-export function formatMin(minutes: number | undefined): string {
-  if (minutes === undefined) {
+export function formatMin(minutes: number | undefined | null, shorthand?: boolean): string {
+  console.log('format called: minutes is ' + minutes);
+  if (minutes === undefined || minutes === null) {
     return '';
   }
   // TODO: leading 0 and base 24hr on user prefs
   const hours = Math.floor(minutes / 60);
   const minLeft = minutes % 60;
+  const minPart = (shorthand && minLeft === 0) ? '' : `:${leadingZero(minLeft)}`;
   if (hours === 12) {
-    return `${hours}:${leadingZero(minLeft)}pm`;
+    return `${hours}${minPart}pm`;
   } else if (hours >= 12) {
-    return `${hours - 12}:${leadingZero(minLeft)}pm`;
+    return `${hours - 12}${minPart}pm`;
   } else {
-    return `${hours}:${leadingZero(minLeft)}am`;
+    return `${hours}${minPart}am`;
   }
 }
 

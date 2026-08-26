@@ -9,7 +9,7 @@ import type { Task, Calendar } from '../util/types';
 import { NewTaskPopover, ExistingTaskPopover } from '../components/TaskPopover';
 import useMotions from '../util/motions';
 import { useDateNav } from '../util/hooks';
-import { leadingZero, compareTasks } from '../util/helpers';
+import { leadingZero, compareTasks, formatMin } from '../util/helpers';
 
 import { IoArrowBackSharp, IoArrowForwardSharp } from 'solid-icons/io';
 
@@ -54,13 +54,15 @@ function TaskTile(props: { task: Task }) {
     }
   }
 
+  const formattedTitle = props.task.start_min ? `${formatMin(props.task.start_min, true)} ${props.task.title}` : `${props.task.title}`;
+
   return (
     <div class="task-tile">
       <button
         class={`task ${props.task.complete ? 'complete' : ''} ${selected() ? 'selected' : ''}`}
         onClick={toggleSelected}
       >
-        {props.task.title || <>&nbsp;</>}
+        {formattedTitle || <>&nbsp;</>}
       </button>
     </div>
   )
