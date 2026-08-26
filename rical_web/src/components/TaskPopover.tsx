@@ -71,9 +71,11 @@ function TaskPopoverForm(props: {
   }, 'Escape');
 
   // TODO: capture and autoformat times
+  // TODO: better way to determine whether the selected day is near the bottom
+  const dayIsNearBottom = () => props.taskData.day > 21;
 
   return (
-    <div ref={outerRef} class={`task-popover ${props.taskData.complete ? 'complete' : ''}`}>
+    <div ref={outerRef} class={`task-popover ${props.taskData.complete ? 'complete' : ''} ${dayIsNearBottom() ? 'from-top' : ''}`}>
       <div class="form-body">
         <div class="top-options">
           <Show when={!isNewTask()}>

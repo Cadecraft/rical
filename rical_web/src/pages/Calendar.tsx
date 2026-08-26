@@ -66,7 +66,7 @@ function TaskTile(props: { task: Task }) {
 }
 
 function MonthDay(props: { day: DateData }) {
-  const [state, _] = useCalendarState();
+  const [state, setState] = useCalendarState();
   const isToday = () => eq(currentDate(), props.day.date);
   const isSelected = () => state.selectedMonth === props.day.date.month &&
     (state.selection.type === "precise-day" && state.selection.day === props.day.date.dayOfMonth);
@@ -80,10 +80,16 @@ function MonthDay(props: { day: DateData }) {
     }
   }
 
+  const clickDay = () => {
+    if (state.selection.type === "precise-day" || state.selection.type === "vibing-day") {
+      setState('selection', { type: 'vibing-day', day: props.day.date.dayOfMonth });
+    }
+  }
+
   // TODO: document 'o' for new task hotkey, only when this day is selected?
 
   return (
-    <div class={`month-day ${isToday() ? 'today' : ''} ${isSelected() ? 'selected' : ''} ${state.selection.type === "task" ? 'task-focused' : ''}`}>
+    <div class={`month-day ${isToday() ? 'today' : ''} ${isSelected() ? 'selected' : ''} ${state.selection.type === "task" ? 'task-focused' : ''}`} onClick={clickDay}>
       <div class="month-day-top">
         <div class="day-of-month">{dayOfMonthDisp()}</div>
       </div>
@@ -163,6 +169,9 @@ function Page() {
   const [state, setState] = useCalendarState();
 
   // TODO: kick out un-authed users
+
+  // TODO: fix creating/clicking tasks in the top/bottom rows outside of this month
+  // TODO: display tasks in the top/bottom rows outside of this month, maybe by loading prev and next month too
 
   createEffect(() => {
     const year = () => Number(params.y || currentDate().year);

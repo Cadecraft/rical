@@ -14,6 +14,17 @@
 
   background-color: var(--surface);
 
+  &.from-top {
+    bottom: unset;
+    top: 50px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+
+    .form-body {
+      padding-bottom: 6px;
+    }
+  }
+
   input {
     background-color: var(--background);
   }
