@@ -73,11 +73,6 @@
       font-size: 14px;
       font-family: monospace;
       gap: 4px;
-
-      input {
-        width: 72px;
-        height: 24px;
-      }
     }
 
     .bottom-options {
@@ -106,5 +101,16 @@
     &:focus-visible {
       outline: solid 2px var(--blue-outline);
     }
+  }
+}
+
+input.time-range {
+  width: 72px;
+  height: 24px;
+  font-family: monospace;
+
+  &.invalid {
+    border: solid 1px var(--rical-accent);
+    color: var(--rical-accent);
   }
 }

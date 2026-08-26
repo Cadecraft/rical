@@ -1,5 +1,5 @@
 import './TaskPopover.css';
-import { createEffect, Show, createSignal } from 'solid-js';
+import { createEffect, Show, createSignal, createMemo } from 'solid-js';
 import { type Ridate } from '../util/ridate';
 import { useCalendarState } from '../util/StateProvider';
 import { useCalCache } from '../util/calCache';
@@ -7,9 +7,37 @@ import type { Task, TaskData } from '../util/types';
 import { Button } from './Button';
 import { useGlobalKey } from '../util/hooks';
 import HotkeyPrompt from './HotkeyPrompt';
-import { isAnythingFocusedInclButton } from '../util/helpers';
+import { isAnythingFocusedInclButton, formatMin, parseMinString } from '../util/helpers';
 
 import { IoTrashSharp } from 'solid-icons/io';
+
+function TimeInput(props: { min: number | undefined, setMin: (time: number | undefined) => void }) {
+  const [curr, setCurr] = createSignal(formatMin(props.min));
+
+  const parsedVal = createMemo(() => parseMinString(curr()));
+
+  const updateInput = (newInput: string) => {
+    setCurr(newInput);
+  }
+
+  const invalid = () => parsedVal() === undefined && curr().length > 0;
+
+  const change = () => {
+    props.setMin(parsedVal());
+    setCurr(formatMin(parsedVal()));
+  }
+
+  return (
+    <input
+      value={curr()}
+      onInput={(e) => updateInput(e.target.value)}
+      class={`time-range ${invalid() ? 'invalid' : ''}`}
+      title={invalid() ? 'Not a valid time' : ''}
+      placeholder="00:00"
+      onChange={change}
+    />
+  )
+}
 
 function TaskPopoverForm(props: {
   taskData: TaskData,
@@ -97,9 +125,9 @@ function TaskPopoverForm(props: {
           </div>
         </div>
         <div class="time-form">
-          <input placeholder="00:00" />
+          <TimeInput min={props.taskData.start_min} setMin={(newMin) => props.setTaskData({...props.taskData, start_min: newMin })} />
           to
-          <input placeholder="00:00" />
+          <TimeInput min={props.taskData.end_min} setMin={(newMin) => props.setTaskData({...props.taskData, end_min: newMin })} />
         </div>
         <textarea onInput={(e) => props.setTaskData({...props.taskData, description: e.target.value})} class="description" placeholder="Description">{props.taskData.description}</textarea>
         <div class="bottom-options">

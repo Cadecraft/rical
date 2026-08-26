@@ -2,7 +2,7 @@ import { createEffect, onCleanup } from 'solid-js';
 import { useCalendarState } from './StateProvider';
 import { type Ridate, addDays } from './ridate';
 import { useDateNav } from './hooks';
-import { isAnythingFocused } from './helpers';
+import { isAnythingFocused, compareTasks } from './helpers';
 import { useCalCache } from './calCache';
 
 function useMotions() {
@@ -52,18 +52,19 @@ function useMotions() {
     if (!date) return;
 
     const tasksHere = calCache.getTasksAtDate(date);
-    if (tasksHere.length === 0) {
+    const sorted = tasksHere.toSorted(compareTasks);
+    if (sorted.length === 0) {
       return;
     }
     const existingSelectedTaskId = state.selection.type === "task" && !state.selection.newTask ? state.selection.id : undefined;
-    const selectedHere = tasksHere.findIndex((t) => t.task_id === existingSelectedTaskId);
+    const selectedHere = sorted.findIndex((t) => t.task_id === existingSelectedTaskId);
     if (selectedHere === undefined) {
-      setState('selection', { type: 'task', newTask: false, id: tasksHere[0].task_id });
+      setState('selection', { type: 'task', newTask: false, id: sorted[0].task_id });
       return;
     }
     const newSelected = selectedHere + direction;
-    const newSelectedInRange = newSelected < 0 ? tasksHere.length - 1 : (newSelected >= tasksHere.length ? 0 : newSelected);
-    const newSelectedId = tasksHere[newSelectedInRange].task_id;
+    const newSelectedInRange = newSelected < 0 ? sorted.length - 1 : (newSelected >= sorted.length ? 0 : newSelected);
+    const newSelectedId = sorted[newSelectedInRange].task_id;
     setState('selection', { type: 'task', newTask: false, id: newSelectedId });
   }
 

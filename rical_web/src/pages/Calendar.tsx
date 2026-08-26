@@ -1,7 +1,7 @@
 import './Calendar.css';
 import { For, createEffect, createMemo, Show, createSignal } from 'solid-js';
 import { useSearchParams } from '@solidjs/router';
-import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate, leadingZero } from '../util/ridate';
+import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate } from '../util/ridate';
 import { useCalendarState } from '../util/StateProvider';
 import { DAYS_PER_WEEK } from '../util/constants';
 import { useCalCache } from '../util/calCache';
@@ -9,6 +9,7 @@ import type { Task, Calendar } from '../util/types';
 import { NewTaskPopover, ExistingTaskPopover } from '../components/TaskPopover';
 import useMotions from '../util/motions';
 import { useDateNav } from '../util/hooks';
+import { leadingZero, compareTasks } from '../util/helpers';
 
 import { IoArrowBackSharp, IoArrowForwardSharp } from 'solid-icons/io';
 
@@ -86,6 +87,10 @@ function MonthDay(props: { day: DateData }) {
     }
   }
 
+  const sortedTasks = createMemo(() => {
+    return props.day.tasks.toSorted(compareTasks);
+  });
+
   // TODO: document 'o' for new task hotkey, only when this day is selected?
 
   return (
@@ -94,7 +99,7 @@ function MonthDay(props: { day: DateData }) {
         <div class="day-of-month">{dayOfMonthDisp()}</div>
       </div>
       <div class="tasks">
-        <For each={props.day.tasks}>
+        <For each={sortedTasks()}>
           {(task) => <TaskTile task={task} />}
         </For>
         <NewTaskButton date={props.day.date} />
