@@ -1,8 +1,8 @@
-import { Button, PlainLink } from '../components/Button';
-import { Switch, Match, createSignal } from 'solid-js';
-import Banner from '../components/Banner';
-import { fetchSignup, fetchLogin } from '../util/apiInterface';
-import { useSearchParams } from '@solidjs/router';
+import { Button, PlainLink } from "../components/Button";
+import { Switch, Match, createSignal } from "solid-js";
+import Banner from "../components/Banner";
+import { fetchSignup, fetchLogin } from "../util/apiInterface";
+import { useSearchParams } from "@solidjs/router";
 
 function Page(props: { signup: boolean }) {
   const [username, setUsername] = createSignal("");
@@ -21,21 +21,25 @@ function Page(props: { signup: boolean }) {
     setLoading(true);
 
     if (props.signup) {
-      fetchSignup(username(), password()).then(() => {
-        location.href = "/login?signupSuccess=true";
-      }).catch(() => {
-        setError("Error signing up. This username may already be taken.");
-        setLoading(false);
-      });
+      fetchSignup(username(), password())
+        .then(() => {
+          location.href = "/login?signupSuccess=true";
+        })
+        .catch(() => {
+          setError("Error signing up. This username may already be taken.");
+          setLoading(false);
+        });
     } else {
-      fetchLogin(username(), password()).then((res) => {
-        // TODO: localStorage is temporary. start sending token in cookie
-        localStorage.setItem("tok", res.token);
-        location.href = "/cal";
-      }).catch(() => {
-        setError("Username or password did not match an existing account");
-        setLoading(false);
-      });
+      fetchLogin(username(), password())
+        .then((res) => {
+          // TODO: localStorage is temporary. start sending token in cookie
+          localStorage.setItem("tok", res.token);
+          location.href = "/cal";
+        })
+        .catch(() => {
+          setError("Username or password did not match an existing account");
+          setLoading(false);
+        });
     }
   }
 
@@ -45,7 +49,7 @@ function Page(props: { signup: boolean }) {
     } else {
       return "Log in with a username and password.";
     }
-  }
+  };
 
   return (
     <div class="outer">
@@ -55,13 +59,21 @@ function Page(props: { signup: boolean }) {
           <Switch>
             <Match when={props.signup}>
               <h2>Sign up</h2>
-              <div class="secondary">
-                Sign up with a username and password.
-              </div>
+              <div class="secondary">Sign up with a username and password.</div>
               <br />
               <div class="form">
-                <input type="text" placeholder="New username" value={username()} onChange={e => setUsername(e.target.value)} />
-                <input type="password" placeholder="New password" value={password()} onChange={e => setPassword(e.target.value)} />
+                <input
+                  type="text"
+                  placeholder="New username"
+                  value={username()}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="New password"
+                  value={password()}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
                 <Button disabled={loading()} onClick={submit}>
                   Sign up
                 </Button>
@@ -74,13 +86,21 @@ function Page(props: { signup: boolean }) {
             </Match>
             <Match when={!props.signup}>
               <h2>Login</h2>
-              <div class="secondary">
-                {loginMessage()}
-              </div>
+              <div class="secondary">{loginMessage()}</div>
               <br />
               <div class="form">
-                <input type="text" placeholder="Username" value={username()} onChange={e => setUsername(e.target.value)} />
-                <input type="password" placeholder="Password" value={password()} onChange={e => setPassword(e.target.value)} />
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={username()}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password()}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
                 <Button disabled={loading()} onClick={submit}>
                   Log in
                 </Button>
@@ -100,7 +120,7 @@ function Page(props: { signup: boolean }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default Page;

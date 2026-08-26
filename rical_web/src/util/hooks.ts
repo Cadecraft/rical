@@ -1,13 +1,13 @@
-import { createEffect, createSignal, onCleanup } from 'solid-js';
-import { useCalendarState } from './StateProvider';
-import { useSearchParams } from '@solidjs/router';
-import { isAnythingFocused } from './helpers';
+import { createEffect, createSignal, onCleanup } from "solid-js";
+import { useCalendarState } from "./StateProvider";
+import { useSearchParams } from "@solidjs/router";
+import { isAnythingFocused } from "./helpers";
 
 /** Binds a function to be called by a keypress. Returns whether the hotkey is down */
 export function useHotkey(onActivated: () => void, hotkey?: string) {
   // Keydown may fire with #, but if the user releases shift first, keyup fires with 3
   const SHIFT_HOTKEY_EQUIV: Record<string, string> = {
-    '#': '3'
+    "#": "3",
   };
 
   const [hotkeyDown, setHotkeyDown] = createSignal(false);
@@ -21,7 +21,7 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
       }
       if (e.key === hotkey && !e.ctrlKey) {
         setHotkeyDown(true);
-      } else if (e.key == 'Escape') {
+      } else if (e.key == "Escape") {
         setHotkeyDown(false);
       }
     };
@@ -30,7 +30,10 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
       if (isAnythingFocused()) {
         return;
       }
-      if (e.key === hotkey || (hotkey in SHIFT_HOTKEY_EQUIV && e.key === SHIFT_HOTKEY_EQUIV[hotkey])) {
+      if (
+        e.key === hotkey ||
+        (hotkey in SHIFT_HOTKEY_EQUIV && e.key === SHIFT_HOTKEY_EQUIV[hotkey])
+      ) {
         if (hotkeyDown()) {
           onActivated();
         }
@@ -75,25 +78,25 @@ export function useDateNav() {
       y: state.selectedMonth === 1 ? state.selectedYear - 1 : state.selectedYear,
       m: state.selectedMonth === 1 ? 12 : state.selectedMonth - 1,
     });
-  }
+  };
 
   const nextMonth = () => {
     setParams({
       y: state.selectedMonth === 12 ? state.selectedYear + 1 : state.selectedYear,
       m: state.selectedMonth === 12 ? 1 : state.selectedMonth + 1,
     });
-  }
+  };
 
   const toYearMonth = (year: number, month: number) => {
     setParams({
       y: year,
       m: month,
     });
-  }
+  };
 
   return {
     prevMonth,
     nextMonth,
     toYearMonth,
-  }
+  };
 }

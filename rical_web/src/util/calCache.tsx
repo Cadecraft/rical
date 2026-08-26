@@ -1,15 +1,21 @@
-import { fetchCalMonth, fetchCreateTask, fetchTask, fetchPutTask, fetchDeleteTask } from './apiInterface';
-import type { TaskData, Task } from './types';
-import { useCalendarState } from './StateProvider';
-import { unwrap } from 'solid-js/store';
-import { type Ridate } from './ridate';
+import {
+  fetchCalMonth,
+  fetchCreateTask,
+  fetchTask,
+  fetchPutTask,
+  fetchDeleteTask,
+} from "./apiInterface";
+import type { TaskData, Task } from "./types";
+import { useCalendarState } from "./StateProvider";
+import { unwrap } from "solid-js/store";
+import { type Ridate } from "./ridate";
 
 export function useCalCache() {
   const [state, setState] = useCalendarState();
 
   const toKey = (year: number, month: number) => {
     return `${year}/${month}`;
-  }
+  };
 
   const getMonth = async (year: number, month: number) => {
     const cache = state.calCache;
@@ -19,7 +25,7 @@ export function useCalCache() {
       return Promise.resolve(cache.months[key]);
     }
 
-    const res = await fetchCalMonth(year, month)
+    const res = await fetchCalMonth(year, month);
     console.log(`[DBG] fetched month: ${JSON.stringify(res)}`);
     const newCache = structuredClone(unwrap(cache));
     newCache.months[key] = res;
@@ -28,15 +34,15 @@ export function useCalCache() {
         newCache.tasks[task.task_id] = task;
       }
     }
-    setState('calCache', newCache);
+    setState("calCache", newCache);
     return res;
-  }
+  };
 
   const getTasksAtDate = (date: Ridate) => {
     const cache = state.calCache;
     const key = toKey(date.year, date.month);
     return cache.months[key].days[date.dayOfMonth - 1];
-  }
+  };
 
   const createTask = async (taskData: TaskData) => {
     const cache = state.calCache;
@@ -47,9 +53,9 @@ export function useCalCache() {
       const createdTask = { ...taskData, task_id: res.task_id };
       newCache.months[key].days[taskData.day - 1].push(createdTask);
       newCache.tasks[res.task_id] = createdTask;
-      setState('calCache', newCache);
+      setState("calCache", newCache);
     });
-  }
+  };
 
   const getTask = async (id: number) => {
     const cache = state.calCache;
@@ -61,16 +67,16 @@ export function useCalCache() {
     const task = await fetchTask(id);
     const newCache = structuredClone(unwrap(cache));
     newCache.tasks[id] = task;
-    setState('calCache', newCache);
+    setState("calCache", newCache);
     return task;
-  }
+  };
 
   const getTaskUnsafe = (id: number) => {
     if (!(id in state.calCache.tasks)) {
       console.error(`getTaskUnsafe failed for task id ${id}`);
     }
     return state.calCache.tasks[id];
-  }
+  };
 
   const putTask = async (task: Task) => {
     const cache = state.calCache;
@@ -79,15 +85,15 @@ export function useCalCache() {
       const newCache = structuredClone(unwrap(cache));
       newCache.tasks[task.task_id] = task;
       // TODO: moving tasks
-      newCache.months[toKey(task.year, task.month)].days[task.day - 1].forEach(t => {
+      newCache.months[toKey(task.year, task.month)].days[task.day - 1].forEach((t) => {
         if (t.task_id === task.task_id) {
           Object.assign(t, task);
         }
       });
-      setState('calCache', newCache);
+      setState("calCache", newCache);
       return task;
     });
-  }
+  };
 
   const deleteTask = async (id: number) => {
     const cache = state.calCache;
@@ -99,8 +105,8 @@ export function useCalCache() {
     const month = newCache.months[toKey(task.year, task.month)];
     month.days[task.day - 1] = month.days[task.day - 1].filter((d) => d.task_id != id);
     delete newCache.tasks[id];
-    setState('calCache', newCache);
-  }
+    setState("calCache", newCache);
+  };
 
   return {
     getMonth,

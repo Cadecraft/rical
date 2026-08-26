@@ -1,14 +1,14 @@
 /* @refresh reload */
-import { render } from 'solid-js/web'
-import { Router, Route } from '@solidjs/router';
-import './index.css'
-import Landing from './pages/Landing.tsx'
-import NotFound from './pages/NotFound.tsx'
-import Calendar from './pages/Calendar.tsx';
-import Login from './pages/Login.tsx';
-import { CalendarStateProvider } from './util/StateProvider.tsx';
+import { render } from "solid-js/web";
+import { Router, Route } from "@solidjs/router";
+import "./index.css";
+import Landing from "./pages/Landing.tsx";
+import NotFound from "./pages/NotFound.tsx";
+import Calendar from "./pages/Calendar.tsx";
+import Login from "./pages/Login.tsx";
+import { CalendarStateProvider } from "./util/StateProvider.tsx";
 
-const root = document.getElementById('root')
+const root = document.getElementById("root");
 
 render(
   () => (
@@ -22,5 +22,5 @@ render(
       </Router>
     </CalendarStateProvider>
   ),
-  root!
+  root!,
 );

@@ -16,7 +16,8 @@
 
   width: fit-content;
 
-  &:focus-visible, &.pressed {
+  &:focus-visible,
+  &.pressed {
     outline: solid 4px var(--blue-outline);
   }
 
@@ -26,7 +27,8 @@
     color: white;
   }
 
-  &:active, &.pressed {
+  &:active,
+  &.pressed {
     background-color: var(--rical-red-dark);
   }
 
@@ -58,7 +60,10 @@
   }
 }
 
-.rical-button:active, .rical-button.pressed, .icon-button:active, .icon-button.pressed {
+.rical-button:active,
+.rical-button.pressed,
+.icon-button:active,
+.icon-button.pressed {
   .hotkey {
     border-bottom: none;
     height: 16px;

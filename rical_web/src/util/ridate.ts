@@ -1,4 +1,4 @@
-import { DAYS_PER_WEEK } from '../util/constants';
+import { DAYS_PER_WEEK } from "../util/constants";
 
 export type Ridate = {
   year: number;
@@ -21,19 +21,19 @@ function toRidate(date: Date): Ridate {
 }
 
 export function monthName(ridate: Ridate) {
-  return toDate(ridate).toLocaleString('default', { month: 'short' });
+  return toDate(ridate).toLocaleString("default", { month: "short" });
 }
 
 export function eq(ridate1: Ridate, ridate2: Ridate) {
   return (
-    (ridate1.year === ridate2.year)
-    && (ridate1.month === ridate2.month)
-    && (ridate1.dayOfMonth === ridate2.dayOfMonth)
+    ridate1.year === ridate2.year &&
+    ridate1.month === ridate2.month &&
+    ridate1.dayOfMonth === ridate2.dayOfMonth
   );
 }
 
 export function weekdayName(ridate: Ridate) {
-  return toDate(ridate).toLocaleDateString('default', { weekday: 'short' });
+  return toDate(ridate).toLocaleDateString("default", { weekday: "short" });
 }
 
 /** 0-indexed, 0 being Sunday */
@@ -63,7 +63,7 @@ export function getCalendarFrame(year: number, month: number) {
     if (res.length === 0 || weekday === 0) {
       const blankWeek = [];
       for (let i = 0; i < DAYS_PER_WEEK; ++i) {
-        blankWeek.push({year: -1, month: -1, dayOfMonth: -1});
+        blankWeek.push({ year: -1, month: -1, dayOfMonth: -1 });
       }
       res.push(blankWeek);
     }

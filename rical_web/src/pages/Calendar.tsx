@@ -1,17 +1,24 @@
-import './Calendar.css';
-import { For, createEffect, createMemo, Show, createSignal } from 'solid-js';
-import { useSearchParams } from '@solidjs/router';
-import { type Ridate, monthName, eq, weekdayName, getCalendarFrame, currentDate } from '../util/ridate';
-import { useCalendarState } from '../util/StateProvider';
-import { DAYS_PER_WEEK } from '../util/constants';
-import { useCalCache } from '../util/calCache';
-import type { Task, Calendar } from '../util/types';
-import { NewTaskPopover, ExistingTaskPopover } from '../components/TaskPopover';
-import useMotions from '../util/motions';
-import { useDateNav } from '../util/hooks';
-import { leadingZero, compareTasks, formatMin } from '../util/helpers';
+import "./Calendar.css";
+import { For, createEffect, createMemo, Show, createSignal } from "solid-js";
+import { useSearchParams } from "@solidjs/router";
+import {
+  type Ridate,
+  monthName,
+  eq,
+  weekdayName,
+  getCalendarFrame,
+  currentDate,
+} from "../util/ridate";
+import { useCalendarState } from "../util/StateProvider";
+import { DAYS_PER_WEEK } from "../util/constants";
+import { useCalCache } from "../util/calCache";
+import type { Task, Calendar } from "../util/types";
+import { NewTaskPopover, ExistingTaskPopover } from "../components/TaskPopover";
+import useMotions from "../util/motions";
+import { useDateNav } from "../util/hooks";
+import { leadingZero, compareTasks, formatMin } from "../util/helpers";
 
-import { IoArrowBackSharp, IoArrowForwardSharp } from 'solid-icons/io';
+import { IoArrowBackSharp, IoArrowForwardSharp } from "solid-icons/io";
 
 type DateData = {
   date: Ridate;
@@ -21,14 +28,15 @@ type DateData = {
 function NewTaskButton(props: { date: Ridate }) {
   const [state, setState] = useCalendarState();
 
-  const creatingNewTaskDate = () => (state.selection.type === "task" && state.selection.newTask) ? state.selection.date : undefined;
+  const creatingNewTaskDate = () =>
+    state.selection.type === "task" && state.selection.newTask ? state.selection.date : undefined;
   const startNewTask = () => {
     if (creatingNewTaskDate() && eq(creatingNewTaskDate()!, props.date)) {
-      setState('selection', { type: 'vibing-day', day: props.date.dayOfMonth });
+      setState("selection", { type: "vibing-day", day: props.date.dayOfMonth });
     } else {
-      setState('selection', { type: 'task', newTask: true, date: props.date });
+      setState("selection", { type: "task", newTask: true, date: props.date });
     }
-  }
+  };
 
   return (
     <>
@@ -43,51 +51,60 @@ function TaskTile(props: { task: Task }) {
   const [state, setState] = useCalendarState();
   const { toYearMonth } = useDateNav();
 
-  const selected = () => state.selection.type === "task" && !state.selection.newTask && state.selection.id === props.task.task_id;
+  const selected = () =>
+    state.selection.type === "task" &&
+    !state.selection.newTask &&
+    state.selection.id === props.task.task_id;
   const toggleSelected = () => {
     if (selected()) {
-      setState('selection', { type: 'vibing-day', day: props.task.day });
+      setState("selection", { type: "vibing-day", day: props.task.day });
     } else {
-      setState('selection', { type: 'task', newTask: false, id: props.task.task_id });
+      setState("selection", { type: "task", newTask: false, id: props.task.task_id });
       // TODO: automatically transport us (probably down near calendar) to the proper year and month if they go out of range
       toYearMonth(props.task.year, props.task.month);
     }
-  }
+  };
 
-  const formattedTitle = props.task.start_min ? `${formatMin(props.task.start_min, true)} ${props.task.title}` : `${props.task.title}`;
+  const formattedTitle = () => {
+    return props.task.start_min
+      ? `${formatMin(props.task.start_min, true)} ${props.task.title}`
+      : `${props.task.title}`;
+  };
 
   return (
     <div class="task-tile">
       <button
-        class={`task ${props.task.complete ? 'complete' : ''} ${selected() ? 'selected' : ''}`}
+        class={`task ${props.task.complete ? "complete" : ""} ${selected() ? "selected" : ""}`}
         onClick={toggleSelected}
       >
-        {formattedTitle || <>&nbsp;</>}
+        {formattedTitle() || <>&nbsp;</>}
       </button>
     </div>
-  )
+  );
 }
 
 function MonthDay(props: { day: DateData }) {
   const [state, setState] = useCalendarState();
   const isToday = () => eq(currentDate(), props.day.date);
-  const isSelected = () => state.selectedMonth === props.day.date.month &&
-    (state.selection.type === "precise-day" && state.selection.day === props.day.date.dayOfMonth);
+  const isSelected = () =>
+    state.selectedMonth === props.day.date.month &&
+    state.selection.type === "precise-day" &&
+    state.selection.day === props.day.date.dayOfMonth;
 
   const dayOfMonthDisp = () => {
     const dayOfMonth = props.day.date.dayOfMonth;
     if (state.selectedMonth === props.day.date.month) {
       return dayOfMonth.toString();
     } else {
-      return `${monthName(props.day.date)} ${dayOfMonth}`
+      return `${monthName(props.day.date)} ${dayOfMonth}`;
     }
-  }
+  };
 
   const clickDay = () => {
     if (state.selection.type === "precise-day" || state.selection.type === "vibing-day") {
-      setState('selection', { type: 'vibing-day', day: props.day.date.dayOfMonth });
+      setState("selection", { type: "vibing-day", day: props.day.date.dayOfMonth });
     }
-  }
+  };
 
   const sortedTasks = createMemo(() => {
     return props.day.tasks.toSorted(compareTasks);
@@ -96,14 +113,15 @@ function MonthDay(props: { day: DateData }) {
   // TODO: document 'o' for new task hotkey, only when this day is selected?
 
   return (
-    <div class={`month-day ${isToday() ? 'today' : ''} ${isSelected() ? 'selected' : ''} ${state.selection.type === "task" ? 'task-focused' : ''}`} onClick={clickDay}>
+    <div
+      class={`month-day ${isToday() ? "today" : ""} ${isSelected() ? "selected" : ""} ${state.selection.type === "task" ? "task-focused" : ""}`}
+      onClick={clickDay}
+    >
       <div class="month-day-top">
         <div class="day-of-month">{dayOfMonthDisp()}</div>
       </div>
       <div class="tasks">
-        <For each={sortedTasks()}>
-          {(task) => <TaskTile task={task} />}
-        </For>
+        <For each={sortedTasks()}>{(task) => <TaskTile task={task} />}</For>
         <NewTaskButton date={props.day.date} />
       </div>
     </div>
@@ -127,10 +145,15 @@ function MonthView() {
 
   const days = createMemo(() => {
     const frame = getCalendarFrame(state.selectedYear, state.selectedMonth);
-    const frameAugmented: DateData[][] = frame.map(week => week.map(date => ({
-      date,
-      tasks: (monthFromApi() && date.month === state.selectedMonth) ? monthFromApi()!.days[date.dayOfMonth - 1] : [],
-    })));
+    const frameAugmented: DateData[][] = frame.map((week) =>
+      week.map((date) => ({
+        date,
+        tasks:
+          monthFromApi() && date.month === state.selectedMonth
+            ? monthFromApi()!.days[date.dayOfMonth - 1]
+            : [],
+      })),
+    );
     const res = frameAugmented.flat();
     return res;
   });
@@ -139,17 +162,11 @@ function MonthView() {
     <div class="month-view">
       <div class="month-view-weekdays">
         <For each={days().slice(0, DAYS_PER_WEEK)}>
-          {(day) => (
-            <div>{weekdayName(day.date)}</div>
-          )}
+          {(day) => <div>{weekdayName(day.date)}</div>}
         </For>
       </div>
       <div class="month-view-grid">
-        <For each={days()}>
-          {(day) => (
-            <MonthDay day={day} />
-          )}
-        </For>
+        <For each={days()}>{(day) => <MonthDay day={day} />}</For>
       </div>
     </div>
   );
@@ -163,9 +180,15 @@ function TopBar() {
     <div class="top-bar">
       <img src="/RicalIcon.svg" alt="Rical Home" />
       <div class="month-select">
-        <button onClick={prevMonth}><IoArrowBackSharp /></button>
-        <h2>{state.selectedYear}/{leadingZero(state.selectedMonth)}</h2>
-        <button onClick={nextMonth}><IoArrowForwardSharp /></button>
+        <button onClick={prevMonth}>
+          <IoArrowBackSharp />
+        </button>
+        <h2>
+          {state.selectedYear}/{leadingZero(state.selectedMonth)}
+        </h2>
+        <button onClick={nextMonth}>
+          <IoArrowForwardSharp />
+        </button>
       </div>
     </div>
   );
@@ -183,9 +206,9 @@ function Page() {
   createEffect(() => {
     const year = () => Number(params.y || currentDate().year);
     const month = () => Number(params.m || currentDate().month);
-    
-    setState('selectedYear', year());
-    setState('selectedMonth', month());
+
+    setState("selectedYear", year());
+    setState("selectedMonth", month());
   });
 
   useMotions();
@@ -196,12 +219,22 @@ function Page() {
       <div class="main-cal">
         <MonthView />
       </div>
-      <Show when={state.selection.type === "task" && state.selection.newTask === false && state.selection.id}>{(id) => (
-        <ExistingTaskPopover taskId={id()} />
-      )}</Show>
-      <Show when={state.selection.type === "task" && state.selection.newTask === true && state.selection.date}>{(date) => (
-        <NewTaskPopover date={date()} />
-      )}</Show>
+      <Show
+        when={
+          state.selection.type === "task" && state.selection.newTask === false && state.selection.id
+        }
+      >
+        {(id) => <ExistingTaskPopover taskId={id()} />}
+      </Show>
+      <Show
+        when={
+          state.selection.type === "task" &&
+          state.selection.newTask === true &&
+          state.selection.date
+        }
+      >
+        {(date) => <NewTaskPopover date={date()} />}
+      </Show>
     </div>
   );
 }

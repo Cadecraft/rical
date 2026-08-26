@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "warn"
+  },
+  "rules": {
+    "eslint/no-unused-vars": "error"
+  },
+  "jsPlugins": ["eslint-plugin-solid"],
+  "rules": {
+    "solid/reactivity": "warn",
+    "solid/no-destructure": "error",
+    "solid/jsx-no-undef": "error"
+  }
+}

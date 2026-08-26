@@ -1,33 +1,34 @@
-import { type Task } from '../util/types';
+import { type Task } from "../util/types";
 
 export function isAnythingFocused() {
-  return document.activeElement &&
+  return (
+    document.activeElement &&
     document.activeElement !== document.body &&
-    document.activeElement.nodeName !== "BUTTON";
+    document.activeElement.nodeName !== "BUTTON"
+  );
 }
 
 export function isAnythingFocusedInclButton() {
-  return document.activeElement &&
-    document.activeElement !== document.body
+  return document.activeElement && document.activeElement !== document.body;
 }
 
 export function leadingZero(x: number): string {
   if (x < 10) {
-    return '0' + x.toString();
+    return "0" + x.toString();
   } else {
     return x.toString();
   }
 }
 
 export function formatMin(minutes: number | undefined | null, shorthand?: boolean): string {
-  console.log('format called: minutes is ' + minutes);
+  console.log("format called: minutes is " + minutes);
   if (minutes === undefined || minutes === null) {
-    return '';
+    return "";
   }
   // TODO: leading 0 and base 24hr on user prefs
   const hours = Math.floor(minutes / 60);
   const minLeft = minutes % 60;
-  const minPart = (shorthand && minLeft === 0) ? '' : `:${leadingZero(minLeft)}`;
+  const minPart = shorthand && minLeft === 0 ? "" : `:${leadingZero(minLeft)}`;
   if (hours === 12) {
     return `${hours}${minPart}pm`;
   } else if (hours >= 12) {
@@ -48,7 +49,7 @@ export function formatMin(minutes: number | undefined | null, shorthand?: boolea
   E.g. 15pm -> INVALID
 */
 export function parseMinString(minString: string): number | undefined {
-  const normalized = minString.replace(/\s/g,'').replaceAll('.', '').toLowerCase();
+  const normalized = minString.replace(/\s/g, "").replaceAll(".", "").toLowerCase();
 
   const validShorthand = /^[0-9][0-9]?(:[0-9][0-9])?(pm|am)?$/;
 
@@ -56,7 +57,7 @@ export function parseMinString(minString: string): number | undefined {
     return undefined;
   }
 
-  const period = normalized.endsWith('am') ? 'am' : (normalized.endsWith('pm') ? 'pm' : '24hr');
+  const period = normalized.endsWith("am") ? "am" : normalized.endsWith("pm") ? "pm" : "24hr";
   let hours = 0;
   let minutes = 0;
   let processingMinutes = false;
@@ -70,7 +71,7 @@ export function parseMinString(minString: string): number | undefined {
         hours *= 10;
         hours += asDigit;
       }
-    } else if (c === ':') {
+    } else if (c === ":") {
       processingMinutes = true;
     }
   }
@@ -79,11 +80,11 @@ export function parseMinString(minString: string): number | undefined {
   }
 
   // Special case: 12pm -> 12, but 12am -> 0
-  if (period === 'am') {
+  if (period === "am") {
     if (hours === 12) {
       hours = 0;
     }
-  } else if (period === 'pm') {
+  } else if (period === "pm") {
     if (hours !== 12) {
       hours += 12;
     }

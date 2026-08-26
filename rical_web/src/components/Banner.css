@@ -7,7 +7,7 @@
 .banner {
   width: 100%;
   /* TODO: fix borders with the blur? */
-  background-image: url('/Cloudscape_Small.jpg');
+  background-image: url("/Cloudscape_Small.jpg");
   background-color: rgba(25, 22, 136, 0.2);
   background-size: cover;
   background-position: bottom;
