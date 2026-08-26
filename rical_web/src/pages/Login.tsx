@@ -1,7 +1,8 @@
 import { Button, PlainLink } from "../components/Button";
-import { Switch, Match, createSignal } from "solid-js";
+import { Switch, Match, createSignal, createEffect } from "solid-js";
 import Banner from "../components/Banner";
-import { fetchSignup, fetchLogin } from "../util/apiInterface";
+import Footer from "../components/Footer";
+import { fetchSignup, fetchLogin, fetchWhoami } from "../util/apiInterface";
 import { useSearchParams } from "@solidjs/router";
 
 function Page(props: { signup: boolean }) {
@@ -14,7 +15,14 @@ function Page(props: { signup: boolean }) {
 
   // TODO: make form so user can press enter at any time
 
-  // TODO: kick logged-in users to /cal
+  createEffect(() => {
+    fetchWhoami()
+      .then((_) => {
+        // Kick logged-in users to /cal
+        window.location.replace("/cal");
+      })
+      .catch(() => {});
+  });
 
   function submit() {
     setError("");
@@ -48,6 +56,14 @@ function Page(props: { signup: boolean }) {
       return "Your account was created successfully. Log in to start using Rical!";
     } else {
       return "Log in with a username and password.";
+    }
+  };
+
+  const loginTitle = () => {
+    if (params.reason === "loggedout") {
+      return "Successfully logged out";
+    } else {
+      return "Login";
     }
   };
 
@@ -85,7 +101,7 @@ function Page(props: { signup: boolean }) {
               </PlainLink>
             </Match>
             <Match when={!props.signup}>
-              <h2>Login</h2>
+              <h2>{loginTitle()}</h2>
               <div class="secondary">{loginMessage()}</div>
               <br />
               <div class="form">
@@ -113,11 +129,7 @@ function Page(props: { signup: boolean }) {
             </Match>
           </Switch>
         </div>
-        <div class="section footer">
-          © 2025 Rical contributors
-          <br />
-          <a href="https://github.com/Cadecraft/rical">GitHub</a>
-        </div>
+        <Footer />
       </div>
     </div>
   );

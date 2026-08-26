@@ -1,6 +1,7 @@
 import "./Landing.css";
 import { LinkButton } from "../components/Button";
 import Banner from "../components/Banner";
+import Footer from "../components/Footer";
 
 function Page() {
   return (
@@ -52,11 +53,7 @@ function Page() {
             calendars...
           </i>
         </div>
-        <div class="section footer">
-          © 2025 Rical contributors
-          <br />
-          <a href="https://github.com/Cadecraft/rical">GitHub</a>
-        </div>
+        <Footer />
       </div>
     </div>
   );

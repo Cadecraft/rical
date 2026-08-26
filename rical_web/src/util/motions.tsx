@@ -117,7 +117,7 @@ function useMotions() {
       if (isAnythingFocused()) {
         return;
       }
-      if (e.key in motionMap) {
+      if (e.key in motionMap && !e.ctrlKey) {
         e.preventDefault();
         motionMap[e.key]();
       }

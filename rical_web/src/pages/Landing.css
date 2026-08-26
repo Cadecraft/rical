@@ -23,10 +23,6 @@
   color: var(--text-secondary);
 }
 
-.footer {
-  background-color: var(--surface);
-}
-
 .terminal-ss {
   width: 100%;
   border-radius: 8px;

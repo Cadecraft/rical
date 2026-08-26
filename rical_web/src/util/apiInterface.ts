@@ -97,3 +97,7 @@ export async function fetchPutTask(task: Task): Promise<Task> {
 export async function fetchDeleteTask(id: number): Promise<Task> {
   return await fetchTemplate("DELETE", `/task/${id}`, ["auth"], "none");
 }
+
+export async function fetchWhoami(): Promise<{ username: string }> {
+  return await fetchTemplate("GET", "/account/whoami", ["auth", "json"], "json");
+}

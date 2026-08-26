@@ -1,5 +1,5 @@
 import "./Calendar.css";
-import { For, createEffect, createMemo, Show, createSignal } from "solid-js";
+import { For, createEffect, createMemo, Show, createSignal, onCleanup } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import {
   type Ridate,
@@ -15,8 +15,11 @@ import { useCalCache } from "../util/calCache";
 import type { Task, Calendar } from "../util/types";
 import { NewTaskPopover, ExistingTaskPopover } from "../components/TaskPopover";
 import useMotions from "../util/motions";
-import { useDateNav } from "../util/hooks";
+import { useDateNav, useGlobalKey } from "../util/hooks";
 import { leadingZero, compareTasks, formatMin } from "../util/helpers";
+import { fetchWhoami } from "../util/apiInterface";
+import { IoPersonCircleSharp } from "solid-icons/io";
+import { Button } from "../components/Button";
 
 import { IoArrowBackSharp, IoArrowForwardSharp } from "solid-icons/io";
 
@@ -176,6 +179,44 @@ function TopBar() {
   const [state] = useCalendarState();
   const { prevMonth, nextMonth } = useDateNav();
 
+  const [whoami, setWhoami] = createSignal<undefined | { username: string }>(undefined);
+
+  let whoamiElem!: HTMLDivElement;
+
+  createEffect(() => {
+    fetchWhoami()
+      .then((res) => {
+        setWhoami(res);
+      })
+      .catch(() => {
+        // Send the user back to login
+        location.href = "/login?reason=unauthorized";
+      });
+  });
+
+  const [visible, setVisible] = createSignal(false);
+
+  const signOut = () => {
+    // TODO: localStorage is temporary. Switch to cookie
+    localStorage.removeItem("tok");
+    location.href = "/login?reason=loggedout";
+  };
+
+  createEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (visible() && e.target instanceof Element && !whoamiElem.contains(e.target)) {
+        setVisible(false);
+      }
+    };
+
+    document.addEventListener("click", onClick);
+    onCleanup(() => {
+      document.removeEventListener("click", onClick);
+    });
+  });
+
+  useGlobalKey(() => setVisible(false), "Escape");
+
   return (
     <div class="top-bar">
       <img src="/RicalIcon.svg" alt="Rical Home" />
@@ -189,6 +230,19 @@ function TopBar() {
         <button onClick={nextMonth}>
           <IoArrowForwardSharp />
         </button>
+      </div>
+      <div class="whoami" ref={whoamiElem}>
+        <button class="icon" onClick={() => setVisible((v) => !v)}>
+          <IoPersonCircleSharp />
+        </button>
+        <Show when={visible()}>
+          <div class="whoami-popover">
+            Signed in as {whoami()?.username ?? "..."}
+            <Button onClick={signOut} hotkey="q">
+              Sign out
+            </Button>
+          </div>
+        </Show>
       </div>
     </div>
   );
