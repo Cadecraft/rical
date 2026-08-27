@@ -15,8 +15,14 @@
 }
 
 .section {
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 16px 16px;
+  border-radius: 20px;
+  background-color: var(--surface);
+
+  color: var(--text-secondary);
+  h2 {
+    color: var(--text);
+  }
 }
 
 .secondary {
@@ -25,6 +31,39 @@
 
 .full-img {
   width: 100%;
+  border-radius: 20px;
+}
+
+.wide-img {
+  width: 100%;
   border-radius: 8px;
-  margin-top: 10px;
+}
+
+.terminal-ss {
+  margin-top: 16px;
+}
+
+ul {
+  margin-bottom: 0px;
+}
+
+.intro {
+  position: relative;
+  overflow: hidden;
+
+  :not(.vibey-icon) {
+    z-index: 1;
+  }
+
+  .vibey-icon {
+    position: absolute;
+    right: 20px;
+    bottom: -40px;
+    height: 160px;
+    width: 160px;
+    transform: perspective(20px) rotateY(-3deg) rotateZ(9deg);
+    color: var(--gray-transparent-effect);
+
+    pointer-events: none;
+  }
 }

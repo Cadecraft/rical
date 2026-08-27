@@ -25,10 +25,6 @@
     }
   }
 
-  input {
-    background-color: var(--background);
-  }
-
   &.top-half {
     bottom: unset;
     top: 60px;

@@ -10,7 +10,7 @@ function Banner() {
             <A href="/">
               <h1>Rical</h1>
             </A>
-            <span>The latest calendar app for minimalists</span>
+            <span>A calendar app for minimalists</span>
           </div>
           <img src="/RicalIcon.svg" alt="Rical icon" width={40} />
         </div>

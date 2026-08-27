@@ -7,7 +7,7 @@
   --text-secondary: rgb(90, 100, 110);
   --disabled: #575b66;
   --white: #fff;
-  --background: #eaecee;
+  --background: #fff;
   --surface: rgb(240, 242, 249);
   --blue: rgb(80, 130, 215);
   --blue-light: rgb(120, 180, 240);
@@ -23,6 +23,8 @@
   --gray: #c5c9d3;
   --gray-dark: #a9adb9;
   --border: #c9ced3;
+
+  --gray-transparent-effect: rgba(77, 91, 117, 0.2);
 
   /* TODO: dark mode settings */
   @media (prefers-color-scheme: dark) {
@@ -102,7 +104,7 @@ input {
   font-family: inherit;
   font-size: inherit;
   color: var(--text);
-  background-color: var(--surface);
+  background-color: var(--background);
   border: solid 1px var(--border);
   border-radius: 4px;
   padding: 2px 6px;
