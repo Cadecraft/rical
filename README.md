@@ -1,40 +1,41 @@
 # Rical
 
-The latest calendar app for minimalists.
+The latest calendar app for minimalists, available at [rical.app](https://rical.app)
 
 ![A screenshot of Rical's terminal UI](images/rical_terminal_screenshot.png)
 
 ## Core Objectives
-Modern calendar apps are too slow! If you want these, Rical might be for you:
+Modern calendar apps are too cluttered and slow! If you want these, Rical might be for you:
 - Fast keyboard shortcuts
-- Lightweight cross-device frontend(s\*)
-- A full-scale database that allows multiple accounts, syncing, and availability sharing\*
+- Lightweight cross-device frontends
+- Syncing and availability sharing\*
 - System notifications for events\*
 
 \* *Rical is far from complete yet. Check back soon for more features, mark your calendars...*
 
 ## Repo Structure
-**Rical Backend**
-- A friendly and simple API to access and write calendars
-- Includes an authentication system for multiple accounts and syncing
+**Rical Backend** (api.rical.app)
+- The core API for authentication and calendar access
 
 **Rical Terminal Client**
 - A keyboard-oriented calendar TUI frontend for Rical
-- Login, signup, calendar month view and task list, task completion/editing, fast keyboard navigation
+- To install and learn, read below!
 
-**Rical Web Client** *(coming soon!)*
+**Rical Web Client** ([rical.app](https://rical.app))
 - An intuitive calendar web frontend for Rical, much like existing calendar GUI apps
-- Offers the same full functionality as the terminal client (above)
+- Features similar keyboard shortcuts and the same functionality as the terminal client
 - Useful for managing your calendar from mobile or on devices where you don't want to install the TUI
 
-**Drical (the Daemon for Rical)** *(coming soon!)*
-- Offer system notifications once a day for the calendar tasks that will appear that day
-- Work cross-platform; constantly run in the background, but be very lightweight
-- If the user has not opened their computer/ran Drical for multiple days, show all the tasks that have accumulated over the unviewed days
+**Drical (the Daemon for Rical)**
+- *Coming soon!*
+- Goal: cross-platform system notifications once a day for the calendar tasks and events on that day
 
 ## Using the Rical Terminal Client
+If you aren't familiar with TUI apps, you should consider using the [web client](https://rical.app) instead.
+If you want to manage your calendar from the command line, read on!
+
 ### Starting out
-Run the terminal client (see development below) and make sure you're connected to the server.
+Run the terminal client (see Development below) and make sure you're connected to the server.
 
 To create an account, follow the instructions in the main menu.
 
@@ -78,13 +79,28 @@ These should be what you're familiar with:
 - Crossterm TUI library
 
 **Rical Web Client**
-- Coming soon! Libraries and technologies to be determined
+- Solid.js
 
-**Drical**: coming soon!
-- Rust 🦀
-- Coming soon! Libraries and technologies to be determined
+**Drical**
+- *Coming soon! Libraries and technologies to be determined*
 
 ## Development
+**Starting the terminal client**
+1. Clone the repository
+2. Copy `rical_terminal/.env.example` into `rical_terminal/.env` and set the `API_URL` variable properly.
+    - If you're planning on using the officially hosted backend, set it to <https://api.rical.app>
+    - If you're self-hosting, use the URL that you're running the backend on
+3. Run or install with `cargo` by running these commands:
+```sh
+cd rical_terminal
+
+# To just run the program once
+cargo run
+
+# OR, to install to your computer
+cargo install --path .
+```
+
 **Starting the backend**
 - Note: make sure to update the `.env` file and use the correct DB password/other info in these commands
 - Run a Postgres database. Do this anywhere, such as in Docker:
@@ -107,22 +123,6 @@ docker container start rical-db
 - If you want to use the dockerfile, include the args
 ```sh
 docker build . --tag 'rical_backend_test' --build-arg DATABASE_URL=yoururlhere --build-arg JWT_SECRET=yoursecrethere --build-arg PORT=3001
-```
-
-**Starting the terminal client**
-1. Clone the repository
-2. Copy `rical_terminal/.env.example` into `rical_terminal/.env` and set the `API_URL` variable properly.
-    - If you're planning on using the officially hosted backend, set it to that URL (coming soon)
-    - If you're self-hosting, put the URL that you're running the backend on
-3. Run or install with `cargo` by running these commands:
-```sh
-cd rical_terminal
-
-# To just run the program once
-cargo run
-
-# OR, to install to your computer
-cargo install --path .
 ```
 
 **Starting Rical Web**

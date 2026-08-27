@@ -18,7 +18,7 @@ function Page() {
         <div class="section intro">
           <h2>Get started</h2>
           <span>
-            Try out Rical in seconds!
+            Try out Rical in seconds
           </span>
           <br />
           <br />
