@@ -9,6 +9,12 @@ import type { TaskData, Task } from "./types";
 import { useCalendarState } from "./StateProvider";
 import { unwrap } from "solid-js/store";
 import { type Ridate } from "./ridate";
+import { getCalendarFrame } from '../util/ridate';
+
+export type DateData = {
+  date: Ridate;
+  tasks: Task[];
+};
 
 export function useCalCache() {
   const [state, setState] = useCalendarState();
@@ -37,6 +43,26 @@ export function useCalCache() {
     setState("calCache", newCache);
     return res;
   };
+
+  /** Get the calendar frame for the current month, including the prev and next month's margin days */
+  const getMonthFrame = async (year: number, month: number) => {
+    const res = await Promise.all([
+      getMonth(month === 1 ? year - 1 : year, month === 1 ? 12 : month - 1),
+      getMonth(year, month),
+      getMonth(month === 12 ? year + 1 : year, month === 12 ? 1 : month + 1),
+    ]);
+
+    const frame = getCalendarFrame(year, month);
+
+    const frameAugmented: DateData[][] = frame.map((week) =>
+      week.map((date) => ({
+        date,
+        tasks: (res[date.month - month + 1].days[date.dayOfMonth - 1])
+      })),
+    );
+
+    return frameAugmented;
+  }
 
   const getTasksAtDate = (date: Ridate) => {
     const cache = state.calCache;
@@ -109,7 +135,7 @@ export function useCalCache() {
   };
 
   return {
-    getMonth,
+    getMonthFrame,
     createTask,
     getTask,
     putTask,

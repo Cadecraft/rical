@@ -11,8 +11,8 @@ import {
 } from "../util/ridate";
 import { useCalendarState } from "../util/StateProvider";
 import { DAYS_PER_WEEK } from "../util/constants";
-import { useCalCache } from "../util/calCache";
-import type { Task, Calendar } from "../util/types";
+import { useCalCache, type DateData } from "../util/calCache";
+import type { Task } from "../util/types";
 import { NewTaskPopover, ExistingTaskPopover } from "../components/TaskPopover";
 import useMotions from "../util/motions";
 import { useDateNav, useGlobalKey } from "../util/hooks";
@@ -22,11 +22,6 @@ import { IoPersonCircleSharp } from "solid-icons/io";
 import { Button } from "../components/Button";
 
 import { IoArrowBackSharp, IoArrowForwardSharp } from "solid-icons/io";
-
-type DateData = {
-  date: Ridate;
-  tasks: Task[];
-};
 
 function NewTaskButton(props: { date: Ridate }) {
   const [state, setState] = useCalendarState();
@@ -133,32 +128,31 @@ function MonthDay(props: { day: DateData }) {
 
 function MonthView() {
   const [state, _] = useCalendarState();
-  const [monthFromApi, setMonthFromApi] = createSignal<Calendar | undefined>(undefined);
+  const [frameFromApi, setFrameFromApi] = createSignal<DateData[][] | undefined>(undefined);
 
   const calCache = useCalCache();
 
   createEffect(() => {
     console.log(`[DBG] Rerendering month view`);
-    setMonthFromApi(undefined);
+    setFrameFromApi(undefined);
 
-    calCache.getMonth(state.selectedYear, state.selectedMonth).then((c) => {
-      setMonthFromApi(c);
+    calCache.getMonthFrame(state.selectedYear, state.selectedMonth).then((c) => {
+      setFrameFromApi(c);
     });
   });
 
   const days = createMemo(() => {
+    if (frameFromApi()) {
+      return frameFromApi()!.flat();
+    }
     const frame = getCalendarFrame(state.selectedYear, state.selectedMonth);
-    const frameAugmented: DateData[][] = frame.map((week) =>
+    const emptyFrame: DateData[][] = frame.map((week) =>
       week.map((date) => ({
         date,
-        tasks:
-          monthFromApi() && date.month === state.selectedMonth
-            ? monthFromApi()!.days[date.dayOfMonth - 1]
-            : [],
+        tasks: []
       })),
     );
-    const res = frameAugmented.flat();
-    return res;
+    return emptyFrame.flat();
   });
 
   return (
@@ -253,8 +247,7 @@ function Page() {
   const [params] = useSearchParams();
   const [state, setState] = useCalendarState();
 
-  // TODO: fix creating/clicking tasks in the top/bottom rows outside of this month
-  // TODO: display tasks in the top/bottom rows outside of this month, maybe by loading prev and next month too
+  // TODO: fix creating/clicking tasks in the top/bottom rows outside of this month (focus should be allowed to be on diff day)
 
   createEffect(() => {
     const year = () => Number(params.y || currentDate().year);
