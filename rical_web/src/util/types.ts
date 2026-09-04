@@ -2,9 +2,8 @@ export type Task = {
   year: number;
   month: number;
   day: number;
-  // TODO: these could be null too, from the api
-  start_min?: number;
-  end_min?: number;
+  start_min?: number | null;
+  end_min?: number | null;
   title: string;
   description?: string;
   complete: boolean;

@@ -181,6 +181,7 @@ function TopBar() {
 
   const [whoami, setWhoami] = createSignal<undefined | { username: string }>(undefined);
 
+  // eslint-disable-next-line no-unassigned-vars
   let whoamiElem!: HTMLDivElement;
 
   createEffect(() => {
@@ -189,7 +190,7 @@ function TopBar() {
         setWhoami(res);
       })
       .catch(() => {
-        // Send the user back to login
+        // Kick the user back to login
         location.href = "/login?reason=unauthorized";
       });
   });
@@ -251,8 +252,6 @@ function TopBar() {
 function Page() {
   const [params] = useSearchParams();
   const [state, setState] = useCalendarState();
-
-  // TODO: kick out un-authed users
 
   // TODO: fix creating/clicking tasks in the top/bottom rows outside of this month
   // TODO: display tasks in the top/bottom rows outside of this month, maybe by loading prev and next month too

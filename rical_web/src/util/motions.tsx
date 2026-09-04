@@ -10,7 +10,7 @@ function useMotions() {
   const { toYearMonth } = useDateNav();
   const calCache = useCalCache();
 
-  const selectedDate = (): Ridate | undefined => {
+  const selectedDate = (): Ridate => {
     let selectedDay = -1;
     if (state.selection.type === "vibing-day" || state.selection.type === "precise-day") {
       selectedDay = state.selection.day;
@@ -29,16 +29,7 @@ function useMotions() {
     };
   };
 
-  const defaultSelectedDate = (): Ridate => {
-    return {
-      year: state.selectedYear,
-      month: state.selectedMonth,
-      // TODO: better logic. Ideally 'today', or maybe day with the selected task
-      dayOfMonth: 15,
-    };
-  };
-
-  const pseudoSelectedDate = () => selectedDate() ?? defaultSelectedDate();
+  const pseudoSelectedDate = () => selectedDate();
 
   const selectDate = (date: Ridate) => {
     if (date.year !== state.selectedYear || date.month !== state.selectedMonth) {

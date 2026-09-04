@@ -49,7 +49,9 @@ function TaskPopoverForm(props: {
   id?: number;
   deleteTask?: () => void;
 }) {
+  // eslint-disable-next-line no-unassigned-vars
   let outerRef!: HTMLDivElement;
+  // eslint-disable-next-line no-unassigned-vars
   let newEntryRef!: HTMLInputElement;
 
   const [_, setState] = useCalendarState();
@@ -98,7 +100,6 @@ function TaskPopoverForm(props: {
     }
   }, "Escape");
 
-  // TODO: capture and autoformat times
   // TODO: better way to determine whether the selected day is near the bottom
   const dayIsNearBottom = () => props.taskData.day > 21;
 

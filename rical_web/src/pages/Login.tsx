@@ -17,7 +17,7 @@ function Page(props: { signup: boolean }) {
 
   createEffect(() => {
     fetchWhoami()
-      .then((_) => {
+      .then(() => {
         // Kick logged-in users to /cal
         window.location.replace("/cal");
       })

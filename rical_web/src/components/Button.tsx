@@ -4,7 +4,6 @@ import { children, Show } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { useHotkey } from "../util/hooks";
 
-// TODO: make LinkButton with same behavior but uses an a
 export function Button(props: {
   children: JSX.Element;
   hotkey?: string;
