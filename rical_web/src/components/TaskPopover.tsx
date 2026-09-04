@@ -16,11 +16,14 @@ function TimeInput(props: { min: number | undefined; setMin: (time: number | und
 
   const parsedVal = createMemo(() => parseMinString(curr()));
 
+  const invalid = () => parsedVal() === undefined && curr().length > 0;
+
   const updateInput = (newInput: string) => {
     setCurr(newInput);
+    if (!invalid()) {
+      props.setMin(parsedVal());
+    }
   };
-
-  const invalid = () => parsedVal() === undefined && curr().length > 0;
 
   const change = () => {
     props.setMin(parsedVal());

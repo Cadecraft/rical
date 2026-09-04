@@ -253,6 +253,16 @@ function Page() {
     const year = () => Number(params.y || currentDate().year);
     const month = () => Number(params.m || currentDate().month);
 
+    const movedToNextMonth = (year() * 12 + month() > state.selectedYear * 12 + state.selectedMonth);
+    const movedToPrevMonth = (year() * 12 + month() < state.selectedYear * 12 + state.selectedMonth);
+
+    // TODO: make nicer auto-deselection logic (e.g. clicked a task in a different month)
+    if (state.selection.type === "task" && movedToNextMonth) {
+      setState("selection", { type: "vibing-day", day: 1 })
+    } else if (state.selection.type === "task" && movedToPrevMonth) {
+      setState("selection", { type: "vibing-day", day: 15 })
+    }
+
     setState("selectedYear", year());
     setState("selectedMonth", month());
   });
