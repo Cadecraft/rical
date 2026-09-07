@@ -9,7 +9,7 @@ import type { TaskData, Task } from "./types";
 import { useCalendarState } from "./StateProvider";
 import { unwrap } from "solid-js/store";
 import { type Ridate } from "./ridate";
-import { getCalendarFrame } from '../util/ridate';
+import { getCalendarFrame } from "../util/ridate";
 
 export type DateData = {
   date: Ridate;
@@ -57,12 +57,12 @@ export function useCalCache() {
     const frameAugmented: DateData[][] = frame.map((week) =>
       week.map((date) => ({
         date,
-        tasks: (res[date.month - month + 1].days[date.dayOfMonth - 1])
+        tasks: res[date.month - month + 1].days[date.dayOfMonth - 1],
       })),
     );
 
     return frameAugmented;
-  }
+  };
 
   const getTasksAtDate = (date: Ridate) => {
     const cache = state.calCache;

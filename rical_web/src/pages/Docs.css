@@ -1,0 +1,26 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  tr {
+    :first-child {
+      width: 100px;
+    }
+
+    td:first-child {
+      font-family: monospace;
+    }
+  }
+
+  th {
+    font-weight: bold;
+  }
+
+  th,
+  td {
+    border: solid 1px var(--border);
+    margin: 0px;
+
+    padding: 2px 6px;
+  }
+}

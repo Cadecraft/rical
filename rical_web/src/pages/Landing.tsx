@@ -3,6 +3,7 @@ import { LinkButton } from "../components/Button";
 import Banner from "../components/Banner";
 import Footer from "../components/Footer";
 import { IoCalendarSharp } from "solid-icons/io";
+import { REPO_URL } from "../util/constants";
 
 function VibeyIcon() {
   return <IoCalendarSharp class="vibey-icon" />;
@@ -40,7 +41,7 @@ function Page() {
           <h2>Also available in your terminal</h2>
           <div class="secondary">Manage your calendar from the command line</div>
           <br />
-          <LinkButton href="https://github.com/Cadecraft/rical" hotkey="i">
+          <LinkButton href={REPO_URL} hotkey="i" newTab>
             Install
           </LinkButton>
           <img

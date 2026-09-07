@@ -125,3 +125,10 @@ input {
 .error {
   color: var(--rical-accent);
 }
+
+h2:target {
+  width: fit-content;
+  padding-inline: 4px;
+  margin-inline: -4px;
+  background-color: #f09b183b;
+}

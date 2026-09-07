@@ -70,7 +70,7 @@ function TaskPopoverForm(props: {
 
   const closeTask = () => {
     setState("selection", { type: "precise-day", day: props.taskData.day });
-  }
+  };
 
   const focusedInside = () => {
     return isAnythingFocusedInclButton() && outerRef.contains(document.activeElement);
@@ -115,7 +115,7 @@ function TaskPopoverForm(props: {
       if (!e.composedPath().includes(outerRef)) {
         closeTask();
       }
-    }
+    };
 
     document.addEventListener("click", handleClick);
 

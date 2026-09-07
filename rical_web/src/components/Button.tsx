@@ -31,11 +31,18 @@ export function Button(props: {
   );
 }
 
-export function LinkButton(props: { children: JSX.Element; hotkey?: string; href: string }) {
+export function LinkButton(props: {
+  children: JSX.Element;
+  hotkey?: string;
+  href: string;
+  newTab?: boolean;
+}) {
   const resolved = children(() => props.children);
 
   const hotkeyDown = useHotkey(() => {
-    if (props.href.startsWith("http")) {
+    if (props.newTab) {
+      window.open(props.href, "_blank")?.focus();
+    } else if (props.href.startsWith("http")) {
       location.href = props.href;
     } else {
       navigate(props.href);
@@ -45,7 +52,12 @@ export function LinkButton(props: { children: JSX.Element; hotkey?: string; href
   const navigate = useNavigate();
 
   return (
-    <A draggable={false} class={`rical-button ${hotkeyDown() ? "pressed" : ""}`} href={props.href}>
+    <A
+      draggable={false}
+      class={`rical-button ${hotkeyDown() ? "pressed" : ""}`}
+      href={props.href}
+      target={props.newTab ? "_blank" : undefined}
+    >
       {resolved()}
       <Show when={props.hotkey}>
         <div class="hotkey" title={`Hotkey for this link: ${props.hotkey}`}>

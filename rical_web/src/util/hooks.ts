@@ -2,12 +2,14 @@ import { createEffect, createSignal, onCleanup } from "solid-js";
 import { useCalendarState } from "./StateProvider";
 import { useSearchParams } from "@solidjs/router";
 import { isAnythingFocused } from "./helpers";
+import { fetchWhoami } from "../util/apiInterface";
 
 /** Binds a function to be called by a keypress. Returns whether the hotkey is down */
 export function useHotkey(onActivated: () => void, hotkey?: string) {
   // Keydown may fire with #, but if the user releases shift first, keyup fires with 3
   const SHIFT_HOTKEY_EQUIV: Record<string, string> = {
     "#": "3",
+    "?": "/",
   };
 
   const [hotkeyDown, setHotkeyDown] = createSignal(false);
@@ -56,7 +58,7 @@ export function useHotkey(onActivated: () => void, hotkey?: string) {
 export function useGlobalKey(onActivated: () => void, hotkey: string) {
   createEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === hotkey && !e.ctrlKey && !e.shiftKey) {
+      if (e.key === hotkey && !e.ctrlKey) {
         onActivated();
       }
     };
@@ -99,4 +101,22 @@ export function useDateNav() {
     nextMonth,
     toYearMonth,
   };
+}
+
+export function useWhoami(options?: { kickOnNotSignedIn?: true }) {
+  const [whoami, setWhoami] = createSignal<undefined | { username: string }>(undefined);
+
+  createEffect(() => {
+    fetchWhoami()
+      .then((res) => {
+        setWhoami(res);
+      })
+      .catch(() => {
+        if (options?.kickOnNotSignedIn) {
+          location.href = "/login?reason=unauthorized";
+        }
+      });
+  });
+
+  return whoami;
 }

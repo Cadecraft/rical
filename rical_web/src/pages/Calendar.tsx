@@ -1,6 +1,6 @@
 import "./Calendar.css";
 import { For, createEffect, createMemo, Show, createSignal, onCleanup } from "solid-js";
-import { useSearchParams } from "@solidjs/router";
+import { useSearchParams, A } from "@solidjs/router";
 import {
   type Ridate,
   monthName,
@@ -15,9 +15,8 @@ import { useCalCache, type DateData } from "../util/calCache";
 import type { Task } from "../util/types";
 import { NewTaskPopover, ExistingTaskPopover } from "../components/TaskPopover";
 import useMotions from "../util/motions";
-import { useDateNav, useGlobalKey } from "../util/hooks";
-import { leadingZero, compareTasks, formatMin } from "../util/helpers";
-import { fetchWhoami } from "../util/apiInterface";
+import { useDateNav, useGlobalKey, useWhoami } from "../util/hooks";
+import { leadingZero, compareTasks, formatMin, isAnythingFocused } from "../util/helpers";
 import { IoPersonCircleSharp } from "solid-icons/io";
 import { Button } from "../components/Button";
 
@@ -135,7 +134,6 @@ function MonthView() {
   const calCache = useCalCache();
 
   createEffect(() => {
-    console.log(`[DBG] Rerendering month view`);
     setFrameFromApi(undefined);
 
     calCache.getMonthFrame(state.selectedYear, state.selectedMonth).then((c) => {
@@ -151,7 +149,7 @@ function MonthView() {
     const emptyFrame: DateData[][] = frame.map((week) =>
       week.map((date) => ({
         date,
-        tasks: []
+        tasks: [],
       })),
     );
     return emptyFrame.flat();
@@ -171,33 +169,13 @@ function MonthView() {
   );
 }
 
-function TopBar() {
-  const [state] = useCalendarState();
-  const { prevMonth, nextMonth } = useDateNav();
-
-  const [whoami, setWhoami] = createSignal<undefined | { username: string }>(undefined);
-
+function ProfileMenu() {
   // eslint-disable-next-line no-unassigned-vars
   let whoamiElem!: HTMLDivElement;
 
-  createEffect(() => {
-    fetchWhoami()
-      .then((res) => {
-        setWhoami(res);
-      })
-      .catch(() => {
-        // Kick the user back to login
-        location.href = "/login?reason=unauthorized";
-      });
-  });
-
   const [visible, setVisible] = createSignal(false);
 
-  const signOut = () => {
-    // TODO: localStorage is temporary. Switch to cookie
-    localStorage.removeItem("tok");
-    location.href = "/login?reason=loggedout";
-  };
+  const whoami = useWhoami({ kickOnNotSignedIn: true });
 
   createEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -212,7 +190,48 @@ function TopBar() {
     });
   });
 
+  const signOut = () => {
+    // TODO: localStorage is temporary. Switch to cookie
+    localStorage.removeItem("tok");
+    location.href = "/login?reason=loggedout";
+  };
+
   useGlobalKey(() => setVisible(false), "Escape");
+  useGlobalKey(() => {
+    if (!isAnythingFocused()) {
+      setVisible((v) => !v);
+    }
+  }, "p");
+
+  useGlobalKey(() => {
+    if (!isAnythingFocused()) {
+      window.open("/docs#hotkeys", "_blank")?.focus();
+    }
+  }, "?");
+
+  return (
+    <div class="whoami" ref={whoamiElem}>
+      <button class="icon" onClick={() => setVisible((v) => !v)}>
+        <IoPersonCircleSharp />
+      </button>
+      <Show when={visible()}>
+        <div class="whoami-popover">
+          Signed in as {whoami()?.username ?? "..."}
+          <Button onClick={signOut} hotkey="q">
+            Sign out
+          </Button>
+          <A target="_blank" href="/docs#hotkeys">
+            Hotkeys help (?)
+          </A>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
+function TopBar() {
+  const [state] = useCalendarState();
+  const { prevMonth, nextMonth } = useDateNav();
 
   return (
     <div class="top-bar">
@@ -228,19 +247,7 @@ function TopBar() {
           <IoArrowForwardSharp />
         </button>
       </div>
-      <div class="whoami" ref={whoamiElem}>
-        <button class="icon" onClick={() => setVisible((v) => !v)}>
-          <IoPersonCircleSharp />
-        </button>
-        <Show when={visible()}>
-          <div class="whoami-popover">
-            Signed in as {whoami()?.username ?? "..."}
-            <Button onClick={signOut} hotkey="q">
-              Sign out
-            </Button>
-          </div>
-        </Show>
-      </div>
+      <ProfileMenu />
     </div>
   );
 }
@@ -255,14 +262,14 @@ function Page() {
     const year = () => Number(params.y || currentDate().year);
     const month = () => Number(params.m || currentDate().month);
 
-    const movedToNextMonth = (year() * 12 + month() > state.selectedYear * 12 + state.selectedMonth);
-    const movedToPrevMonth = (year() * 12 + month() < state.selectedYear * 12 + state.selectedMonth);
+    const movedToNextMonth = year() * 12 + month() > state.selectedYear * 12 + state.selectedMonth;
+    const movedToPrevMonth = year() * 12 + month() < state.selectedYear * 12 + state.selectedMonth;
 
     // TODO: make nicer auto-deselection logic (e.g. clicked a task in a different month)
     if (state.selection.type === "task" && movedToNextMonth) {
-      setState("selection", { type: "vibing-day", day: 1 })
+      setState("selection", { type: "vibing-day", day: 1 });
     } else if (state.selection.type === "task" && movedToPrevMonth) {
-      setState("selection", { type: "vibing-day", day: 15 })
+      setState("selection", { type: "vibing-day", day: 15 });
     }
 
     setState("selectedYear", year());
