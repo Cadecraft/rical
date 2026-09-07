@@ -21,7 +21,6 @@ export function leadingZero(x: number): string {
 }
 
 export function formatMin(minutes: number | undefined | null, shorthand?: boolean): string {
-  console.log("format called: minutes is " + minutes);
   if (minutes === undefined || minutes === null) {
     return "";
   }

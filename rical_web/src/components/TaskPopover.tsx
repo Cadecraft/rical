@@ -1,5 +1,5 @@
 import "./TaskPopover.css";
-import { createEffect, Show, createSignal, createMemo } from "solid-js";
+import { createEffect, Show, createSignal, createMemo, onCleanup } from "solid-js";
 import { type Ridate } from "../util/ridate";
 import { useCalendarState } from "../util/StateProvider";
 import { useCalCache } from "../util/calCache";
@@ -68,6 +68,10 @@ function TaskPopoverForm(props: {
 
   const isNewTask = () => !props.id;
 
+  const closeTask = () => {
+    setState("selection", { type: "precise-day", day: props.taskData.day });
+  }
+
   const focusedInside = () => {
     return isAnythingFocusedInclButton() && outerRef.contains(document.activeElement);
   };
@@ -99,12 +103,26 @@ function TaskPopoverForm(props: {
       props.cancelEdit();
       document.activeElement?.blur();
     } else {
-      setState("selection", { type: "precise-day", day: props.taskData.day });
+      closeTask();
     }
   }, "Escape");
 
   // TODO: better way to determine whether the selected day is near the bottom
   const dayIsNearBottom = () => props.taskData.day > 21;
+
+  createEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (!e.composedPath().includes(outerRef)) {
+        closeTask();
+      }
+    }
+
+    document.addEventListener("click", handleClick);
+
+    onCleanup(() => {
+      document.removeEventListener("click", handleClick);
+    });
+  });
 
   return (
     <div
@@ -133,12 +151,12 @@ function TaskPopoverForm(props: {
         </div>
         <div class="time-form">
           <TimeInput
-            min={props.taskData.start_min}
+            min={props.taskData.start_min ?? undefined}
             setMin={(newMin) => props.setTaskData({ ...props.taskData, start_min: newMin })}
           />
           to
           <TimeInput
-            min={props.taskData.end_min}
+            min={props.taskData.end_min ?? undefined}
             setMin={(newMin) => props.setTaskData({ ...props.taskData, end_min: newMin })}
           />
         </div>

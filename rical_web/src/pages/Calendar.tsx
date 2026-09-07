@@ -28,6 +28,7 @@ function NewTaskButton(props: { date: Ridate }) {
 
   const creatingNewTaskDate = () =>
     state.selection.type === "task" && state.selection.newTask ? state.selection.date : undefined;
+
   const startNewTask = () => {
     if (creatingNewTaskDate() && eq(creatingNewTaskDate()!, props.date)) {
       setState("selection", { type: "vibing-day", day: props.date.dayOfMonth });
@@ -53,6 +54,7 @@ function TaskTile(props: { task: Task }) {
     state.selection.type === "task" &&
     !state.selection.newTask &&
     state.selection.id === props.task.task_id;
+
   const toggleSelected = () => {
     if (selected()) {
       setState("selection", { type: "vibing-day", day: props.task.day });
