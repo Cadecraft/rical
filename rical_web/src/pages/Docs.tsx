@@ -24,58 +24,66 @@ function Page() {
           <br />
           <h3>Global</h3>
           <table>
-            <tr>
-              <th>Key</th>
-              <th>Description</th>
-            </tr>
-            <tr>
-              <td>?</td>
-              <td>Hotkeys help</td>
-            </tr>
-            <tr>
-              <td>h, j, k, l</td>
-              <td>Navigate left, down, up, right in the calendar</td>
-            </tr>
-            <tr>
-              <td>o</td>
-              <td>Open a new task in the selected day</td>
-            </tr>
-            <tr>
-              <td>Enter</td>
-              <td>Enter the list of tasks for the current day</td>
-            </tr>
-            <tr>
-              <td>p</td>
-              <td>Profile menu</td>
-            </tr>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>?</td>
+                <td>Hotkeys help</td>
+              </tr>
+              <tr>
+                <td>h, j, k, l</td>
+                <td>Navigate left, down, up, right in the calendar</td>
+              </tr>
+              <tr>
+                <td>o</td>
+                <td>Open a new task in the selected day</td>
+              </tr>
+              <tr>
+                <td>Enter</td>
+                <td>Enter the list of tasks for the current day</td>
+              </tr>
+              <tr>
+                <td>p</td>
+                <td>Profile menu</td>
+              </tr>
+            </tbody>
           </table>
           <br />
           <h3>When a task is selected</h3>
           <table>
-            <tr>
-              <th>Key</th>
-              <th>Description</th>
-            </tr>
-            <tr>
-              <td>#</td>
-              <td>Delete the task</td>
-            </tr>
-            <tr>
-              <td>d</td>
-              <td>Toggle whether the task is done</td>
-            </tr>
-            <tr>
-              <td>Enter</td>
-              <td>Edit the task, or confirm saving changes</td>
-            </tr>
-            <tr>
-              <td>Tab, Shift+Tab</td>
-              <td>Navigate between inputs</td>
-            </tr>
-            <tr>
-              <td>Esc</td>
-              <td>Cancel editing a task/deselect the task</td>
-            </tr>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>#</td>
+                <td>Delete the task</td>
+              </tr>
+              <tr>
+                <td>d</td>
+                <td>Toggle whether the task is done</td>
+              </tr>
+              <tr>
+                <td>Enter</td>
+                <td>Edit the task, or confirm saving changes</td>
+              </tr>
+              <tr>
+                <td>Tab, Shift+Tab</td>
+                <td>Navigate between inputs</td>
+              </tr>
+              <tr>
+                <td>Esc</td>
+                <td>Cancel editing a task/deselect the task</td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <div class="section">
